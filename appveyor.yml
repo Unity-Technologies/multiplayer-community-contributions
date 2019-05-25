@@ -1,0 +1,29 @@
+version: '{branch}-{build}'
+
+configuration:
+  - Debug
+  - Release
+
+skip_tags: true
+
+build:
+  project: MLAPI.Transports.sln
+  verbosity: minimal
+
+after_build:
+# ENET
+  - 7z a ENET.zip %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\*\*\ENet-CSharp.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\*\*\enet.dylib %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\*\*\enet.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\*\*\libenet.so %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\*\*\EnetTransport*.*
+# Ruffles
+  - 7z a Ruffles.zip %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\*\*\Ruffles.* %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\*\*\RufflesTransport.*
+
+artifacts:
+  - path: 'ENET.zip'
+  - path: 'Ruffles.zip'
+
+image: Visual Studio 2017
+
+before_build:
+  - nuget restore
+
+matrix:
+  fast_finish: true
