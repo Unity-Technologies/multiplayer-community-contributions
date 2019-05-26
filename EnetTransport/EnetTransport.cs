@@ -87,7 +87,10 @@ namespace EnetTransport
                         channelName = null;
                         payload = new ArraySegment<byte>();
 
-                        connectedEnetPeers.Add(@event.Peer.ID, @event.Peer);
+                        if (!connectedEnetPeers.ContainsKey(@event.Peer.ID))
+                        {
+                            connectedEnetPeers.Add(@event.Peer.ID, @event.Peer);
+                        }
 
                         return NetEventType.Connect;
                     }
