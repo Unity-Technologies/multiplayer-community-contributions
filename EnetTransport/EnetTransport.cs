@@ -214,6 +214,7 @@ namespace EnetTransport
             channelIdToName.Clear();
             channelNameToId.Clear();
 
+            connectedEnetPeers.Clear();
 
             // MLAPI Channels
             for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
