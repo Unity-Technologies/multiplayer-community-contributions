@@ -164,6 +164,8 @@ namespace EnetTransport
             Peer serverPeer = host.Connect(address, MLAPI_CHANNELS.Length + Channels.Count);
 
             serverPeerId = serverPeer.ID;
+
+            connectedEnetPeers.Add(serverPeerId, serverPeer);
         }
 
         public override void StartServer()
