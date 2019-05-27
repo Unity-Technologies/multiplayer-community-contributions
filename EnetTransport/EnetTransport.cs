@@ -21,6 +21,12 @@ namespace EnetTransport
         public List<EnetChannel> Channels = new List<EnetChannel>();
         public int MessageBufferSize = 1024 * 5;
 
+        [UnityEngine.Header("ENET Settings")]
+        public uint PingInterval = 500;
+        public uint TimeoutLimit = 32;
+        public uint TimeoutMinimum = 5000;
+        public uint TimeoutMaximum = 30000;
+
 
         // Runtime / state
         private byte[] messageBuffer;
@@ -87,10 +93,10 @@ namespace EnetTransport
                         channelName = null;
                         payload = new ArraySegment<byte>();
 
-                        if (!connectedEnetPeers.ContainsKey(@event.Peer.ID))
-                        {
-                            connectedEnetPeers.Add(@event.Peer.ID, @event.Peer);
-                        }
+                        connectedEnetPeers.Add(@event.Peer.ID, @event.Peer);
+
+                        @event.Peer.PingInterval(PingInterval);
+                        @event.Peer.Timeout(TimeoutLimit, TimeoutMinimum, TimeoutMaximum);
 
                         return NetEventType.Connect;
                     }
@@ -166,9 +172,10 @@ namespace EnetTransport
 
             Peer serverPeer = host.Connect(address, MLAPI_CHANNELS.Length + Channels.Count);
 
-            serverPeerId = serverPeer.ID;
+            serverPeer.PingInterval(PingInterval);
+            serverPeer.Timeout(TimeoutLimit, TimeoutMinimum, TimeoutMaximum);
 
-            connectedEnetPeers.Add(serverPeerId, serverPeer);
+            serverPeerId = serverPeer.ID;
         }
 
         public override void StartServer()
@@ -194,12 +201,15 @@ namespace EnetTransport
 
             GetEnetConnectionDetails(serverPeerId, out uint peerId);
 
-            connectedEnetPeers[peerId].DisconnectNow(0);
+            if (connectedEnetPeers.ContainsKey(peerId))
+            {
+                connectedEnetPeers[peerId].DisconnectNow(0);
+            }
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
-            GetEnetConnectionDetails(serverPeerId, out uint peerId);
+            GetEnetConnectionDetails(clientId, out uint peerId);
 
             return connectedEnetPeers[peerId].RoundTripTime;
         }
