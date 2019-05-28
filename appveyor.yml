@@ -1,7 +1,6 @@
 version: '{branch}-{build}'
 
 configuration:
-  - Debug
   - Release
 
 skip_tags: true
