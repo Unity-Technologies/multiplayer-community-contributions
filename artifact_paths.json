@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Ruffles",
+        "path": "Ruffles.zip",
+        "description": "Ruffles is a work in progress lightweight reliable UDP library",
+        "credits": "Albin Corén"
+    },
+    {
+        "name": "ENET",
+        "path": "ENET.zip",
+        "description": "ENET is a lightweight reliable UDP library written in C",
+        "credits": "Stanislav Denisov (fork and C# wrapper), Lee Salzman (original implementation)"
+    }
+]
