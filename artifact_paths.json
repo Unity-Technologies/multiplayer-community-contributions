@@ -1,16 +1,32 @@
-[
-    {
-        "id": "ruffles",
-        "name": "Ruffles",
-        "path": "Ruffles.zip",
-        "description": "Ruffles is a work in progress lightweight reliable UDP library",
-        "credits": "Albin Corén"
-    },
-    {
-        "id": "enet-csharp",
-        "name": "ENET",
-        "path": "ENET.zip",
-        "description": "ENET is a lightweight reliable UDP library written in C",
-        "credits": "Stanislav Denisov (fork and C# wrapper), Lee Salzman (original implementation)"
-    }
-]
+{
+    "artifacts": [
+        {
+            "id": "ruffles",
+            "name": "Ruffles",
+            "path": "Ruffles.zip",
+            "description": "Ruffles is a work in progress lightweight reliable UDP library.",
+            "credits": "Albin Corén",
+            "licence": "MIT/X11",
+            "platform_compatibility_description": "Works everywhere except WebGL.",
+            "net35": true,
+            "net45": true,
+            "preferNet45": false,
+            "experimental": true,
+            "mlapi_major_version": 10
+        },
+        {
+            "id": "enet-csharp",
+            "name": "ENET",
+            "path": "ENET.zip",
+            "description": "ENET is a lightweight reliable UDP library written in C.",
+            "credits": "Albin Corén (transport adapter), Stanislav Denisov (fork and C# wrapper), Lee Salzman (original implementation).",
+            "licence": "MIT/X11",
+            "platform_compatibility_description": "Works on Windows, Linux and macOS by default. Other platforms needs native binaries compiled.",
+            "net35": true,
+            "net45": true,
+            "preferNet45": false,
+            "experimental": false,
+            "mlapi_major_version": 10
+        }
+    ]
+}
