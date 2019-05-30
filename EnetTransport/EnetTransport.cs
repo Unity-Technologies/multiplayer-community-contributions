@@ -216,8 +216,11 @@ namespace EnetTransport
 
         public override void Shutdown()
         {
-            host.Flush();
-            host.Dispose();
+            if (host != null)
+            {
+                host.Flush();
+                host.Dispose();
+            }
             Library.Deinitialize();
         }
 
