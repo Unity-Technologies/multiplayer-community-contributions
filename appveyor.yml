@@ -15,7 +15,7 @@ after_build:
 # Ruffles
   - 7z a Ruffles.zip %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\Ruffles.* %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\RufflesTransport.*
 # WebSockets
-  - del /F /Q WebSocketTransport\bin\Release\*\*.*
+  - ps:  Remove-Item %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release\*\*.*
   - 7z a WebSockets.zip %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release
 
 artifacts:
