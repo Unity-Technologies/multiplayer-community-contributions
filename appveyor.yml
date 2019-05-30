@@ -20,6 +20,7 @@ after_build:
 artifacts:
   - path: 'ENET.zip'
   - path: 'Ruffles.zip'
+  - path: 'WebSocket.zip'
 
 image: Visual Studio 2017
 
