@@ -17,11 +17,14 @@ after_build:
 # WebSockets
   - ps:  Remove-Item WebSocketTransport\bin\Release\*\*.*
   - 7z a WebSockets.zip %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release
+# SteamP2P
+  - 7z a SteamP2P.zip %APPVEYOR_BUILD_FOLDER%\SteamP2PTransport\SteamP2PTransport.*
 
 artifacts:
   - path: 'ENET.zip'
   - path: 'Ruffles.zip'
   - path: 'WebSockets.zip'
+  - path: 'SteamP2P.zip'
 
 image: Visual Studio 2017
 
