@@ -14,13 +14,13 @@ after_build:
   - 7z a ENET.zip %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\ENet-CSharp.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.dylib %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\libenet.so %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\EnetTransport*.*
 # Ruffles
   - 7z a Ruffles.zip %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\Ruffles.* %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\RufflesTransport.*
-# WebSocket
-  - 7z a WebSocket.zip %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release -x!%APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release\*\*.*
+# WebSockets
+  - 7z a WebSockets.zip %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release -x!%APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release\*\*.*
 
 artifacts:
   - path: 'ENET.zip'
   - path: 'Ruffles.zip'
-  - path: 'WebSocket.zip'
+  - path: 'WebSockets.zip'
 
 image: Visual Studio 2017
 
