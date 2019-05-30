@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net35;net45;net471;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\Libraries\Unity\UnityEngine.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>false</Private>
+    </Reference>
+    <PackageReference Include="MLAPI" Version="10.2.3" />
+    <Reference Include="MLAPI.WebSockets">
+      <HintPath>..\Libraries\MLAPI.WebSockets\Native\MLAPI.WebSockets.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Libraries\MLAPI.WebSockets\Native\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="websocket-sharp">
+      <HintPath>..\Libraries\MLAPI.WebSockets\Native\websocket-sharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeFiles Include="..\Libraries\MLAPI.WebSockets\Native\*" />
+    <WebGLFiles Include="..\Libraries\MLAPI.WebSockets\WebGL\*" />
+  </ItemGroup>
+
+  <Target Name="CopyNativeFiles" AfterTargets="AfterBuild">
+      <Copy SourceFiles="@(NativeFiles)" DestinationFolder="$(OutputPath)\Native\%(RecursiveDir)" ContinueOnError="true" />
+  </Target>
+
+  <Target Name="CopyWebGLFiles" AfterTargets="AfterBuild">
+        <Copy SourceFiles="@(WebGLFiles)" DestinationFolder="$(OutputPath)\WebGL\%(RecursiveDir)" ContinueOnError="true" />
+  </Target>
+
+</Project>

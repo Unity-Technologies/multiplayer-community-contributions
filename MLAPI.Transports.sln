@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RufflesTransport", "Ruffles
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnetTransport", "EnetTransport\EnetTransport.csproj", "{8FBAD051-AF4B-4793-AFB7-83767E3E8A88}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketTransport", "WebSocketTransport\WebSocketTransport.csproj", "{65CBF801-7A29-42BC-899B-E2AE71D9C720}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,5 +21,9 @@ Global
 		{8FBAD051-AF4B-4793-AFB7-83767E3E8A88}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8FBAD051-AF4B-4793-AFB7-83767E3E8A88}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8FBAD051-AF4B-4793-AFB7-83767E3E8A88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65CBF801-7A29-42BC-899B-E2AE71D9C720}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65CBF801-7A29-42BC-899B-E2AE71D9C720}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65CBF801-7A29-42BC-899B-E2AE71D9C720}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65CBF801-7A29-42BC-899B-E2AE71D9C720}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
