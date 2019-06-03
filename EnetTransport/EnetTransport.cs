@@ -192,7 +192,7 @@ namespace EnetTransport
         {
             GetEnetConnectionDetails(serverPeerId, out uint peerId);
 
-            connectedEnetPeers[peerId].DisconnectLater(0);
+            connectedEnetPeers[peerId].DisconnectNow(0);
         }
 
         public override void DisconnectLocalClient()
