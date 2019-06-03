@@ -275,9 +275,8 @@ namespace EnetTransport
                     }
                 case ChannelType.Reliable:
                     {
-                        //-This does not seem to work as intended since messages used with 'PacketFlags.Unsequenced' seems to ba able to get lost.
-                        //-Changed to only use 'PacketFlags.Reliable' until further investigation.
-                        //return PacketFlags.Reliable | PacketFlags.Unsequenced;
+                        // ENET Does not support ReliableUnsequenced.
+                        // https://github.com/MidLevel/MLAPI.Transports/pull/5#issuecomment-498311723
                         return PacketFlags.Reliable;
                     }
                 case ChannelType.ReliableSequenced:
