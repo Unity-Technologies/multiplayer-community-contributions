@@ -275,7 +275,10 @@ namespace EnetTransport
                     }
                 case ChannelType.Reliable:
                     {
-                        return PacketFlags.Reliable | PacketFlags.Unsequenced;
+                        //-This does not seem to work as intended since messages used with 'PacketFlags.Unsequenced' seems to ba able to get lost.
+                        //-Changed to only use 'PacketFlags.Reliable' until further investigation.
+                        //return PacketFlags.Reliable | PacketFlags.Unsequenced;
+                        return PacketFlags.Reliable;
                     }
                 case ChannelType.ReliableSequenced:
                     {
