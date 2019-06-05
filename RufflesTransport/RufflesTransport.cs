@@ -4,6 +4,7 @@ using System.Net;
 using MLAPI.Transports;
 using Ruffles.Configuration;
 using Ruffles.Core;
+using UnityEngine;
 
 namespace RufflesTransport
 {
@@ -15,6 +16,8 @@ namespace RufflesTransport
             public string Name;
             public Ruffles.Channeling.ChannelType Type;
         }
+
+        public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
 
         // Inspector / settings
         public int MessageBufferSize = 1024 * 5;

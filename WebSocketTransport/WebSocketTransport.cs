@@ -4,6 +4,7 @@ using System.Net;
 using MLAPI;
 using MLAPI.Transports;
 using MLAPI.WebSockets;
+using UnityEngine;
 
 namespace WebSocketTransport
 {
@@ -14,6 +15,8 @@ namespace WebSocketTransport
             public NetEventType Type;
             public ArraySegment<byte> Payload;
         }
+
+        public override bool IsSupported => true;
 
         public string Url = "ws://127.0.0.1";
         public ushort Port;

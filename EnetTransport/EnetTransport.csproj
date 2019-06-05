@@ -11,6 +11,6 @@
       <SpecificVersion>False</SpecificVersion>
       <Private>false</Private>
     </Reference>
-    <PackageReference Include="MLAPI" Version="10.2.3" />
+    <PackageReference Include="MLAPI" Version="10.11.0" />
   </ItemGroup>
 </Project>
