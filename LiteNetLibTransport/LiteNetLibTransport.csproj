@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net35;net45;net471;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="LiteNetLib" Version="0.8.3.1" />
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\Libraries\Unity\UnityEngine.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>false</Private>
+    </Reference>
+    <PackageReference Include="MLAPI" Version="10.11.0" />
+  </ItemGroup>
+</Project>

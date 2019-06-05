@@ -17,11 +17,15 @@ after_build:
 # WebSockets
   - ps:  Remove-Item WebSocketTransport\bin\Release\*\*.*
   - 7z a WebSockets.zip %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release
+# LiteNetLib
+  - 7z a LiteNetLib.zip %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLib.* %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLibTransport.*
+
 
 artifacts:
   - path: 'ENET.zip'
   - path: 'Ruffles.zip'
   - path: 'WebSockets.zip'
+  - path: 'LiteNetLib.zip'
 
 image: Visual Studio 2017
 

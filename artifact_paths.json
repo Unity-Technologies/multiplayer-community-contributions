@@ -49,6 +49,22 @@
             "required_build_targets": [
                 20
             ]
-        }
+        },
+        {
+            "id": "litenetlib",
+            "name": "LiteNetLib",
+            "path": "LiteNetLib.zip",
+            "description": "LiteNetLib is a light reliable UDP library native to C#.",
+            "credits": "Piotr Kaminski (transport adapter), Ruslan Pyrch (library implementation).",
+            "licence": "MIT/X11",
+            "platform_compatibility_description": "Works on Windows, Linux, macOS, Android, iOS, UWP, and Lumin OS.",
+            "net35": true,
+            "net45": true,
+            "preferNet45": false,
+            "experimental": false,
+            "mlapi_major_version": 10,
+            "required_build_targets": [
+            ]
+        },
     ]
 }
