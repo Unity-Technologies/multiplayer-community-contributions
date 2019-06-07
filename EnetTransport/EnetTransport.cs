@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using ENet;
 using MLAPI.Transports;
-using UnityEngine;
 
 namespace EnetTransport
 {
@@ -16,7 +15,7 @@ namespace EnetTransport
             public PacketFlags Flags;
         }
 
-        public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
+        public override bool IsSupported => UnityEngine.Application.platform != UnityEngine.RuntimePlatform.WebGLPlayer;
 
         public ushort Port = 7777;
         public string Address = "127.0.0.1";
