@@ -65,6 +65,6 @@
             "mlapi_major_version": 10,
             "required_build_targets": [
             ]
-        },
+        }
     ]
 }
