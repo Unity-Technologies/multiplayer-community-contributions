@@ -115,3 +115,6 @@ The experimental flag describes if the transport or its adapter is in an experim
 
 ##### mlapi_major_version
 The mlapi_major_version integer should describe the MLAPI major version that is used for building this transport adapter. This **MUST** match the version that is imported via NuGet in the csproj file. Example: If the MLAPI NuGet version used is 10.2.3, the mlapi_major_version **MUST** be 10.
+
+##### required_build_targets
+The required_build_targets integer array defines the build targets that has to be installed before the tranport. This is rarley needed, but is neccecary in times where a a meta file is distributed with platform blacklists. The integers represents the enum integer value of [UnityEditor.BuildTarget](https://docs.unity3d.com/ScriptReference/BuildTarget.html)
