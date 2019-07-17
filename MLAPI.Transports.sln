@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketTransport", "WebSo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteNetLibTransport", "LiteNetLibTransport\LiteNetLibTransport.csproj", "{70EE9452-59B0-483D-8512-C75B46EFA979}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamP2PTransport", "SteamP2PTransport\SteamP2PTransport.csproj", "{7A6F0341-A4D8-466B-8475-FF90CBE9BE52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,5 +33,9 @@ Global
 		{70EE9452-59B0-483D-8512-C75B46EFA979}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70EE9452-59B0-483D-8512-C75B46EFA979}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70EE9452-59B0-483D-8512-C75B46EFA979}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A6F0341-A4D8-466B-8475-FF90CBE9BE52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A6F0341-A4D8-466B-8475-FF90CBE9BE52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A6F0341-A4D8-466B-8475-FF90CBE9BE52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A6F0341-A4D8-466B-8475-FF90CBE9BE52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

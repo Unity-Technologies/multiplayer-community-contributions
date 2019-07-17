@@ -65,6 +65,22 @@
             "mlapi_major_version": 10,
             "required_build_targets": [
             ]
+        },
+        {
+            "id": "steam-p2p",
+            "name": "SteamP2P",
+            "path": "SteamP2P.zip",
+            "description": "SteamP2P is Steams solution for peer-to-peer networking, used with Steamworks.NET.",
+            "credits": "Petter Vernersson (transport adapter), Riley Labrecque (C# wrapper Steamworks.NET), Valve Corporation.",
+            "licence": "MIT/X11",
+            "platform_compatibility_description": "Works on Windows, Linux and macOS. Requires Steamworks.NET to be preinstalled",
+            "net35": false,
+            "net45": true,
+            "preferNet45": true,
+            "experimental": true,
+            "mlapi_major_version": 10,
+            "required_build_targets": [
+            ]
         }
     ]
 }

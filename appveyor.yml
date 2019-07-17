@@ -19,13 +19,15 @@ after_build:
   - 7z a WebSockets.zip %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release
 # LiteNetLib
   - 7z a LiteNetLib.zip %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLib.* %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLibTransport.*
-
+# SteamP2P
+  - 7z a SteamP2P.zip %APPVEYOR_BUILD_FOLDER%\SteamP2PTransport\bin\Release\*\SteamP2PTransport.*
 
 artifacts:
   - path: 'ENET.zip'
   - path: 'Ruffles.zip'
   - path: 'WebSockets.zip'
   - path: 'LiteNetLib.zip'
+  - path: 'SteamP2P.zip'
 
 image: Visual Studio 2017
 
