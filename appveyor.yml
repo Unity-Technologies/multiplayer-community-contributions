@@ -20,7 +20,7 @@ after_build:
 # LiteNetLib
   - 7z a LiteNetLib.zip %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLib.* %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLibTransport.*
 # SteamP2P
-  - 7z a SteamP2P.zip %APPVEYOR_BUILD_FOLDER%\SteamP2PTransport\bin\Release\*\SteamP2PTransport.*
+  - 7z a SteamP2P.zip %APPVEYOR_BUILD_FOLDER%\SteamP2PTransport\SteamP2PTransport.cs
 
 artifacts:
   - path: 'ENET.zip'
