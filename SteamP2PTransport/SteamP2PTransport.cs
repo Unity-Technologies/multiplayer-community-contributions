@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#if !DISABLESTEAMWORKS
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Steamworks;
@@ -537,3 +538,4 @@ namespace SteamP2PTransport
         }
     }
 }
+#endif
