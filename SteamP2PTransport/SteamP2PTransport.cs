@@ -8,6 +8,7 @@ using MLAPI.Logging;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Reflection;
 
 /*
  * Steamworks API Reference for ISteamNetworking: https://partner.steamgames.com/doc/api/ISteamNetworking
@@ -203,7 +204,19 @@ namespace SteamP2PTransport
         }
         public override void Init()
         {
-            if (!SteamManager.Initialized)
+            Type steamManagerType = Type.GetType("SteamManager");
+
+            PropertyInfo property = steamManagerType == null ? null : steamManagerType.GetProperty("Initialized", BindingFlags.Static | BindingFlags.Public);
+
+            if (steamManagerType == null || property == null || !property.CanRead || property.PropertyType != typeof(bool))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SteamP2PTransport - Init - Steamworks.NET SteamManager.Initialized not found, SteamP2PTransport can not run without it");
+                return;
+            }
+
+            bool propertyValue = (bool)property.GetValue(null);
+
+            if (!propertyValue)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SteamP2PTransport - Init - Steamworks.NET is not Initialized, SteamP2PTransport can not run without it");
                 return;
