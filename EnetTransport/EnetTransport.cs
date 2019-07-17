@@ -10,9 +10,17 @@ namespace EnetTransport
         [Serializable]
         public struct EnetChannel
         {
+            [UnityEngine.HideInInspector]
             public byte Id;
             public string Name;
-            public PacketFlags Flags;
+            public EnetDelivery Flags;
+        }
+
+        public enum EnetDelivery
+        {
+            UnreliableSequenced,
+            ReliableSequenced,
+            Unreliable
         }
 
         public override bool IsSupported => UnityEngine.Application.platform != UnityEngine.RuntimePlatform.WebGLPlayer;
@@ -51,7 +59,7 @@ namespace EnetTransport
         {
             Packet packet = default(Packet);
 
-            packet.Create(data.Array, data.Offset, data.Count, internalChannels[channelNameToId[channelName]].Flags);
+            packet.Create(data.Array, data.Offset, data.Count, PacketFlagFromDelivery(internalChannels[channelNameToId[channelName]].Flags));
 
             GetEnetConnectionDetails(clientId, out uint peerId);
 
@@ -267,31 +275,46 @@ namespace EnetTransport
             messageBuffer = new byte[MessageBufferSize];
         }
 
-        public PacketFlags MLAPIChannelTypeToPacketFlag(ChannelType type)
+        private PacketFlags PacketFlagFromDelivery(EnetDelivery delivery)
+        {
+            switch (delivery)
+            {
+                case EnetDelivery.UnreliableSequenced:
+                    return PacketFlags.None;
+                case EnetDelivery.ReliableSequenced:
+                    return PacketFlags.Reliable;
+                case EnetDelivery.Unreliable:
+                    return PacketFlags.Unsequenced;
+                default:
+                    return PacketFlags.None;
+            }
+        }
+
+        public EnetDelivery MLAPIChannelTypeToPacketFlag(ChannelType type)
         {
             switch (type)
             {
                 case ChannelType.Unreliable:
                     {
-                        return PacketFlags.Unsequenced | PacketFlags.UnreliableFragment;
+                        return EnetDelivery.Unreliable;
                     }
                 case ChannelType.Reliable:
                     {
                         // ENET Does not support ReliableUnsequenced.
                         // https://github.com/MidLevel/MLAPI.Transports/pull/5#issuecomment-498311723
-                        return PacketFlags.Reliable;
+                        return EnetDelivery.ReliableSequenced;
                     }
                 case ChannelType.ReliableSequenced:
                     {
-                        return PacketFlags.Reliable;
+                        return EnetDelivery.ReliableSequenced;
                     }
                 case ChannelType.ReliableFragmentedSequenced:
                     {
-                        return PacketFlags.Reliable;
+                        return EnetDelivery.ReliableSequenced;
                     }
                 case ChannelType.UnreliableSequenced:
                     {
-                        return PacketFlags.None;
+                        return EnetDelivery.UnreliableSequenced;
                     }
                 default:
                     {
