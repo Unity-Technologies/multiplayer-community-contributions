@@ -79,6 +79,11 @@ namespace LiteNetLibTransport
             SimulateMaxLatency = Math.Max(SimulateMinLatency, SimulateMaxLatency);
         }
 
+        private void Update()
+        {
+            netManager?.PollEvents();
+        }
+
         public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
 
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
