@@ -9,7 +9,7 @@
       <SpecificVersion>False</SpecificVersion>
       <Private>false</Private>
     </Reference>
-    <PackageReference Include="MLAPI" Version="10.2.3" />
+    <PackageReference Include="MLAPI" Version="11.0.0" />
     <Reference Include="Steamworks.NET">
       <HintPath>..\Libraries\Steamworks.NET\Windows-x64\Steamworks.NET.dll</HintPath>
     </Reference>

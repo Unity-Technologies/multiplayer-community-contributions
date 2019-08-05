@@ -11,11 +11,12 @@ build:
 
 after_build:
 # ENET
-  - 7z a ENET.zip %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\ENet-CSharp.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.dylib %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\libenet.so %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\EnetTransport*.*
+  - ps: Get-ChildItem *.dylib | Rename-Item -NewName { $_.Name.Replace('.dylib','.bundle') }
+  - 7z a ENET.zip %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\ENet-CSharp.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.bundle %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\libenet.so %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\EnetTransport*.*
 # Ruffles
   - 7z a Ruffles.zip %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\Ruffles.* %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\RufflesTransport.*
 # WebSockets
-  - ps:  Remove-Item WebSocketTransport\bin\Release\*\*.*
+  - ps: Remove-Item WebSocketTransport\bin\Release\*\*.*
   - 7z a WebSockets.zip %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release
 # LiteNetLib
   - 7z a LiteNetLib.zip %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLib.* %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLibTransport.*

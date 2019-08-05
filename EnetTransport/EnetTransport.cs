@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using ENet;
 using MLAPI.Transports;
+using MLAPI.Transports.Tasks;
 
 namespace EnetTransport
 {
@@ -53,9 +54,11 @@ namespace EnetTransport
 
         private uint serverPeerId;
 
+        private SocketTask connectTask;
+
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
+        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
             Packet packet = default(Packet);
 
@@ -66,12 +69,7 @@ namespace EnetTransport
             connectedEnetPeers[peerId].Send(channelNameToId[channelName], ref packet);
         }
 
-        public override void FlushSendQueue(ulong clientId)
-        {
-            // Not needed
-        }
-
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
+        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
             Event @event;
 
@@ -82,6 +80,7 @@ namespace EnetTransport
                     clientId = 0;
                     channelName = null;
                     payload = new ArraySegment<byte>();
+                    receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
                     return NetEventType.Nothing;
                 }
@@ -95,6 +94,7 @@ namespace EnetTransport
                     {
                         channelName = null;
                         payload = new ArraySegment<byte>();
+                        receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
                         return NetEventType.Nothing;
                     }
@@ -102,11 +102,19 @@ namespace EnetTransport
                     {
                         channelName = null;
                         payload = new ArraySegment<byte>();
+                        receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
                         connectedEnetPeers.Add(@event.Peer.ID, @event.Peer);
 
                         @event.Peer.PingInterval(PingInterval);
                         @event.Peer.Timeout(TimeoutLimit, TimeoutMinimum, TimeoutMaximum);
+
+                        if (connectTask != null)
+                        {
+                            connectTask.Success = true;
+                            connectTask.IsDone = true;
+                            connectTask = null;
+                        }
 
                         return NetEventType.Connect;
                     }
@@ -114,14 +122,23 @@ namespace EnetTransport
                     {
                         channelName = null;
                         payload = new ArraySegment<byte>();
+                        receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
                         connectedEnetPeers.Remove(@event.Peer.ID);
+
+                        if (connectTask != null)
+                        {
+                            connectTask.Success = false;
+                            connectTask.IsDone = true;
+                            connectTask = null;
+                        }
 
                         return NetEventType.Disconnect;
                     }
                 case EventType.Receive:
                     {
                         channelName = channelIdToName[@event.ChannelID];
+                        receiveTime = UnityEngine.Time.realtimeSinceStartup;
                         int size = @event.Packet.Length;
 
                         if (size > messageBuffer.Length)
@@ -155,6 +172,7 @@ namespace EnetTransport
                     {
                         channelName = null;
                         payload = new ArraySegment<byte>();
+                        receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
                         connectedEnetPeers.Remove(@event.Peer.ID);
 
@@ -164,14 +182,17 @@ namespace EnetTransport
                     {
                         channelName = null;
                         payload = new ArraySegment<byte>();
+                        receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
                         return NetEventType.Nothing;
                     }
             }
         }
 
-        public override void StartClient()
+        public override SocketTasks StartClient()
         {
+            SocketTask task = SocketTask.Working;
+
             host = new Host();
 
             host.Create(1, MLAPI_CHANNELS.Length + Channels.Count);
@@ -186,9 +207,13 @@ namespace EnetTransport
             serverPeer.Timeout(TimeoutLimit, TimeoutMinimum, TimeoutMaximum);
 
             serverPeerId = serverPeer.ID;
+
+            connectTask = task;
+
+            return task.AsTasks();
         }
 
-        public override void StartServer()
+        public override SocketTasks StartServer()
         {
             host = new Host();
 
@@ -196,6 +221,8 @@ namespace EnetTransport
             address.Port = Port;
 
             host.Create(address, MaxClients, MLAPI_CHANNELS.Length + Channels.Count);
+
+            return SocketTask.Done.AsTasks();
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
@@ -231,6 +258,7 @@ namespace EnetTransport
                 host.Flush();
                 host.Dispose();
             }
+
             Library.Deinitialize();
         }
 

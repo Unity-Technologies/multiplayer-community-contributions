@@ -1,5 +1,6 @@
 ﻿using LiteNetLib;
 using MLAPI.Transports;
+using MLAPI.Transports.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -67,6 +68,8 @@ namespace LiteNetLibTransport
         private HostType hostType;
         private static readonly ArraySegment<byte> emptyArraySegment = new ArraySegment<byte>();
 
+        private SocketTask connectTask;
+
         private void OnValidate()
         {
             PingInterval = Math.Max(0, PingInterval);
@@ -86,7 +89,7 @@ namespace LiteNetLibTransport
 
         public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
+        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
             LiteChannel channel = liteChannels[channelName];
 
@@ -96,22 +99,12 @@ namespace LiteNetLibTransport
             }
         }
 
-        public override void FlushSendQueue(ulong clientId)
-        {
-            // Ignore. LiteNetLib will handle it for us.
-        }
-
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
-        {
-            clientId = 0;
-            channelName = null;
-            payload = emptyArraySegment;
-            return NetEventType.Nothing;
-        }
-
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
             payload = emptyArraySegment;
+            clientId = 0;
+            channelName = null;
+            receiveTime = Time.realtimeSinceStartup;
 
             if (eventQueue.Count > 0)
             {
@@ -143,20 +136,18 @@ namespace LiteNetLibTransport
 
                     payload = new ArraySegment<byte>(data, 0, size);
                     @event.packetReader.Recycle();
+
+                    return @event.type;
                 }
-
-                return @event.type;
             }
-
-            clientId = 0;
-            channelName = null;
-            receiveTime = 0;
 
             return NetEventType.Nothing;
         }
 
-        public override void StartClient()
+        public override SocketTasks StartClient()
         {
+            SocketTask task = SocketTask.Working;
+
             if (hostType != HostType.None)
             {
                 throw new InvalidOperationException("Already started as " + hostType);
@@ -174,9 +165,11 @@ namespace LiteNetLibTransport
             }
 
             peers[(ulong)peer.Id] = peer;
+
+            return task.AsTasks();
         }
 
-        public override void StartServer()
+        public override SocketTasks StartServer()
         {
             if (hostType != HostType.None)
             {
@@ -185,7 +178,18 @@ namespace LiteNetLibTransport
 
             hostType = HostType.Server;
 
-            netManager.Start(Port);
+            bool success = netManager.Start(Port);
+
+            return new SocketTask()
+            {
+                IsDone = true,
+                Message = null,
+                SocketError = SocketError.SocketError,
+                State = null,
+                Success = success,
+                TransportCode = -1,
+                TransportException = null
+            }.AsTasks();
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
@@ -311,6 +315,13 @@ namespace LiteNetLibTransport
 
         void INetEventListener.OnPeerConnected(NetPeer peer)
         {
+            if (connectTask != null)
+            {
+                connectTask.Success = true;
+                connectTask.IsDone = true;
+                connectTask = null;
+            }
+
             Event @event = new Event()
             {
                 dateTime = DateTime.UtcNow,
@@ -325,6 +336,13 @@ namespace LiteNetLibTransport
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
+            if (connectTask != null)
+            {
+                connectTask.Success = false;
+                connectTask.IsDone = true;
+                connectTask = null;
+            }
+
             Event @event = new Event()
             {
                 dateTime = DateTime.UtcNow,
@@ -340,6 +358,12 @@ namespace LiteNetLibTransport
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
             // Ignore
+            if (connectTask != null)
+            {
+                connectTask.SocketError = socketError;
+                connectTask.IsDone = true;
+                connectTask = null;
+            }
         }
 
         void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)

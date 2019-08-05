@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using MLAPI.Transports;
+using MLAPI.Transports.Tasks;
 using Ruffles.Configuration;
 using Ruffles.Core;
 using UnityEngine;
@@ -43,24 +44,21 @@ namespace RufflesTransport
 
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
+        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
             GetRufflesConnectionDetails(clientId, out ulong connectionId);
 
             byte channelId = channelNameToId[channelName];
 
-            socket.Send(data, connectionId, channelId, skipQueue);
+            socket.Send(data, connectionId, channelId, false);
         }
 
-        public override void FlushSendQueue(ulong clientId)
-        {
-
-        }
-
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
+        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
             socket.RunInternalLoop();
             NetworkEvent @event = socket.Poll();
+
+            receiveTime = Time.realtimeSinceStartup - (float)(DateTime.UtcNow - @event.SocketReceiveTime).TotalSeconds;
 
             if (@event.Type != NetworkEventType.Nothing)
             {
@@ -134,7 +132,7 @@ namespace RufflesTransport
             return NetEventType.Nothing;
         }
 
-        public override void StartClient()
+        public override SocketTasks StartClient()
         {
             SocketConfig config = GetConfig();
             // The OS will grab a port
@@ -143,14 +141,18 @@ namespace RufflesTransport
 
             isConnector = true;
             socket.Connect(new IPEndPoint(IPAddress.Parse(ConnectAddress), ConnectPort));
+
+            return SocketTask.Done.AsTasks();
         }
 
-        public override void StartServer()
+        public override SocketTasks StartServer()
         {
             SocketConfig config = GetConfig();
             config.DualListenPort = (ushort)ServerListenPort;
 
             socket = new RuffleSocket(config);
+
+            return SocketTask.Done.AsTasks();
         }
 
         public override void DisconnectRemoteClient(ulong clientId)

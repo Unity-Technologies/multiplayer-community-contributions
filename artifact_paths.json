@@ -13,7 +13,7 @@
             "net45": true,
             "preferNet45": false,
             "experimental": true,
-            "mlapi_major_version": 10,
+            "mlapi_major_version": 11,
             "required_build_targets": [
             ]
         },
@@ -29,7 +29,7 @@
             "net45": true,
             "preferNet45": false,
             "experimental": false,
-            "mlapi_major_version": 10,
+            "mlapi_major_version": 11,
             "required_build_targets": [
             ]
         },
@@ -45,7 +45,7 @@
             "net45": true,
             "preferNet45": false,
             "experimental": true,
-            "mlapi_major_version": 10,
+            "mlapi_major_version": 11,
             "required_build_targets": [
                 20
             ]
@@ -62,7 +62,7 @@
             "net45": true,
             "preferNet45": false,
             "experimental": false,
-            "mlapi_major_version": 10,
+            "mlapi_major_version": 11,
             "required_build_targets": [
             ]
         },
@@ -78,7 +78,7 @@
             "net45": true,
             "preferNet45": true,
             "experimental": true,
-            "mlapi_major_version": 10,
+            "mlapi_major_version": 11,
             "required_build_targets": [
             ]
         }

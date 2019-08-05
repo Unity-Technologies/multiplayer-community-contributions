@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using MLAPI;
 using MLAPI.Transports;
+using MLAPI.Transports.Tasks;
 using MLAPI.WebSockets;
 using UnityEngine;
 
@@ -43,11 +44,6 @@ namespace WebSocketTransport
             }
         }
 
-        public override void FlushSendQueue(ulong clientId)
-        {
-            
-        }
-
         public override ulong GetCurrentRtt(ulong clientId)
         {
             return 0;
@@ -58,10 +54,11 @@ namespace WebSocketTransport
             
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
+        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
             payload = new ArraySegment<byte>();
             channelName = null;
+            receiveTime = Time.realtimeSinceStartup;
 
             if (server != null)
             {
@@ -97,7 +94,7 @@ namespace WebSocketTransport
             return NetEventType.Nothing;
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
+        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
             if (server != null)
             {
@@ -125,7 +122,7 @@ namespace WebSocketTransport
             server = null;
         }
 
-        public override void StartClient()
+        public override SocketTasks StartClient()
         {
             string conUrl = Url;
 
@@ -166,13 +163,17 @@ namespace WebSocketTransport
             });
 
             client.Connect();
+
+            return SocketTask.Done.AsTasks();
         }
 
-        public override void StartServer()
+        public override SocketTasks StartServer()
         {
             server = NativeWebSocketServer.Instance;
 
             server.Start(IPAddress.Any, Port, "/mlapi-connection", NetworkingManager.Singleton.NetworkConfig.ServerX509Certificate);
+
+            return SocketTask.Done.AsTasks();
         }
 
 
