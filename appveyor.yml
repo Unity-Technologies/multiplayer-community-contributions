@@ -11,8 +11,8 @@ build:
 
 after_build:
 # ENET
-  - ps: Get-ChildItem *.dylib | Rename-Item -NewName { $_.Name.Replace('.dylib','.bundle') }
-  - 7z a ENET.zip %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\ENet-CSharp.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.dylib %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.bundle %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\libenet.so %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\EnetTransport*.*
+  - ps: Get-ChildItem *.dylib -Recurse | Rename-Item -NewName { $_.Name.Replace('.dylib','.bundle') }
+  - 7z a ENET.zip %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\ENet-CSharp.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.bundle %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\enet.dll %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\libenet.so %APPVEYOR_BUILD_FOLDER%\EnetTransport\bin\Release\*\EnetTransport*.*
 # Ruffles
   - 7z a Ruffles.zip %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\Ruffles.* %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\RufflesTransport.*
 # WebSockets
