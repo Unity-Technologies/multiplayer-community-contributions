@@ -88,6 +88,8 @@ namespace RufflesTransport
 
                 Buffer.BlockCopy(@event.Data.Array, @event.Data.Offset, dataBuffer, 0, @event.Data.Count);
                 payload = new ArraySegment<byte>(dataBuffer, 0, @event.Data.Count);
+
+                @event.Recycle();
             }
             else
             {
