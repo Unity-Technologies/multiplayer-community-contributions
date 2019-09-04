@@ -226,9 +226,9 @@ namespace RufflesTransport
 
             for (byte i = (byte)MLAPI_CHANNELS.Length; i < Channels.Count + MLAPI_CHANNELS.Length; i++)
             {
-                config.ChannelTypes[i] = Channels[i].Type;
-                channelIdToName.Add(i, Channels[i].Name);
-                channelNameToId.Add(Channels[i].Name, i);
+                config.ChannelTypes[i] = Channels[config.ChannelTypes.Length - 1 - i].Type;
+                channelIdToName.Add(i, Channels[config.ChannelTypes.Length - 1 - i].Name);
+                channelNameToId.Add(Channels[config.ChannelTypes.Length - 1 - i].Name, i);
             }
 
             return config;
