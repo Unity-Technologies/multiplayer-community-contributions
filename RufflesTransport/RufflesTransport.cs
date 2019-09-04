@@ -58,7 +58,7 @@ namespace RufflesTransport
             socket.RunInternalLoop();
             NetworkEvent @event = socket.Poll();
 
-            receiveTime = Time.realtimeSinceStartup - (float)(DateTime.UtcNow - @event.SocketReceiveTime).TotalSeconds;
+            receiveTime = Time.realtimeSinceStartup - (float)(DateTime.Now - @event.SocketReceiveTime).TotalSeconds;
 
             if (@event.Type != NetworkEventType.Nothing)
             {
