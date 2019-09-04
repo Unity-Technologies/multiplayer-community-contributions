@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ruffles" Version="2.3.1" />
+    <PackageReference Include="Ruffles" Version="2.4.0" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\Libraries\Unity\UnityEngine.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
