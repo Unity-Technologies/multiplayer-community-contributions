@@ -136,9 +136,9 @@ namespace LiteNetLibTransport
 
                     payload = new ArraySegment<byte>(data, 0, size);
                     @event.packetReader.Recycle();
-
-                    return @event.type;
                 }
+
+                return @event.type;
             }
 
             return NetEventType.Nothing;
