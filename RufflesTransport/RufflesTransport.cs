@@ -55,7 +55,6 @@ namespace RufflesTransport
 
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
-            socket.RunInternalLoop();
             NetworkEvent @event = socket.Poll();
 
             receiveTime = Time.realtimeSinceStartup - (float)(DateTime.Now - @event.SocketReceiveTime).TotalSeconds;
