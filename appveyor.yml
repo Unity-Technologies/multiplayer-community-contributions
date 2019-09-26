@@ -16,7 +16,7 @@ after_build:
 # Ruffles
   - 7z a Ruffles.zip %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\Ruffles.* %APPVEYOR_BUILD_FOLDER%\RufflesTransport\bin\Release\*\RufflesTransport.*
 # WebSockets
-  - ps: Remove-Item WebSocketTransport\bin\Release\*\*.*
+  - ps: Remove-Item WebSocketTransport\bin\Release\*\*.* -Exclude WebsocketTransport.*
   - 7z a WebSockets.zip %APPVEYOR_BUILD_FOLDER%\WebSocketTransport\bin\Release
 # LiteNetLib
   - 7z a LiteNetLib.zip %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLib.* %APPVEYOR_BUILD_FOLDER%\LiteNetLibTransport\bin\Release\*\LiteNetLibTransport.*
