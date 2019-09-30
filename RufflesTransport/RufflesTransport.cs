@@ -246,13 +246,13 @@ namespace RufflesTransport
                 case ChannelType.Reliable:
                     return Ruffles.Channeling.ChannelType.Reliable;
                 case ChannelType.ReliableFragmentedSequenced:
-                    return Ruffles.Channeling.ChannelType.ReliableSequenced;
+                    return Ruffles.Channeling.ChannelType.ReliableSequencedFragmented;
                 case ChannelType.ReliableSequenced:
                     return Ruffles.Channeling.ChannelType.ReliableSequenced;
                 case ChannelType.Unreliable:
                     return Ruffles.Channeling.ChannelType.Unreliable;
                 case ChannelType.UnreliableSequenced:
-                    return Ruffles.Channeling.ChannelType.UnreliableSequenced;
+                    return Ruffles.Channeling.ChannelType.UnreliableOrdered;
             }
 
             return Ruffles.Channeling.ChannelType.Reliable;
