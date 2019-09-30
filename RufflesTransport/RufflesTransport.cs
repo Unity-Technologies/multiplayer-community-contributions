@@ -87,8 +87,6 @@ namespace RufflesTransport
 
                 Buffer.BlockCopy(@event.Data.Array, @event.Data.Offset, dataBuffer, 0, @event.Data.Count);
                 payload = new ArraySegment<byte>(dataBuffer, 0, @event.Data.Count);
-
-                @event.Recycle();
             }
             else
             {
@@ -101,6 +99,7 @@ namespace RufflesTransport
             switch (@event.Type)
             {
                 case NetworkEventType.Data:
+                    @event.Recycle();
                     return NetEventType.Data;
                 case NetworkEventType.Connect:
                     {
@@ -112,6 +111,8 @@ namespace RufflesTransport
                             serverConnection = @event.Connection;
                         }
 
+                        @event.Recycle();
+
                         return NetEventType.Connect;
                     }
                 case NetworkEventType.Timeout:
@@ -122,11 +123,12 @@ namespace RufflesTransport
 
                         connections.Remove(@event.Connection.Id);
 
-                        @event.Connection.Recycle();
+                        @event.Recycle();
 
                         return NetEventType.Disconnect;
                     }
                 case NetworkEventType.Nothing:
+                    @event.Recycle();
                     return NetEventType.Nothing;
             }
 
@@ -138,7 +140,9 @@ namespace RufflesTransport
             SocketConfig config = GetConfig();
             // The OS will grab a port
             config.DualListenPort = 0;
+
             socket = new RuffleSocket(config);
+            socket.Start();
 
             isConnector = true;
             socket.Connect(new IPEndPoint(IPAddress.Parse(ConnectAddress), ConnectPort));
@@ -152,6 +156,7 @@ namespace RufflesTransport
             config.DualListenPort = (ushort)ServerListenPort;
 
             socket = new RuffleSocket(config);
+            socket.Start();
 
             return SocketTask.Done.AsTasks();
         }
@@ -178,6 +183,7 @@ namespace RufflesTransport
             channelIdToName.Clear();
             channelNameToId.Clear();
             connections.Clear();
+            socket.Shutdown();
         }
 
         public override void Init()
