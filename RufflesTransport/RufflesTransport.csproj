@@ -5,12 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ruffles" Version="3.0.0" />
+    <PackageReference Include="Ruffles" Version="5.4.0" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\Libraries\Unity\UnityEngine.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
       <Private>false</Private>
     </Reference>
-    <PackageReference Include="MLAPI" Version="11.0.0" />
+    <PackageReference Include="MLAPI" Version="11.8.1" />
   </ItemGroup>
 </Project>
