@@ -6,6 +6,8 @@ using MLAPI.Transports.Tasks;
 using Ruffles.Configuration;
 using Ruffles.Connections;
 using Ruffles.Core;
+using Ruffles.Time;
+using Ruffles.Utils;
 using UnityEngine;
 
 namespace RufflesTransport
@@ -27,6 +29,7 @@ namespace RufflesTransport
         public ushort Port = 7777;
         public List<RufflesChannel> Channels = new List<RufflesChannel>();
         public int TransportBufferSize = 1024 * 8;
+        public LogLevel LogLevel = LogLevel.Info;
 
         [Header("SocketConfig")]
         public bool EnablePollEvents = true;
@@ -71,6 +74,21 @@ namespace RufflesTransport
         public ushort ReliableAckFlowWindowSize = 1024;
         public ulong ReliabilityMaxResendAttempts = 30;
         public double ReliabilityResendRoundtripMultiplier = 1.2;
+        public ulong ReliabilityMinAckResendDelay = 100;
+        public ulong ReliabilityMinPacketResendDelay = 100;
+        public ushort InternalEventQueueSize = 1024;
+        public ushort HeapPointersPoolSize = 1024;
+        public ushort HeapMemoryPoolSize = 1024;
+        public ushort MemoryWrapperPoolSize = 1024;
+        public ushort ChannelPoolSize = 1024;
+        public Ruffles.Channeling.ChannelType PooledChannels = Ruffles.Channeling.ChannelType.Reliable | 
+                                                               Ruffles.Channeling.ChannelType.ReliableFragmented |
+                                                               Ruffles.Channeling.ChannelType.ReliableOrdered |
+                                                               Ruffles.Channeling.ChannelType.ReliableSequenced |
+                                                               Ruffles.Channeling.ChannelType.ReliableSequencedFragmented |
+                                                               Ruffles.Channeling.ChannelType.Unreliable |
+                                                               Ruffles.Channeling.ChannelType.UnreliableOrdered |
+                                                               Ruffles.Channeling.ChannelType.UnreliableRaw;
 
         [Header("Simulator")]
         public bool UseSimulator = false;
@@ -84,6 +102,7 @@ namespace RufflesTransport
         public bool EnableChannelUpdates = true;
         public bool EnableConnectionRequestResends = true;
         public bool EnablePacketMerging = true;
+        public bool EnableQueuedIOEvents = true;
 
         // Runtime / state
         private byte[] messageBuffer;
@@ -91,7 +110,7 @@ namespace RufflesTransport
         private bool isConnector = false;
 
         // Lookup / translation
-        private readonly Dictionary<ulong, Ruffles.Connections.Connection> connections = new Dictionary<ulong, Ruffles.Connections.Connection>();
+        private readonly Dictionary<ulong, Connection> connections = new Dictionary<ulong, Connection>();
         private readonly Dictionary<string, byte> channelNameToId = new Dictionary<string, byte>();
         private readonly Dictionary<byte, string> channelIdToName = new Dictionary<byte, string>();
         private Connection serverConnection;
@@ -111,14 +130,14 @@ namespace RufflesTransport
 
             byte channelId = channelNameToId[channelName];
 
-            socket.Send(data, connectionId, channelId, false);
+            socket.SendLater(data, connectionId, channelId, false);
         }
 
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
             NetworkEvent @event = socket.Poll();
 
-            receiveTime = Time.realtimeSinceStartup - (float)(DateTime.Now - @event.SocketReceiveTime).TotalSeconds;
+            receiveTime = Time.realtimeSinceStartup - (float)(NetTime.Now - @event.SocketReceiveTime).TotalSeconds;
 
             if (@event.Type != NetworkEventType.Nothing)
             {
@@ -228,7 +247,7 @@ namespace RufflesTransport
                 return SocketTask.Fault.AsTasks();
             }
 
-            connectConnection = socket.Connect(new IPEndPoint(IPAddress.Parse(ConnectAddress), Port));
+            connectConnection = socket.ConnectNow(new IPEndPoint(IPAddress.Parse(ConnectAddress), Port));
 
             if (connectConnection == null)
             {
@@ -262,12 +281,12 @@ namespace RufflesTransport
         public override void DisconnectRemoteClient(ulong clientId)
         {
             GetRufflesConnectionDetails(clientId, out ulong connectionId);
-            socket.Disconnect(connections[connectionId], true);
+            socket.DisconnectLater(connections[connectionId], true);
         }
 
         public override void DisconnectLocalClient()
         {
-            socket.Disconnect(serverConnection, true);
+            socket.DisconnectNow(serverConnection, true);
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
@@ -287,6 +306,8 @@ namespace RufflesTransport
         public override void Init()
         {
             messageBuffer = new byte[TransportBufferSize];
+
+            Logging.CurrentLogLevel = LogLevel;
         }
 
         public ulong GetMLAPIClientId(ulong connectionId, bool isServer)
@@ -373,7 +394,16 @@ namespace RufflesTransport
                 TimeBasedConnectionChallenge = TimeBasedConnectionChallenge,
                 UseIPv6Dual = UseIPv6Dual,
                 UseSimulator = UseSimulator,
-                ConnectionRequestTimeout = ConnectionRequestTimeout
+                ConnectionRequestTimeout = ConnectionRequestTimeout,
+                ChannelPoolSize = ChannelPoolSize,
+                EnableQueuedIOEvents = EnableQueuedIOEvents,
+                HeapMemoryPoolSize = HeapMemoryPoolSize,
+                HeapPointersPoolSize = HeapPointersPoolSize,
+                InternalEventQueueSize = InternalEventQueueSize,
+                MemoryWrapperPoolSize = MemoryWrapperPoolSize,
+                PooledChannels = PooledChannels,
+                ReliabilityMinAckResendDelay = ReliabilityMinAckResendDelay,
+                ReliabilityMinPacketResendDelay = ReliabilityMinPacketResendDelay
             };
 
             int channelCount = MLAPI_CHANNELS.Length + Channels.Count;
