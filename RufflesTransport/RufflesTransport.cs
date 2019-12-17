@@ -300,7 +300,11 @@ namespace RufflesTransport
             channelIdToName.Clear();
             channelNameToId.Clear();
             connections.Clear();
-            socket.Shutdown();
+
+            if (socket != null)
+            {
+                socket.Shutdown();
+            }
         }
 
         public override void Init()
