@@ -32,14 +32,20 @@ namespace RufflesTransport
         public LogLevel LogLevel = LogLevel.Info;
 
         [Header("SocketConfig")]
-        public bool EnablePollEvents = true;
-        public ushort EventQueueSize = 8192;
+        public bool EnableSyncronizationEvent = false;
+        public bool EnableSyncronizedCallbacks = false;
+        public ushort EventQueueSize = 1024 * 8;
+        public int ProcessingQueueSize = 1024 * 8;
         public IPAddress IPv4ListenAddress = IPAddress.Any;
         public IPAddress IPv6ListenAddress = IPAddress.IPv6Any;
         public bool UseIPv6Dual = true;
         public bool AllowUnconnectedMessages = false;
-        public ushort SocketPollTime = 50;
-        public bool ReuseConnections = true;
+        public bool AllowBroadcasts = true;
+        public ushort LogicDelay = 50;
+        public bool ReuseChannels = true;
+        public int SocketThreads = 1;
+        public int LogicThreads = 0;
+        public int ProcessingThreads = 0;
         public ushort MaxMergeMessageSize = 1024;
         public ulong MaxMergeDelay = 100;
         public bool EnableMergedAcks = true;
@@ -52,14 +58,10 @@ namespace RufflesTransport
         public double MTUGrowthFactor = 1.25;
         public ushort MaxFragments = 512;
         public ushort MaxBufferSize = 5120;
-        public ushort MaxConnections = ushort.MaxValue;
         public ulong HandshakeTimeout = 30000;
         public ulong ConnectionTimeout = 30000;
         public ulong ConnectionRequestTimeout = 5000;
         public ulong HeartbeatDelay = 20000;
-        public double MaxPacketLossPercentage = 0.8;
-        public uint MaxRoundtripTime = 1500;
-        public ulong ConnectionQualityGracePeriod = 5000;
         public ulong HandshakeResendDelay = 500;
         public byte MaxHandshakeResends = 20;
         public ulong ConnectionRequestMinResendDelay = 200;
@@ -68,7 +70,6 @@ namespace RufflesTransport
         public uint ConnectionChallengeHistory = 2048;
         public ulong ConnectionChallengeTimeWindow = 300;
         public bool TimeBasedConnectionChallenge = true;
-        public ushort MaxPendingConnections = ushort.MaxValue;
         public ushort AmplificationPreventionHandshakePadding = 512;
         public ushort ReliabilityWindowSize = 512;
         public ushort ReliableAckFlowWindowSize = 1024;
@@ -76,7 +77,6 @@ namespace RufflesTransport
         public double ReliabilityResendRoundtripMultiplier = 1.2;
         public ulong ReliabilityMinAckResendDelay = 100;
         public ulong ReliabilityMinPacketResendDelay = 100;
-        public ushort InternalEventQueueSize = 1024;
         public ushort HeapPointersPoolSize = 1024;
         public ushort HeapMemoryPoolSize = 1024;
         public ushort MemoryWrapperPoolSize = 1024;
@@ -102,7 +102,7 @@ namespace RufflesTransport
         public bool EnableChannelUpdates = true;
         public bool EnableConnectionRequestResends = true;
         public bool EnablePacketMerging = true;
-        public bool EnableQueuedIOEvents = true;
+
 
         // Runtime / state
         private byte[] messageBuffer;
@@ -110,7 +110,11 @@ namespace RufflesTransport
         private bool isConnector = false;
 
         // Lookup / translation
-        private readonly Dictionary<ulong, Connection> connections = new Dictionary<ulong, Connection>();
+        private readonly Dictionary<ulong, Connection> connectionIdToConnection = new Dictionary<ulong, Connection>();
+        private readonly Dictionary<Connection, ulong> connectionToConnectionId = new Dictionary<Connection, ulong>();
+        private readonly Queue<ulong> releasedConnectionIds = new Queue<ulong>();
+        private ulong connectionIdCounter;
+
         private readonly Dictionary<string, byte> channelNameToId = new Dictionary<string, byte>();
         private readonly Dictionary<byte, string> channelIdToName = new Dictionary<byte, string>();
         private Connection serverConnection;
@@ -122,7 +126,7 @@ namespace RufflesTransport
         private SocketTask connectTask;
         private Connection connectConnection;
 
-        public override ulong ServerClientId => GetMLAPIClientId(0, true);
+        public override ulong ServerClientId => GetMLAPIClientId(serverConnection, true);
 
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
@@ -130,7 +134,7 @@ namespace RufflesTransport
 
             byte channelId = channelNameToId[channelName];
 
-            socket.SendLater(data, connectionId, channelId, false);
+            connectionIdToConnection[connectionId].Send(data, channelId, false);
         }
 
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
@@ -141,7 +145,7 @@ namespace RufflesTransport
 
             if (@event.Type != NetworkEventType.Nothing)
             {
-                clientId = GetMLAPIClientId(@event.Connection.Id, false);
+                clientId = GetMLAPIClientId(@event.Connection, false);
             }
             else
             {
@@ -192,7 +196,19 @@ namespace RufflesTransport
                             connectTask = null;
                         }
 
-                        connections.Add(@event.Connection.Id, @event.Connection);
+                        ulong id;
+                        if (releasedConnectionIds.Count > 0)
+                        {
+                            id = releasedConnectionIds.Dequeue();
+                        }
+                        else
+                        {
+                            id = connectionIdCounter;
+                            connectionIdCounter++;
+                        }
+
+                        connectionIdToConnection.Add(id, @event.Connection);
+                        connectionToConnectionId.Add(@event.Connection, id);
 
                         // Set the server connectionId
                         if (isConnector)
@@ -220,7 +236,13 @@ namespace RufflesTransport
                             serverConnection = null;
                         }
 
-                        connections.Remove(@event.Connection.Id);
+                        if (connectionToConnectionId.ContainsKey(@event.Connection))
+                        {
+                            ulong id = connectionToConnectionId[@event.Connection];
+                            releasedConnectionIds.Enqueue(id);
+                            connectionIdToConnection.Remove(id);
+                            connectionToConnectionId.Remove(@event.Connection);
+                        }
 
                         @event.Recycle();
 
@@ -247,7 +269,7 @@ namespace RufflesTransport
                 return SocketTask.Fault.AsTasks();
             }
 
-            connectConnection = socket.ConnectNow(new IPEndPoint(IPAddress.Parse(ConnectAddress), Port));
+            connectConnection = socket.Connect(new IPEndPoint(IPAddress.Parse(ConnectAddress), Port));
 
             if (connectConnection == null)
             {
@@ -281,25 +303,28 @@ namespace RufflesTransport
         public override void DisconnectRemoteClient(ulong clientId)
         {
             GetRufflesConnectionDetails(clientId, out ulong connectionId);
-            socket.DisconnectLater(connections[connectionId], true);
+            connectionIdToConnection[connectionId].Disconnect(true);
         }
 
         public override void DisconnectLocalClient()
         {
-            socket.DisconnectNow(serverConnection, true);
+            serverConnection.Disconnect(true);
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
             GetRufflesConnectionDetails(clientId, out ulong connectionId);
-            return (ulong)connections[connectionId].Roundtrip;
+            return (ulong)connectionIdToConnection[connectionId].Roundtrip;
         }
 
         public override void Shutdown()
         {
             channelIdToName.Clear();
             channelNameToId.Clear();
-            connections.Clear();
+            connectionIdToConnection.Clear();
+            connectionToConnectionId.Clear();
+            releasedConnectionIds.Clear();
+            connectionIdCounter = 0;
 
             if (socket != null)
             {
@@ -314,7 +339,7 @@ namespace RufflesTransport
             Logging.CurrentLogLevel = LogLevel;
         }
 
-        public ulong GetMLAPIClientId(ulong connectionId, bool isServer)
+        public ulong GetMLAPIClientId(Connection connection, bool isServer)
         {
             if (isServer)
             {
@@ -322,7 +347,7 @@ namespace RufflesTransport
             }
             else
             {
-                return connectionId + 1;
+                return connectionToConnectionId[connection] + 1;
             }
         }
 
@@ -330,11 +355,11 @@ namespace RufflesTransport
         {
             if (clientId == 0)
             {
-                connectionId = serverConnection.Id;
+                connectionId = connectionToConnectionId[serverConnection];
             }
             else
             {
-                connectionId = (ushort)(clientId - 1);
+                connectionId = clientId - 1;
             }
         }
 
@@ -348,18 +373,15 @@ namespace RufflesTransport
                 ConnectionChallengeHistory = ConnectionChallengeHistory,
                 ChannelTypes = null,
                 ConnectionChallengeTimeWindow = ConnectionChallengeTimeWindow,
-                ConnectionQualityGracePeriod = ConnectionQualityGracePeriod,
                 ConnectionRequestMinResendDelay = ConnectionRequestMinResendDelay,
                 ConnectionTimeout = ConnectionTimeout,
                 DualListenPort = server ? Port : (ushort)0,
                 EnableChannelUpdates = EnableChannelUpdates,
                 EnableConnectionRequestResends = EnableConnectionRequestResends,
-                EnableCallbackEvents = false,
                 EnableHeartbeats = EnableHeartbeats,
                 EnableMergedAcks = EnableMergedAcks,
                 EnablePacketMerging = EnablePacketMerging,
                 EnablePathMTU = EnablePathMTU,
-                EnablePollEvents = true,
                 EnableTimeouts = EnableTimeouts,
                 EventQueueSize = EventQueueSize,
                 HandshakeResendDelay = HandshakeResendDelay,
@@ -369,16 +391,12 @@ namespace RufflesTransport
                 IPv6ListenAddress = IPAddress.IPv6Any,
                 MaxBufferSize = MaxBufferSize,
                 MaxConnectionRequestResends = MaxConnectionRequestResends,
-                MaxConnections = MaxConnections,
                 MaxFragments = MaxFragments,
                 MaxHandshakeResends = MaxHandshakeResends,
                 MaximumMTU = MaximumMTU,
                 MaxMergeDelay = MaxMergeDelay,
                 MaxMergeMessageSize = MaxMergeMessageSize,
                 MaxMTUAttempts = MaxMTUAttempts,
-                MaxPacketLossPercentage = MaxPacketLossPercentage,
-                MaxPendingConnections = MaxPendingConnections,
-                MaxRoundtripTime = MaxRoundtripTime,
                 MergedAckBytes = MergedAckBytes,
                 MinimumMTU = MinimumMTU,
                 MTUAttemptDelay = MTUAttemptDelay,
@@ -387,27 +405,32 @@ namespace RufflesTransport
                 ReliabilityResendRoundtripMultiplier = ReliabilityResendRoundtripMultiplier,
                 ReliabilityWindowSize = ReliableAckFlowWindowSize,
                 ReliableAckFlowWindowSize = ReliableAckFlowWindowSize,
-                ReuseConnections = ReuseConnections,
                 SimulatorConfig = new Ruffles.Simulation.SimulatorConfig()
                 {
                     DropPercentage = DropPercentage,
                     MaxLatency = MaxLatency,
                     MinLatency = MinLatency
                 },
-                SocketPollTime = SocketPollTime,
                 TimeBasedConnectionChallenge = TimeBasedConnectionChallenge,
                 UseIPv6Dual = UseIPv6Dual,
                 UseSimulator = UseSimulator,
                 ConnectionRequestTimeout = ConnectionRequestTimeout,
                 ChannelPoolSize = ChannelPoolSize,
-                EnableQueuedIOEvents = EnableQueuedIOEvents,
                 HeapMemoryPoolSize = HeapMemoryPoolSize,
                 HeapPointersPoolSize = HeapPointersPoolSize,
-                InternalEventQueueSize = InternalEventQueueSize,
                 MemoryWrapperPoolSize = MemoryWrapperPoolSize,
                 PooledChannels = PooledChannels,
                 ReliabilityMinAckResendDelay = ReliabilityMinAckResendDelay,
-                ReliabilityMinPacketResendDelay = ReliabilityMinPacketResendDelay
+                ReliabilityMinPacketResendDelay = ReliabilityMinPacketResendDelay,
+                AllowBroadcasts = AllowBroadcasts,
+                EnableSyncronizationEvent = EnableSyncronizationEvent,
+                EnableSyncronizedCallbacks = EnableSyncronizedCallbacks,
+                LogicDelay = LogicDelay,
+                LogicThreads = LogicThreads,
+                ProcessingQueueSize = ProcessingQueueSize,
+                ProcessingThreads = ProcessingThreads,
+                ReuseChannels = ReuseChannels,
+                SocketThreads = SocketThreads
             };
 
             int channelCount = MLAPI_CHANNELS.Length + Channels.Count;
