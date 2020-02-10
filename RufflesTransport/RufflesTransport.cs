@@ -136,15 +136,6 @@ namespace RufflesTransport
 
             receiveTime = Time.realtimeSinceStartup - (float)(NetTime.Now - @event.SocketReceiveTime).TotalSeconds;
 
-            if (@event.Type != NetworkEventType.Nothing)
-            {
-                clientId = GetMLAPIClientId(@event.Connection, false);
-            }
-            else
-            {
-                clientId = 0;
-            }
-
             byte[] dataBuffer = messageBuffer;
 
             if (@event.Type == NetworkEventType.Data)
@@ -176,6 +167,7 @@ namespace RufflesTransport
             switch (@event.Type)
             {
                 case NetworkEventType.Data:
+                    clientId = GetMLAPIClientId(@event.Connection, false);
                     @event.Recycle();
                     return NetEventType.Data;
                 case NetworkEventType.Connect:
@@ -209,6 +201,7 @@ namespace RufflesTransport
                             serverConnection = @event.Connection;
                         }
 
+                        clientId = id;
                         @event.Recycle();
 
                         return NetEventType.Connect;
@@ -235,6 +228,12 @@ namespace RufflesTransport
                             releasedConnectionIds.Enqueue(id);
                             connectionIdToConnection.Remove(id);
                             connectionToConnectionId.Remove(@event.Connection);
+
+                            clientId = id;
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Could not find connection to disconnect");
                         }
 
                         @event.Recycle();
@@ -242,10 +241,12 @@ namespace RufflesTransport
                         return NetEventType.Disconnect;
                     }
                 case NetworkEventType.Nothing:
+                    clientId = 0;
                     @event.Recycle();
                     return NetEventType.Nothing;
             }
 
+            clientId = 0;
             return NetEventType.Nothing;
         }
 
