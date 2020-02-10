@@ -81,14 +81,7 @@ namespace RufflesTransport
         public ushort HeapMemoryPoolSize = 1024;
         public ushort MemoryWrapperPoolSize = 1024;
         public ushort ChannelPoolSize = 1024;
-        public Ruffles.Channeling.ChannelType PooledChannels = Ruffles.Channeling.ChannelType.Reliable | 
-                                                               Ruffles.Channeling.ChannelType.ReliableFragmented |
-                                                               Ruffles.Channeling.ChannelType.ReliableOrdered |
-                                                               Ruffles.Channeling.ChannelType.ReliableSequenced |
-                                                               Ruffles.Channeling.ChannelType.ReliableSequencedFragmented |
-                                                               Ruffles.Channeling.ChannelType.Unreliable |
-                                                               Ruffles.Channeling.ChannelType.UnreliableOrdered |
-                                                               Ruffles.Channeling.ChannelType.UnreliableRaw;
+        public Ruffles.Channeling.ChannelType PooledChannels = (Ruffles.Channeling.ChannelType)~0;
 
         [Header("Simulator")]
         public bool UseSimulator = false;
