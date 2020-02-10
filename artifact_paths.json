@@ -5,7 +5,7 @@
             "id": "ruffles",
             "name": "Ruffles",
             "path": "Ruffles.zip",
-            "description": "Ruffles is a work in progress lightweight reliable UDP library.",
+            "description": "Ruffles is a lightweight reliable UDP library.",
             "credits": "Albin Corén",
             "licence": "MIT/X11",
             "platform_compatibility_description": "Works everywhere except WebGL.",
