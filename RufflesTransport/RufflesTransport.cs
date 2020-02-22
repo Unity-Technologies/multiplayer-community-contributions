@@ -32,56 +32,57 @@ namespace RufflesTransport
         public LogLevel LogLevel = LogLevel.Info;
 
         [Header("SocketConfig")]
-        public bool EnableSyncronizationEvent = false;
-        public bool EnableSyncronizedCallbacks = false;
-        public ushort EventQueueSize = 1024 * 8;
+        public bool EnableSyncronizationEvent = true;
+        public bool EnableSyncronizedCallbacks = true;
+        public int EventQueueSize = 1024 * 8;
         public int ProcessingQueueSize = 1024 * 8;
+        public int HeapPointersPoolSize = 1024;
+        public int HeapMemoryPoolSize = 1024;
+        public int MemoryWrapperPoolSize = 1024;
+        public int ChannelPoolSize = 1024;
+        public Ruffles.Channeling.PooledChannelType PooledChannels = Ruffles.Channeling.PooledChannelType.All;
         public IPAddress IPv4ListenAddress = IPAddress.Any;
         public IPAddress IPv6ListenAddress = IPAddress.IPv6Any;
         public bool UseIPv6Dual = true;
         public bool AllowUnconnectedMessages = false;
-        public bool AllowBroadcasts = true;
-        public ushort LogicDelay = 50;
+        public bool AllowBroadcasts = false;
+        public int LogicDelay = 50;
         public bool ReuseChannels = true;
+        public int LogicThreads = 1;
         public int SocketThreads = 1;
-        public int LogicThreads = 0;
         public int ProcessingThreads = 0;
-        public ushort MaxMergeMessageSize = 1024;
-        public ulong MaxMergeDelay = 100;
+        public int MaxMergeMessageSize = 1024;
+        public int MaxMergeDelay = 100;
         public bool EnableMergedAcks = true;
-        public byte MergedAckBytes = 8;
-        public ushort MaximumMTU = 4096;
-        public ushort MinimumMTU = 512;
+        public int MergedAckBytes = 8;
+        public int MaximumMTU = 4096;
+        public int MinimumMTU = 512;
         public bool EnablePathMTU = true;
-        public byte MaxMTUAttempts = 8;
-        public ulong MTUAttemptDelay = 1000;
+        public int MaxMTUAttempts = 8;
+        public int MTUAttemptDelay = 1000;
         public double MTUGrowthFactor = 1.25;
-        public ushort MaxFragments = 512;
-        public ushort MaxBufferSize = 5120;
-        public ulong HandshakeTimeout = 30000;
-        public ulong ConnectionTimeout = 30000;
-        public ulong ConnectionRequestTimeout = 5000;
-        public ulong HeartbeatDelay = 20000;
-        public ulong HandshakeResendDelay = 500;
-        public byte MaxHandshakeResends = 20;
-        public ulong ConnectionRequestMinResendDelay = 200;
-        public byte MaxConnectionRequestResends = 5;
-        public byte ChallengeDifficulty = 20;
-        public uint ConnectionChallengeHistory = 2048;
-        public ulong ConnectionChallengeTimeWindow = 300;
+        public int MaxFragments = 512;
+        public int MaxBufferSize = 1024 * 5;
+        public int HandshakeTimeout = 20_000;
+        public int ConnectionTimeout = 20_000;
+        public int HeartbeatDelay = 5000;
+        public int HandshakeResendDelay = 500;
+        public int MaxHandshakeResends = 20;
+        public int ConnectionRequestMinResendDelay = 500;
+        public int MaxConnectionRequestResends = 5;
+        public int ConnectionRequestTimeout = 5000;
+        public int ChallengeDifficulty = 20;
+        public int ConnectionChallengeHistory = 2048;
+        public int ConnectionChallengeTimeWindow = 60 * 5;
         public bool TimeBasedConnectionChallenge = true;
-        public ushort AmplificationPreventionHandshakePadding = 512;
-        public ushort ReliabilityWindowSize = 512;
-        public ushort ReliableAckFlowWindowSize = 1024;
-        public ulong ReliabilityMaxResendAttempts = 30;
+        public int AmplificationPreventionHandshakePadding = 512;
+        public ChannelType[] ChannelTypes = new ChannelType[0];
+        public int ReliabilityWindowSize = 512;
+        public int ReliableAckFlowWindowSize = 1024;
+        public int ReliabilityMaxResendAttempts = 30;
         public double ReliabilityResendRoundtripMultiplier = 1.2;
-        public ulong ReliabilityMinAckResendDelay = 100;
-        public ulong ReliabilityMinPacketResendDelay = 100;
-        public ushort HeapPointersPoolSize = 1024;
-        public ushort HeapMemoryPoolSize = 1024;
-        public ushort MemoryWrapperPoolSize = 1024;
-        public ushort ChannelPoolSize = 1024;
-        public Ruffles.Channeling.ChannelType PooledChannels = (Ruffles.Channeling.ChannelType)~0;
+        public int ReliabilityMinPacketResendDelay = 100;
+        public int ReliabilityMinAckResendDelay = 100;
 
         [Header("Simulator")]
         public bool UseSimulator = false;
@@ -127,7 +128,7 @@ namespace RufflesTransport
 
             byte channelId = channelNameToId[channelName];
 
-            connectionIdToConnection[connectionId].Send(data, channelId, false);
+            connectionIdToConnection[connectionId].Send(data, channelId, false, 0);
         }
 
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
@@ -424,7 +425,8 @@ namespace RufflesTransport
                 ProcessingQueueSize = ProcessingQueueSize,
                 ProcessingThreads = ProcessingThreads,
                 ReuseChannels = ReuseChannels,
-                SocketThreads = SocketThreads
+                SocketThreads = SocketThreads,
+                EnableAckNotifications = false
             };
 
             int channelCount = MLAPI_CHANNELS.Length + Channels.Count;
