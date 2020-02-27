@@ -76,7 +76,6 @@ namespace RufflesTransport
         public int ConnectionChallengeTimeWindow = 60 * 5;
         public bool TimeBasedConnectionChallenge = true;
         public int AmplificationPreventionHandshakePadding = 512;
-        public ChannelType[] ChannelTypes = new ChannelType[0];
         public int ReliabilityWindowSize = 512;
         public int ReliableAckFlowWindowSize = 1024;
         public int ReliabilityMaxResendAttempts = 30;
@@ -104,23 +103,19 @@ namespace RufflesTransport
         private bool isConnector = false;
 
         // Lookup / translation
-        private readonly Dictionary<ulong, Connection> connectionIdToConnection = new Dictionary<ulong, Connection>();
-        private readonly Dictionary<Connection, ulong> connectionToConnectionId = new Dictionary<Connection, ulong>();
-        private readonly Queue<ulong> releasedConnectionIds = new Queue<ulong>();
-        private ulong connectionIdCounter;
+        private readonly Dictionary<ulong, Connection> connections = new Dictionary<ulong, Connection>();
 
         private readonly Dictionary<string, byte> channelNameToId = new Dictionary<string, byte>();
         private readonly Dictionary<byte, string> channelIdToName = new Dictionary<byte, string>();
-        private Connection serverConnection;
 
         // Ruffles
         private RuffleSocket socket;
 
         // Connector task
         private SocketTask connectTask;
-        private Connection connectConnection;
+        private Connection serverConnection;
 
-        public override ulong ServerClientId => GetMLAPIClientId(serverConnection, true);
+        public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
@@ -128,7 +123,7 @@ namespace RufflesTransport
 
             byte channelId = channelNameToId[channelName];
 
-            connectionIdToConnection[connectionId].Send(data, channelId, false, 0);
+            connections[connectionId].Send(data, channelId, false, 0);
         }
 
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
@@ -164,53 +159,39 @@ namespace RufflesTransport
 
             channelName = channelIdToName[@event.ChannelId];
 
+            if (@event.Connection != null)
+            {
+                clientId = GetMLAPIClientId(@event.Connection.Id, false);
+            }
+            else
+            {
+                clientId = 0;
+            }
+
             // Translate NetworkEventType to NetEventType
             switch (@event.Type)
             {
                 case NetworkEventType.Data:
-                    clientId = GetMLAPIClientId(@event.Connection, false);
-                    @event.Recycle();
                     return NetEventType.Data;
                 case NetworkEventType.Connect:
                     {
-                        if (isConnector && @event.Connection == connectConnection && connectTask != null)
+                        if (isConnector && @event.Connection == serverConnection && connectTask != null)
                         {
-                            // Connection failed
+                            // Connection successful
                             connectTask.Success = true;
                             connectTask.IsDone = true;
-
                             connectTask = null;
                         }
 
-                        ulong id;
-                        if (releasedConnectionIds.Count > 0)
-                        {
-                            id = releasedConnectionIds.Dequeue();
-                        }
-                        else
-                        {
-                            id = connectionIdCounter;
-                            connectionIdCounter++;
-                        }
-
-                        connectionIdToConnection.Add(id, @event.Connection);
-                        connectionToConnectionId.Add(@event.Connection, id);
-
-                        // Set the server connectionId
-                        if (isConnector)
-                        {
-                            serverConnection = @event.Connection;
-                        }
-
-                        clientId = id;
-                        @event.Recycle();
+                        // Add the connection
+                        connections.Add(@event.Connection.Id, @event.Connection);
 
                         return NetEventType.Connect;
                     }
                 case NetworkEventType.Timeout:
                 case NetworkEventType.Disconnect:
                     {
-                        if (isConnector && @event.Connection == connectConnection && connectTask != null)
+                        if (isConnector && @event.Connection == serverConnection && connectTask != null)
                         {
                             // Connection failed
                             connectTask.Success = false;
@@ -218,36 +199,16 @@ namespace RufflesTransport
                             connectTask = null;
                         }
 
-                        if (@event.Connection == serverConnection)
-                        {
-                            serverConnection = null;
-                        }
-
-                        if (connectionToConnectionId.ContainsKey(@event.Connection))
-                        {
-                            ulong id = connectionToConnectionId[@event.Connection];
-                            releasedConnectionIds.Enqueue(id);
-                            connectionIdToConnection.Remove(id);
-                            connectionToConnectionId.Remove(@event.Connection);
-
-                            clientId = id;
-                        }
-                        else
-                        {
-                            throw new ArgumentException("Could not find connection to disconnect");
-                        }
-
-                        @event.Recycle();
+                        connections.Remove(@event.Connection.Id);
 
                         return NetEventType.Disconnect;
                     }
                 case NetworkEventType.Nothing:
-                    clientId = 0;
-                    @event.Recycle();
                     return NetEventType.Nothing;
             }
 
-            clientId = 0;
+            @event.Recycle();
+
             return NetEventType.Nothing;
         }
 
@@ -264,15 +225,16 @@ namespace RufflesTransport
                 return SocketTask.Fault.AsTasks();
             }
 
-            connectConnection = socket.Connect(new IPEndPoint(IPAddress.Parse(ConnectAddress), Port));
+            serverConnection = socket.Connect(new IPEndPoint(IPAddress.Parse(ConnectAddress), Port));
 
-            if (connectConnection == null)
+            if (serverConnection == null)
             {
                 return SocketTask.Fault.AsTasks();
             }
             else
             {
                 connectTask = SocketTask.Working;
+
                 return connectTask.AsTasks();
             }
         }
@@ -283,6 +245,7 @@ namespace RufflesTransport
 
             socket = new RuffleSocket(config);
 
+            serverConnection = null;
             isConnector = false;
 
             if (socket.Start())
@@ -298,28 +261,30 @@ namespace RufflesTransport
         public override void DisconnectRemoteClient(ulong clientId)
         {
             GetRufflesConnectionDetails(clientId, out ulong connectionId);
-            connectionIdToConnection[connectionId].Disconnect(true);
+
+            connections[connectionId].Disconnect(true);
         }
 
         public override void DisconnectLocalClient()
         {
-            serverConnection.Disconnect(true);
+            if (serverConnection != null)
+            {
+                serverConnection.Disconnect(true);
+            }
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
             GetRufflesConnectionDetails(clientId, out ulong connectionId);
-            return (ulong)connectionIdToConnection[connectionId].Roundtrip;
+
+            return (ulong)connections[connectionId].Roundtrip;
         }
 
         public override void Shutdown()
         {
             channelIdToName.Clear();
             channelNameToId.Clear();
-            connectionIdToConnection.Clear();
-            connectionToConnectionId.Clear();
-            releasedConnectionIds.Clear();
-            connectionIdCounter = 0;
+            connections.Clear();
 
             if (socket != null)
             {
@@ -334,7 +299,7 @@ namespace RufflesTransport
             Logging.CurrentLogLevel = LogLevel;
         }
 
-        public ulong GetMLAPIClientId(Connection connection, bool isServer)
+        public ulong GetMLAPIClientId(ulong connectionId, bool isServer)
         {
             if (isServer)
             {
@@ -342,7 +307,7 @@ namespace RufflesTransport
             }
             else
             {
-                return connectionToConnectionId[connection] + 1;
+                return connectionId + 1;
             }
         }
 
@@ -350,7 +315,7 @@ namespace RufflesTransport
         {
             if (clientId == 0)
             {
-                connectionId = connectionToConnectionId[serverConnection];
+                connectionId = serverConnection.Id;
             }
             else
             {
