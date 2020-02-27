@@ -172,6 +172,7 @@ namespace RufflesTransport
             switch (@event.Type)
             {
                 case NetworkEventType.Data:
+                    @event.Recycle();
                     return NetEventType.Data;
                 case NetworkEventType.Connect:
                     {
@@ -186,6 +187,7 @@ namespace RufflesTransport
                         // Add the connection
                         connections.Add(@event.Connection.Id, @event.Connection);
 
+                        @event.Recycle();
                         return NetEventType.Connect;
                     }
                 case NetworkEventType.Timeout:
@@ -201,9 +203,11 @@ namespace RufflesTransport
 
                         connections.Remove(@event.Connection.Id);
 
+                        @event.Recycle();
                         return NetEventType.Disconnect;
                     }
                 case NetworkEventType.Nothing:
+                    @event.Recycle();
                     return NetEventType.Nothing;
             }
 
