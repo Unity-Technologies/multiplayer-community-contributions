@@ -32,8 +32,8 @@ namespace RufflesTransport
         public LogLevel LogLevel = LogLevel.Info;
 
         [Header("SocketConfig")]
-        public bool EnableSyncronizationEvent = true;
-        public bool EnableSyncronizedCallbacks = true;
+        public bool EnableSyncronizationEvent = false;
+        public bool EnableSyncronizedCallbacks = false;
         public int EventQueueSize = 1024 * 8;
         public int ProcessingQueueSize = 1024 * 8;
         public int HeapPointersPoolSize = 1024;
@@ -46,13 +46,14 @@ namespace RufflesTransport
         public bool UseIPv6Dual = true;
         public bool AllowUnconnectedMessages = false;
         public bool AllowBroadcasts = false;
+        public bool EnableAckNotifications = false;
         public int LogicDelay = 50;
         public bool ReuseChannels = true;
         public int LogicThreads = 1;
         public int SocketThreads = 1;
         public int ProcessingThreads = 0;
         public int MaxMergeMessageSize = 1024;
-        public int MaxMergeDelay = 100;
+        public int MaxMergeDelay = 15;
         public bool EnableMergedAcks = true;
         public int MergedAckBytes = 8;
         public int MaximumMTU = 4096;
@@ -206,14 +207,10 @@ namespace RufflesTransport
                         @event.Recycle();
                         return NetEventType.Disconnect;
                     }
-                case NetworkEventType.Nothing:
+                default:
                     @event.Recycle();
                     return NetEventType.Nothing;
             }
-
-            @event.Recycle();
-
-            return NetEventType.Nothing;
         }
 
         public override SocketTasks StartClient()
@@ -290,10 +287,23 @@ namespace RufflesTransport
             channelNameToId.Clear();
             connections.Clear();
 
-            if (socket != null)
+            // Release to GC
+            messageBuffer = null;
+
+            if (socket != null && socket.IsInitialized)
             {
+                // Releases memory and other things
                 socket.Shutdown();
             }
+
+            // Release to GC
+            socket = null;
+
+            // Release server connection to GC
+            serverConnection = null;
+
+            // Null the connect task
+            connectTask = null;
         }
 
         public override void Init()
@@ -351,8 +361,8 @@ namespace RufflesTransport
                 HandshakeResendDelay = HandshakeResendDelay,
                 HandshakeTimeout = HandshakeTimeout,
                 HeartbeatDelay = HeartbeatDelay,
-                IPv4ListenAddress = IPAddress.Any,
-                IPv6ListenAddress = IPAddress.IPv6Any,
+                IPv4ListenAddress = IPv4ListenAddress,
+                IPv6ListenAddress = IPv6ListenAddress,
                 MaxBufferSize = MaxBufferSize,
                 MaxConnectionRequestResends = MaxConnectionRequestResends,
                 MaxFragments = MaxFragments,
@@ -395,7 +405,7 @@ namespace RufflesTransport
                 ProcessingThreads = ProcessingThreads,
                 ReuseChannels = ReuseChannels,
                 SocketThreads = SocketThreads,
-                EnableAckNotifications = false
+                EnableAckNotifications = EnableAckNotifications
             };
 
             int channelCount = MLAPI_CHANNELS.Length + Channels.Count;
