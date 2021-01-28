@@ -121,17 +121,17 @@ namespace SteamP2PTransport
 
         public override void DisconnectLocalClient()
         {
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - DisconnectLocalClient");
+            if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - DisconnectLocalClient");
             SteamNetworking.SendP2PPacket(serverUser.SteamId, new byte[] { 0 }, 1, EP2PSend.k_EP2PSendReliable, (int)InternalChannelType.Disconnect);
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - DisconnectRemoteClient clientId: " + clientId);
+            if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - DisconnectRemoteClient clientId: " + clientId);
 
             if (!connectedUsers.ContainsKey(clientId))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SteamP2PTransport - Can't disconect client, client not connected, clientId: " + clientId);
+                if (NetworkingManager.Singleton.LogLevel <= LogLevel.Error) NetworkLog.LogErrorServer("SteamP2PTransport - Can't disconect client, client not connected, clientId: " + clientId);
                 return;
             }
 
@@ -141,7 +141,7 @@ namespace SteamP2PTransport
             NetworkingManager.Singleton.StartCoroutine(Delay(100, () =>
             { //Need to delay the closing of the p2p sessions to not block the disconect message before it is sent.
                 SteamNetworking.CloseP2PSessionWithUser(steamId);
-                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - DisconnectRemoteClient - has Closed P2P Session With clientId: " + clientId);
+                if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - DisconnectRemoteClient - has Closed P2P Session With clientId: " + clientId);
             }));
 
             connectedUsers.Remove(clientId);
@@ -161,7 +161,7 @@ namespace SteamP2PTransport
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SteamP2PTransport - Can't GetCurrentRtt from client, client not connected, clientId: " + clientId);
+                    if (NetworkingManager.Singleton.LogLevel <= LogLevel.Error) NetworkLog.LogErrorServer("SteamP2PTransport - Can't GetCurrentRtt from client, client not connected, clientId: " + clientId);
                 }
             }
             else
@@ -179,7 +179,7 @@ namespace SteamP2PTransport
 
             if (steamManagerType == null || property == null || !property.CanRead || property.PropertyType != typeof(bool))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SteamP2PTransport - Init - Steamworks.NET SteamManager.Initialized not found, SteamP2PTransport can not run without it");
+                if (NetworkingManager.Singleton.LogLevel <= LogLevel.Error) NetworkLog.LogErrorServer("SteamP2PTransport - Init - Steamworks.NET SteamManager.Initialized not found, SteamP2PTransport can not run without it");
                 return;
             }
 
@@ -187,7 +187,7 @@ namespace SteamP2PTransport
 
             if (!propertyValue)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SteamP2PTransport - Init - Steamworks.NET is not Initialized, SteamP2PTransport can not run without it");
+                if (NetworkingManager.Singleton.LogLevel <= LogLevel.Error) NetworkLog.LogErrorServer("SteamP2PTransport - Init - Steamworks.NET is not Initialized, SteamP2PTransport can not run without it");
                 return;
             }
 
@@ -243,7 +243,7 @@ namespace SteamP2PTransport
                     if (messageBuffer.Length < msgSize)
                     {
                         messageBuffer = new byte[msgSize];
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - PollEvent - Increase buffer size to: " + msgSize);
+                        if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - PollEvent - Increase buffer size to: " + msgSize);
                     }
 
                     if (SteamNetworking.ReadP2PPacket(messageBuffer, msgSize, out bytesRead, out remoteId, currentPollChannel))
@@ -341,7 +341,7 @@ namespace SteamP2PTransport
         {
             if (!channelNameToId.ContainsKey(channelName))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SteamP2PTransport - Can't Send to client, channel with channelName: " + channelName + " is not present");
+                if (NetworkingManager.Singleton.LogLevel <= LogLevel.Error) NetworkLog.LogErrorServer("SteamP2PTransport - Can't Send to client, channel with channelName: " + channelName + " is not present");
                 return;
             }
 
@@ -360,14 +360,14 @@ namespace SteamP2PTransport
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SteamP2PTransport - Can't Send to client, client not connected, clientId: " + clientId);
+                    if (NetworkingManager.Singleton.LogLevel <= LogLevel.Error) NetworkLog.LogErrorServer("SteamP2PTransport - Can't Send to client, client not connected, clientId: " + clientId);
                 }
             }
         }
 
         public override void Shutdown()
         {
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - Shutdown");
+            if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - Shutdown");
 
             if (_p2PSessionRequestCallback != null)
                 _p2PSessionRequestCallback.Dispose();
@@ -441,7 +441,7 @@ namespace SteamP2PTransport
             _p2PSessionConnectFailCallback = Callback<P2PSessionConnectFail_t>.Create(OnP2PSessionConnectFail);
             OnConnected();
 
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - StartServer - ConnectToCSteamID: " + SteamUser.GetSteamID().m_SteamID.ToString());
+            if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - StartServer - ConnectToCSteamID: " + SteamUser.GetSteamID().m_SteamID.ToString());
 
             return SocketTask.Done.AsTasks();
         }
@@ -487,12 +487,12 @@ namespace SteamP2PTransport
             }
             connectedUsers.Clear();
             serverUser = null;
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - CloseP2PSessions - has Closed P2P Sessions With all Users");
+            if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - CloseP2PSessions - has Closed P2P Sessions With all Users");
         }
 
         private void OnP2PSessionRequest(P2PSessionRequest_t request)
         {
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - OnP2PSessionRequest - m_steamIDRemote: " + request.m_steamIDRemote);
+            if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - OnP2PSessionRequest - m_steamIDRemote: " + request.m_steamIDRemote);
 
             CSteamID userId = request.m_steamIDRemote;
             //Todo: Might want to check if we expect the user before just accepting it.
@@ -501,7 +501,7 @@ namespace SteamP2PTransport
 
         private void OnP2PSessionConnectFail(P2PSessionConnectFail_t request)
         {
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("SteamP2PTransport - OnP2PSessionConnectFail - m_steamIDRemote: " + request.m_eP2PSessionError.ToString() + " Error: " + request.m_eP2PSessionError.ToString());
+            if (NetworkingManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer("SteamP2PTransport - OnP2PSessionConnectFail - m_steamIDRemote: " + request.m_eP2PSessionError.ToString() + " Error: " + request.m_eP2PSessionError.ToString());
             connectionAttemptFailed = true;
             connectionAttemptFailedClientId = request.m_steamIDRemote.m_SteamID;
         }
