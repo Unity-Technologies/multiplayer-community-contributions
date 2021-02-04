@@ -5,7 +5,7 @@
 [![Download](https://img.shields.io/badge/download-artifacts-informational.svg)](https://ci.appveyor.com/project/MidLevel/mlapi-transports)
 [![Licence](https://img.shields.io/github/license/midlevel/mlapi.transports.svg?color=informational)](https://github.com/MidLevel/MLAPI.Transports/blob/master/LICENCE)
 
-This is a collection repository for all official MLAPI transports. 
+This is a collection repository for MLAPI transports provided by the community. 
 
 ## Download
 There are two ways to download transports for use with the MLAPI.
