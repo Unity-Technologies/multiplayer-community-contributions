@@ -1,5 +1,5 @@
 {
-  "name": "com.unity.multiplayer.transport.enet",
+  "name": "com.mlapi.contrib.transport.enet",
   "displayName": "ENET Transport for MLAPI",
   "version": "1.0.0",
   "unity": "2019.4",
