@@ -17,11 +17,11 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 #### Transports
 | **Name** | **Platforms** | **Version Specifics** | **Latest MLAPI** | **v12** |
 |:------------:|:---------:|:-------------:|:-------:|:---:|
-| **[Ruffles](todo-link)**| Desktop, Mobile | | | :heavy_check_mark: | 
+| **[Ruffles](MLAPI.Transports/tree/master/Transports/com.mlapi.contrib.transport.ruffles)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
 |**[Enet](https://github.com/Unity-Technologies/MLAPI.Transports/tree/master/Transports/com.mlapi.contrib.transport.enet)**| Desktop, Mobile\* | |:heavy_check_mark: | :heavy_check_mark: | 
-|**[LiteNetLib](https://github.com/Unity-Technologies/MLAPI.Transports/tree/master/Transports/com.mlapi.contrib.transport.litenetlib)**| Desktop, Mobile | |:heavy_check_mark: |:heavy_check_mark: | 
-|**[SteamP2P](todo-link)**| Steam ||| :heavy_check_mark: | 
-|**WebSockets]| Desktop, Mobile, WebGL | | :x:| :x: | 
+|**[LiteNetLib](https://github.com/Unity-Technologies/MLAPI.Transports/tree/master/Transports/com.mlapi.contrib.transport.litenetlib)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
+|**[SteamP2P](todo-link)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
+|**WebSocket**| Desktop, Mobile, WebGL | | :x:| :x: | 
 
 \* Needs manual binary compilation.
 
