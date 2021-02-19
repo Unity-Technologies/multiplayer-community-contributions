@@ -9,6 +9,10 @@ Component Name: ENet-CSharp
 
 License Type: MIT
 
+Copyright (c) 2018 Stanislav Denisov (nxrighthere@gmail.com)
+
+https://github.com/nxrighthere/ENet-CSharp
+
 MIT License
 
 Copyright (c) 2018 Stanislav Denisov (nxrighthere@gmail.com)
@@ -40,6 +44,10 @@ SOFTWARE.
 Component Name: LiteNetLib
 
 License Type: MIT
+
+Copyright (c) 2020 Ruslan Pyrch
+
+https://github.com/RevenantX/LiteNetLib
 
 MIT License
 
@@ -73,6 +81,10 @@ Component Name: Ruffles
 
 License Type: MIT
 
+Copyright (c) 2020 Albin Corén
+
+https://github.com/MidLevel/Ruffles
+
 MIT License
 
 Copyright (c) 2020 Albin Corén
@@ -104,6 +116,10 @@ SOFTWARE.
 Component Name: Steamworks.NET
 
 License Type: MIT
+
+Copyright (c) 2013-2020 Riley Labrecque
+
+https://github.com/rlabrecque/Steamworks.NET
 
 The MIT License (MIT)
 
