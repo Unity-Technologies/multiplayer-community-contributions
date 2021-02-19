@@ -13,10 +13,6 @@ Copyright (c) 2018 Stanislav Denisov (nxrighthere@gmail.com)
 
 https://github.com/nxrighthere/ENet-CSharp
 
-MIT License
-
-Copyright (c) 2018 Stanislav Denisov (nxrighthere@gmail.com)
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -48,10 +44,6 @@ License Type: MIT
 Copyright (c) 2020 Ruslan Pyrch
 
 https://github.com/RevenantX/LiteNetLib
-
-MIT License
-
-Copyright (c) 2020 Ruslan Pyrch
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -85,10 +77,6 @@ Copyright (c) 2020 Albin Corén
 
 https://github.com/MidLevel/Ruffles
 
-MIT License
-
-Copyright (c) 2020 Albin Corén
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -120,10 +108,6 @@ License Type: MIT
 Copyright (c) 2013-2020 Riley Labrecque
 
 https://github.com/rlabrecque/Steamworks.NET
-
-The MIT License (MIT)
-
-Copyright (c) 2013-2020 Riley Labrecque
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
