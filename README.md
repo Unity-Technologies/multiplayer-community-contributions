@@ -1,5 +1,11 @@
 The MLAPI Community Contributions repository contains extensions to [MLAPI](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi) provided by the community.
 
+### How to use
+
+[Installing a Community Transport](/Transports/README.md)
+
+[Installing the Community Extensions Package](/com.mlapi.contrib.extensions/README.md)
+
 ### Community and Feedback
 For general questions, networking advice or discussions about MLAPI and its extensions, please join our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
 
