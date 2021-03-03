@@ -1,0 +1,11 @@
+{
+  "name": "com.mlapi.contrib.extensions",
+  "displayName": "MLAPI Community Extensions Package",
+  "version": "1.0.0",
+  "unity": "2019.4",
+  "description": "The MLAPI Community Extensions package is a package containing extensions to MLAPI.",
+  "author": "",
+  "dependencies": {
+    "com.unity.multiplayer.mlapi": "0.0.1-preview.1"
+  }
+}

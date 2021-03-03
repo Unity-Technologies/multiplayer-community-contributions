@@ -1,0 +1,11 @@
+{
+  "name": "com.mlapi.contrib.transport.enet",
+  "displayName": "ENET Transport for MLAPI",
+  "version": "1.0.0",
+  "unity": "2019.4",
+  "description": "ENET Transport for MLAPI",
+  "author": "Albin Corén (transport adapter), Stanislav Denisov (fork and C# wrapper), Lee Salzman (original implementation).",
+  "dependencies": {
+    "com.unity.multiplayer.mlapi": "0.0.1-preview.1"
+  }
+}
