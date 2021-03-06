@@ -26,7 +26,7 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 | **[Ruffles](/Transports/com.mlapi.contrib.transport.ruffles)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
 |**[Enet](/Transports/com.mlapi.contrib.transport.enet)**| Desktop, Mobile\* | |:heavy_check_mark: | :heavy_check_mark: | 
 |**[LiteNetLib](/Transports/com.mlapi.contrib.transport.litenetlib)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
-|**[SteamP2P](t/Transports/com.mlapi.contrib.transport.steamp2p)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
+|**[SteamP2P](/Transports/com.mlapi.contrib.transport.steamp2p)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
 |**WebSocket**| Desktop, Mobile, WebGL | | :x:| :x: | 
 
 \* Needs manual binary compilation.
@@ -34,7 +34,7 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 #### Extensions
 | **Name** | **Version Specifics** | **Latest MLAPI** | **v12** |
 |:------------:|:-------------:|:-------:|:---:|
-|**[NetworkObjectPool](/com.mlapi.contrib.extensions/NetworkObjectPool)**| | :heavy_check_mark: | | 
+|**[NetworkObjectPool](/com.mlapi.contrib.extensions/Runtime/NetworkObjectPool)**| | :heavy_check_mark: | | 
 
 
 ### Releases
