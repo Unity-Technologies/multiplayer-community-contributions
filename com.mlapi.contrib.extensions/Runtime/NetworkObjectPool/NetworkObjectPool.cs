@@ -5,7 +5,7 @@ using MLAPI.Spawning;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace MLAPI.Extensions.NetworkObjectPool
+namespace MLAPI.Extensions
 {
     public class NetworkObjectPool : MonoBehaviour
     {
