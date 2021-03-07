@@ -241,13 +241,13 @@ namespace LiteNetLibTransport
                 m_LiteChannels.Add(channels[i].Channel, new LiteChannel()
                 {
                     ChannelNumber = id++,
-                    Method = ConvertChannelType(channels[i].Delivery)
+                    Method = ConvertNetworkDelivery(channels[i].Delivery)
                 });
             }
         }
 
 
-        DeliveryMethod ConvertChannelType(NetworkDelivery type)
+        DeliveryMethod ConvertNetworkDelivery(NetworkDelivery type)
         {
             switch (type)
             {
