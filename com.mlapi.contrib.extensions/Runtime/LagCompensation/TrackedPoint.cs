@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 
-namespace MLAPI.LagCompensation
+namespace MLAPI.Extensions.LagCompensation
 {
-    internal struct TrackedPointData
+    internal struct TrackedPoint
     {
         internal Vector3 position;
         internal Quaternion rotation;

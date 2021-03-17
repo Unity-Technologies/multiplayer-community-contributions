@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using MLAPI.Collections;
 using UnityEngine;
+using UnityEngine.Assertions;
 
-namespace MLAPI.LagCompensation
+namespace MLAPI.Extensions.LagCompensation
 {
     //Based on: https://twotenpvp.github.io/lag-compensation-in-unity.html
     //Modified to be used with latency rather than fixed frames and subframes. Thus it will be less accrurate but more modular.
@@ -13,11 +14,28 @@ namespace MLAPI.LagCompensation
     [AddComponentMenu("MLAPI/TrackedObject", -98)]
     public class TrackedObject : MonoBehaviour
     {
-        internal Dictionary<float, TrackedPointData> FrameData = new Dictionary<float, TrackedPointData>();
-        internal FixedQueue<float> Framekeys;
-        private Vector3 savedPosition;
-        private Quaternion savedRotation;
+        Dictionary<float, TrackedPoint> m_FrameData = new Dictionary<float, TrackedPoint>();
+        FixedQueue<float> m_Framekeys;
+        int m_MaxPoints;
 
+        Vector3 savedPosition;
+        Quaternion savedRotation;
+
+
+        LagCompensationManager m_LagCompensationManager;
+
+        private void Start()
+        {
+            Assert.IsNotNull(LagCompensationManager.Singleton, $"{nameof(TrackedObject)} needs a {nameof(LagCompensationManager)}. Add a {nameof(LagCompensationManager)} to your scene.");
+            m_LagCompensationManager = LagCompensationManager.Singleton;           
+            
+            m_MaxPoints = m_LagCompensationManager.MaxQueuePoints();
+            
+            m_Framekeys = new FixedQueue<float>(m_MaxPoints);
+            m_Framekeys.Enqueue(0);
+            m_LagCompensationManager.SimulationObjects.Add(this);
+        }
+        
         /// <summary>
         /// Gets the total amount of points stored in the component
         /// </summary>
@@ -25,8 +43,8 @@ namespace MLAPI.LagCompensation
         {
             get
             {
-                if (Framekeys == null) return 0;
-                else return Framekeys.Count;
+                if (m_Framekeys == null) return 0;
+                else return m_Framekeys.Count;
             }
         }
 
@@ -37,8 +55,8 @@ namespace MLAPI.LagCompensation
         {
             get
             {
-                if (Framekeys == null || Framekeys.Count == 0) return 0;
-                else return ((Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0)) / Framekeys.Count) * 1000f;
+                if (m_Framekeys == null || m_Framekeys.Count == 0) return 0;
+                else return ((m_Framekeys.ElementAt(m_Framekeys.Count - 1) - m_Framekeys.ElementAt(0)) / m_Framekeys.Count) * 1000f;
             }
         }
 
@@ -49,16 +67,8 @@ namespace MLAPI.LagCompensation
         {
             get
             {
-                if (Framekeys == null) return 0;
-                else return Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
-            }
-        }
-
-        private int maxPoints
-        {
-            get
-            {
-                return (int)(NetworkManager.Singleton.NetworkConfig.SecondsHistory / (1f / NetworkManager.Singleton.NetworkConfig.EventTickrate));
+                if (m_Framekeys == null) return 0;
+                else return m_Framekeys.ElementAt(m_Framekeys.Count - 1) - m_Framekeys.ElementAt(0);
             }
         }
 
@@ -72,21 +82,21 @@ namespace MLAPI.LagCompensation
 
             float previousTime = 0f;
             float nextTime = 0f;
-            for (int i = 0; i < Framekeys.Count; i++)
+            for (int i = 0; i < m_Framekeys.Count; i++)
             {
-                if (previousTime <= targetTime && Framekeys.ElementAt(i) >= targetTime)
+                if (previousTime <= targetTime && m_Framekeys.ElementAt(i) >= targetTime)
                 {
-                    nextTime = Framekeys.ElementAt(i);
+                    nextTime = m_Framekeys.ElementAt(i);
                     break;
                 }
                 else
-                    previousTime = Framekeys.ElementAt(i);
+                    previousTime = m_Framekeys.ElementAt(i);
             }
             float timeBetweenFrames = nextTime - previousTime;
             float timeAwayFromPrevious = currentTime - previousTime;
             float lerpProgress = timeAwayFromPrevious / timeBetweenFrames;
-            transform.position = Vector3.Lerp(FrameData[previousTime].position, FrameData[nextTime].position, lerpProgress);
-            transform.rotation = Quaternion.Slerp(FrameData[previousTime].rotation, FrameData[nextTime].rotation, lerpProgress);
+            transform.position = Vector3.Lerp(m_FrameData[previousTime].position, m_FrameData[nextTime].position, lerpProgress);
+            transform.rotation = Quaternion.Slerp(m_FrameData[previousTime].rotation, m_FrameData[nextTime].rotation, lerpProgress);
         }
 
         internal void ResetStateTransform()
@@ -95,29 +105,23 @@ namespace MLAPI.LagCompensation
             transform.rotation = savedRotation;
         }
 
-        void Start()
-        {
-            Framekeys = new FixedQueue<float>(maxPoints);
-            Framekeys.Enqueue(0);
-            LagCompensationManager.SimulationObjects.Add(this);
-        }
 
         void OnDestroy()
         {
-            LagCompensationManager.SimulationObjects.Remove(this);
+            m_LagCompensationManager.SimulationObjects.Remove(this);
         }
 
         internal void AddFrame()
         {
-            if (Framekeys.Count == maxPoints)
-                FrameData.Remove(Framekeys.Dequeue());
+            if (m_Framekeys.Count == m_MaxPoints)
+                m_FrameData.Remove(m_Framekeys.Dequeue());
 
-            FrameData.Add(NetworkManager.Singleton.NetworkTime, new TrackedPointData()
+            m_FrameData.Add(NetworkManager.Singleton.NetworkTime, new TrackedPoint()
             {
                 position = transform.position,
                 rotation = transform.rotation
             });
-            Framekeys.Enqueue(NetworkManager.Singleton.NetworkTime);
+            m_Framekeys.Enqueue(NetworkManager.Singleton.NetworkTime);
         }
     }
 }

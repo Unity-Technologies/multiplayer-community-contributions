@@ -2,7 +2,8 @@
     "name": "MLAPI Community Extensions Editor",
     "rootNamespace": "",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Multiplayer.MLAPI.Runtime",
+        "MLAPI Community Extensions"
     ],
     "includePlatforms": [
         "Editor"
