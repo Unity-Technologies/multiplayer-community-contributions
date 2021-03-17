@@ -12,10 +12,14 @@ namespace MLAPI.Extensions.LagCompensation
     {
         public static LagCompensationManager Singleton { get; private set; }
         
-        float m_lastNetworkTime = Single.NegativeInfinity;
+        float m_lastNetworkTime = Single.NaN;
         
         [SerializeField]
         float m_SecondsHistory;
+
+        [SerializeField]
+        [Tooltip("If true this will sync transform changes after the rollback back to the physics engine so that queries like raycasts use the compensated positions")]
+        bool m_SyncTransforms = true;
 
         /// <summary>
         /// Simulation objects
@@ -72,12 +76,22 @@ namespace MLAPI.Extensions.LagCompensation
             {
                 simulatedObjects[i].ReverseTransform(secondsAgo);
             }
+            
+            if (!Physics.autoSyncTransforms && m_SyncTransforms)
+            {
+                Physics.SyncTransforms();
+            }
 
             action.Invoke();
 
             for (int i = 0; i < simulatedObjects.Count; i++)
             {
                 simulatedObjects[i].ResetStateTransform();
+            }
+            
+            if (!Physics.autoSyncTransforms && m_SyncTransforms)
+            {
+                Physics.SyncTransforms();
             }
         }
 
