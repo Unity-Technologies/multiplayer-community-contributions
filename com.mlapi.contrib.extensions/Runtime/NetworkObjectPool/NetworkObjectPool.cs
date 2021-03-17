@@ -118,7 +118,7 @@ namespace MLAPI.Extensions
 
             // Register MLAPI Spawn handlers
 
-            NetworkSpawnManager.RegisterCustomDestroyHandler(prefabHash, ReturnNetworkObject);
+            NetworkSpawnManager.RegisterDestroyHandler(prefabHash, ReturnNetworkObject);
             NetworkSpawnManager.RegisterSpawnHandler(prefabHash, (position, rotation) => GetNetworkObjectInternal(prefabHash, position, rotation));
         }
 
