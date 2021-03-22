@@ -273,7 +273,7 @@ namespace MLAPI.Patcher.Editor
             Dictionary<Regex, string> replacements = new Dictionary<Regex, string>();
             foreach (var apiChange in k_APIChanges)
             {
-                var regex = new Regex($"(?<prefix> (?:MLAPI\\.)?|<){apiChange.Key}(?!(s.UNET))");
+                var regex = new Regex($"(?<prefix> |\\.|<|\\[|\\(){apiChange.Key}(?!(s.UNET))");
                 var replacement = $"${{prefix}}{apiChange.Value}";
                 replacements.Add(regex, replacement);
             }
