@@ -69,6 +69,11 @@ namespace MLAPI.Patcher.Editor
 
         Object m_SourceVersionDirectory;
 
+        void OnEnable()
+        {
+            titleContent.text = "MLAPI Patcher";
+        }
+
         void OnGUI()
         {
             if (m_DllVersion == null)
@@ -101,7 +106,7 @@ namespace MLAPI.Patcher.Editor
                     ReplaceAllScriptReferences(m_DllVersion.Value);
                 }
 
-                if (GUILayout.Button("Replace Type Names (Voluntary)"))
+                if (GUILayout.Button("Replace Type Names (Optional)"))
                 {
                     UpdateApiUsages();
                 }
