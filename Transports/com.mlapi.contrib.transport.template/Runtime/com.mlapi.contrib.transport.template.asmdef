@@ -1,6 +1,6 @@
 {
     "name": "[name] MLAPI Transport",
-    "rootNamespace": "MLAPI.Transports.[name]",
+    "rootNamespace": "MLAPI.Transport.[name]",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime"
     ],
