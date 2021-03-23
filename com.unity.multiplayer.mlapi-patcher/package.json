@@ -1,0 +1,11 @@
+{
+  "name": "com.unity.multiplayer.mlapi-patcher",
+  "displayName": "MLAPI Patcher Package",
+  "version": "0.1.0",
+  "unity": "2019.4",
+  "description": "Package provides utility for upgrading MLAPI to the Unity Package Manager version.",
+  "author": "",
+  "dependencies": {
+    "com.unity.scriptablebuildpipeline" : "1.14.1"
+  }
+}
