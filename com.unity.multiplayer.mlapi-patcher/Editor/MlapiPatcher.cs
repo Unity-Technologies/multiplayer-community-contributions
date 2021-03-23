@@ -35,6 +35,7 @@ namespace MLAPI.Patcher.Editor
             { "NetworkedNavMeshAgent", "NetworkNavMeshAgent" },
             { "SpawnManager", "NetworkSpawnManager" },
             { "BitStream", "NetworkBuffer" },
+            { "PooledBitStream", "PooledNetworkBuffer" },
             { "BitSerializer", "NetworkSerializer" },
             { "BitReader", "NetworkReader" },
             { "BitWriter", "NetworkWriter" },
@@ -50,6 +51,8 @@ namespace MLAPI.Patcher.Editor
             { "NetworkedSet", "NetworkSet" },
             { "MLAPIConstants", "NetworkConstants" },
             { "UnetTransport", "UNetTransport" },
+            { "ServerRPC", "ServerRpc" },
+            { "ClientRPC", "ClientRpc" },
         };
 
         static readonly List<string> OldMlapiUnityObjects = new List<string>()
@@ -273,7 +276,7 @@ namespace MLAPI.Patcher.Editor
             Dictionary<Regex, string> replacements = new Dictionary<Regex, string>();
             foreach (var apiChange in k_APIChanges)
             {
-                var regex = new Regex($"(?<prefix> |\\.|<|\\[|\\(){apiChange.Key}(?!(s.UNET))");
+                var regex = new Regex($"(?<prefix> |\\.|<|\\[|\\(|!){apiChange.Key}(?!(s.UNET))");
                 var replacement = $"${{prefix}}{apiChange.Value}";
                 replacements.Add(regex, replacement);
             }
