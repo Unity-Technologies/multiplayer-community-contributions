@@ -17,7 +17,7 @@ using MLAPI.Transports.Tasks;
  * Steamworks.NET: https://steamworks.github.io/
  */
 
-namespace SteamP2PTransport
+namespace MLAPI.Transports.SteamP2P
 {
     public class SteamP2PTransport : NetworkTransport
     {

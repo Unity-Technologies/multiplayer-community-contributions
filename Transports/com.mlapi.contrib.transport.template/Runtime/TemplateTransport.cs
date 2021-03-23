@@ -1,17 +1,16 @@
 ﻿using System;
-using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
 
-namespace TemplateTransport
+namespace MLAPI.Transports.Template
 {
-    public class TemplateTransport : Transport
+    public class TemplateTransport : NetworkTransport
     {
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
         {
             throw new NotImplementedException();
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
             throw new NotImplementedException();
         }

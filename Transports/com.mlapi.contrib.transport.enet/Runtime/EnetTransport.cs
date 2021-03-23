@@ -8,7 +8,7 @@ using UnityEngine;
 using Event = ENet.Event;
 using EventType = ENet.EventType;
 
-namespace EnetTransport
+namespace MLAPI.Transports.Enet
 {
     [DefaultExecutionOrder(1000)]
     public class EnetTransport : NetworkTransport

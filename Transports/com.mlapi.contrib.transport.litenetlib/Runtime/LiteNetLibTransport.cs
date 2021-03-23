@@ -11,7 +11,7 @@ using MLAPI.Logging;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace LiteNetLibTransport
+namespace MLAPI.Transports.LiteNetLib
 {
     public class LiteNetLibTransport : NetworkTransport, INetEventListener
     {
