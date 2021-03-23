@@ -1,6 +1,6 @@
 {
     "name": "SteamP2P MLAPI Transport",
-    "rootNamespace": "",
+    "rootNamespace": "MLAPI.Transports.SteamP2P",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime"
     ],
@@ -9,7 +9,7 @@
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

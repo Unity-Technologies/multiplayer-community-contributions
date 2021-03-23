@@ -2,18 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
 using Ruffles.Configuration;
-using Ruffles.Connections;
 using Ruffles.Core;
 using Ruffles.Time;
+using Ruffles.Channeling;
+using Ruffles.Simulation;
 using Ruffles.Utils;
 using UnityEngine;
 using UnityEngine.Assertions;
-using NetworkEvent = MLAPI.Transports.NetworkEvent;
+using RufflesConnection = Ruffles.Connections.Connection;
+using RufflesNetworkEvent = Ruffles.Core.NetworkEvent;
+using RufflesLogging = Ruffles.Utils.Logging;
 
-namespace RufflesTransport
+namespace MLAPI.Transports.Ruffles
 {
     public class RufflesTransport : NetworkTransport
     {
@@ -21,7 +23,7 @@ namespace RufflesTransport
         public class RufflesChannel
         {
             public byte ChannelId;
-            public Ruffles.Channeling.ChannelType Type;
+            public ChannelType Type;
         }
 
         public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
@@ -43,7 +45,7 @@ namespace RufflesTransport
         public int HeapMemoryPoolSize = 1024;
         public int MemoryWrapperPoolSize = 1024;
         public int ChannelPoolSize = 1024;
-        public Ruffles.Channeling.PooledChannelType PooledChannels = Ruffles.Channeling.PooledChannelType.All;
+        public PooledChannelType PooledChannels = PooledChannelType.All;
         public IPAddress IPv4ListenAddress = IPAddress.Any;
         public IPAddress IPv6ListenAddress = IPAddress.IPv6Any;
         public bool UseIPv6Dual = true;
@@ -106,7 +108,7 @@ namespace RufflesTransport
         private bool isConnector = false;
 
         // Lookup / translation
-        private readonly Dictionary<ulong, Connection> connections = new Dictionary<ulong, Connection>();
+        private readonly Dictionary<ulong, RufflesConnection> connections = new Dictionary<ulong, RufflesConnection>();
 
         private readonly Dictionary<NetworkChannel, byte> channelNameToId = new Dictionary<NetworkChannel, byte>();
         private readonly Dictionary<byte, NetworkChannel> channelIdToName = new Dictionary<byte, NetworkChannel>();
@@ -116,7 +118,7 @@ namespace RufflesTransport
 
         // Connector task
         private SocketTask connectTask;
-        private Connection serverConnection;
+        private RufflesConnection serverConnection;
 
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
@@ -131,7 +133,7 @@ namespace RufflesTransport
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
-            Ruffles.Core.NetworkEvent @event = socket.Poll();
+            RufflesNetworkEvent @event = socket.Poll();
 
             receiveTime = Time.realtimeSinceStartup - (float)(NetTime.Now - @event.SocketReceiveTime).TotalSeconds;
 
@@ -312,7 +314,7 @@ namespace RufflesTransport
         {
             messageBuffer = new byte[TransportBufferSize];
 
-            Logging.CurrentLogLevel = LogLevel;
+            RufflesLogging.CurrentLogLevel = LogLevel;
         }
 
         public ulong GetMLAPIClientId(ulong connectionId, bool isServer)
@@ -381,7 +383,7 @@ namespace RufflesTransport
                 ReliabilityResendRoundtripMultiplier = ReliabilityResendRoundtripMultiplier,
                 ReliabilityWindowSize = ReliableAckFlowWindowSize,
                 ReliableAckFlowWindowSize = ReliableAckFlowWindowSize,
-                SimulatorConfig = new Ruffles.Simulation.SimulatorConfig()
+                SimulatorConfig = new SimulatorConfig()
                 {
                     DropPercentage = DropPercentage,
                     MaxLatency = MaxLatency,
@@ -411,7 +413,7 @@ namespace RufflesTransport
             };
 
             int channelCount = MLAPI_CHANNELS.Length + Channels.Count;
-            config.ChannelTypes = new Ruffles.Channeling.ChannelType[channelCount];
+            config.ChannelTypes = new ChannelType[channelCount];
 
             for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
@@ -434,23 +436,23 @@ namespace RufflesTransport
             return config;
         }
 
-        private Ruffles.Channeling.ChannelType ConvertChannelType(NetworkDelivery type)
+        private ChannelType ConvertChannelType(NetworkDelivery type)
         {
             switch (type)
             {
                 case NetworkDelivery.Reliable:
-                    return Ruffles.Channeling.ChannelType.Reliable;
+                    return ChannelType.Reliable;
                 case NetworkDelivery.ReliableFragmentedSequenced:
-                    return Ruffles.Channeling.ChannelType.ReliableSequencedFragmented;
+                    return ChannelType.ReliableSequencedFragmented;
                 case NetworkDelivery.ReliableSequenced:
-                    return Ruffles.Channeling.ChannelType.ReliableSequenced;
+                    return ChannelType.ReliableSequenced;
                 case NetworkDelivery.Unreliable:
-                    return Ruffles.Channeling.ChannelType.Unreliable;
+                    return ChannelType.Unreliable;
                 case NetworkDelivery.UnreliableSequenced:
-                    return Ruffles.Channeling.ChannelType.UnreliableOrdered;
+                    return ChannelType.UnreliableOrdered;
             }
 
-            return Ruffles.Channeling.ChannelType.Reliable;
+            return ChannelType.Reliable;
         }
     }
 }

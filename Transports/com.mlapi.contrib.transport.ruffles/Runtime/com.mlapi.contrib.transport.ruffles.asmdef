@@ -1,5 +1,5 @@
 {
-    "name": "[name] MLAPI Transport",
+    "name": "Ruffles MLAPI Transport",
     "rootNamespace": "",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime"
@@ -9,7 +9,7 @@
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

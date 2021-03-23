@@ -2,7 +2,7 @@
 using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
 
-namespace TemplateTransport
+namespace MLAPI.Transports.Template
 {
     public class TemplateTransport : Transport
     {
