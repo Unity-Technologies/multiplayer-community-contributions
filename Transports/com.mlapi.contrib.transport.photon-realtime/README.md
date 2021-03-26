@@ -4,7 +4,7 @@
 
 Follow the [transport installation guide](../README.md) to add the Photon Realtime Transport to your project.
 
-To use this transport you must create an Exit Games account. More information in the [License](Runtime/Photon/LICENSE)
+To use this transport you must create an Exit Games account. More information in the [License](/Transports/com.mlapi.contrib.transport.photon-realtime/Runtime/Photon/LICENSE)
 
 ### Photon Cloud Setup
 
