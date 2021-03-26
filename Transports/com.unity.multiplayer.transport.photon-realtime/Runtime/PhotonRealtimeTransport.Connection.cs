@@ -4,7 +4,7 @@ using UnityEngine;
 using Photon.Realtime;
 using System;
 
-namespace MLAPI.Transports
+namespace MLAPI.Transports.PhotonRealtime
 {
     public partial class PhotonRealtimeTransport : IConnectionCallbacks
     {

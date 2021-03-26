@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Realtime;
 
-namespace MLAPI.Transports
+namespace MLAPI.Transports.PhotonRealtime
 {
     public partial class PhotonRealtimeTransport : IInRoomCallbacks
     {

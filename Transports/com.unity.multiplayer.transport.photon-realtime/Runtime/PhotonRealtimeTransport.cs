@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Assertions;
 
-namespace MLAPI.Transports
+namespace MLAPI.Transports.PhotonRealtime
 {
     [DefaultExecutionOrder(-1000)]
     public partial class PhotonRealtimeTransport : NetworkTransport, IOnEventCallback

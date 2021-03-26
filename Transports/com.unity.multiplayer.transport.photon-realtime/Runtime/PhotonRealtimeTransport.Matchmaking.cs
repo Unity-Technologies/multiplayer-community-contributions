@@ -4,7 +4,7 @@ using MLAPI.Transports.Tasks;
 using UnityEngine;
 using Photon.Realtime;
 
-namespace MLAPI.Transports
+namespace MLAPI.Transports.PhotonRealtime
 {
     public partial class PhotonRealtimeTransport : IMatchmakingCallbacks
     {
