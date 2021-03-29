@@ -1,7 +1,6 @@
 # Photon Realtime Transport for MLAPI
 
-# Setup Photon
-
+## Setup Photon
 
 
 Follow the [transport installation guide](../README.md) to add the Photon Realtime Transport to your project.
@@ -12,7 +11,7 @@ Once added, please follow the following steps
 
 1. Access Wizard from Window → Photon Realtime → Wizard
 2. Click next until you get to the Photon Cloud Setup Part
-3. If you don't already have an account or e-mail, (More information in the [License](/Transports/com.mlapi.contrib.transport.photon-realtime/Runtime/Photon/LICENSE)) click on the Visit Dashboard button in order to create one	
+3. If you don't already have an account or an App Id, (More information in the [License](/Transports/com.mlapi.contrib.transport.photon-realtime/Runtime/Photon/LICENSE)) click on the Visit Dashboard button in order to create one	
     1.  If you just created an account  for the first time you need to also create a New Application from Photon's Dashboard
     2. NOTE! The Photon Type for this transport is: `Photon Realtime`
 
@@ -49,7 +48,7 @@ Follow these steps in order to prepare your Unity to be packaged and distributed
 
     ![Img/Photon-App-Setting.png](Img/Photon-App-Setting.png)
 
-# Before you Build
+## Before you Build
 
 ### Photon Realtime Transport
 
