@@ -2,9 +2,11 @@
 
 # Setup Photon
 
----
+
 
 Follow the [transport installation guide](../README.md) to add the Photon Realtime Transport to your project.
+
+---
 
 Once added, please follow the following steps
 
@@ -29,9 +31,9 @@ Once added, please follow the following steps
 
 ## Preparing Your Project to be built
 
----
-
 Follow these steps in order to prepare your Unity to be packaged and distributed to your audience:
+
+---
 
 1. Find `PhotonAppSettings` asset in your project
 2. The App Id you've set during the setup, should be shared with your friends in case they want to use the Unity Editor, instead of a packaged built, as each developer might have a different App Id/region set in its PhotonAppSettings asset.
@@ -49,8 +51,6 @@ Follow these steps in order to prepare your Unity to be packaged and distributed
 
 # Before you Build
 
----
-
 ### Photon Realtime Transport
 
 - Add the `PhotonRealtimeTransport` component to your GameObject containing your NetworkManager.
@@ -66,7 +66,5 @@ While a static room name works fine it will put all your players into the same r
 Documentation about other settings can be found in the [Photon Documentation](https://doc.photonengine.com/en-us/pun/current/getting-started/initial-setup).
 
 # Build it!
-
----
 
 Your project should be ready to be packaged and distributed!
