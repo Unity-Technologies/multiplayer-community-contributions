@@ -82,6 +82,11 @@ namespace MLAPI.Transports.PhotonRealtime
             get => m_RoomName;
             set => m_RoomName = value;
         }
+        
+        /// <summary>
+        /// The Photon loadbalancing client used by this transport for everything networking related.
+        /// </summary>
+        public LoadBalancingClient Client => m_Client;
 
         ///<inheritdoc/>
         public override ulong ServerClientId => GetMlapiClientId(0, true);
