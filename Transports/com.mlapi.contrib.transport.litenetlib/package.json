@@ -6,6 +6,5 @@
   "description": "LiteNetLib Transport for MLAPI",
   "author": "Piotr Kaminski (transport adapter), Ruslan Pyrch (library implementation).",
   "dependencies": {
-    "com.unity.multiplayer.mlapi": "0.0.1-preview.1"
   }
 }
