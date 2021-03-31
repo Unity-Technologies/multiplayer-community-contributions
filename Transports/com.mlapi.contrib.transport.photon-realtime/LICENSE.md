@@ -1,3 +1,7 @@
+THIRD PARTY NOTICE: Materials herein are subject to multiple licenses established by Unity Technologies and its licensors. Reference the License file in [`/Runtime/Photon/LICENSE.md`](/Runtime/Photon/LICENSE.md) for the applicable terms. All other materials herein are subject to the MIT license as provided below.
+
+---------
+
 MIT License
 
 Copyright (c) 2021 Unity Technologies
