@@ -15,6 +15,8 @@ namespace MLAPI.Transports.PhotonRealtime
     [DefaultExecutionOrder(-1000)]
     public partial class PhotonRealtimeTransport : NetworkTransport, IOnEventCallback
     {
+        private static readonly ArraySegment<byte> s_EmptyArraySegment = new ArraySegment<byte>(Array.Empty<byte>());
+
         [Tooltip("The nickname of the player in the Photon Room. This value is only relevant for other Photon Realtime features. Leaving it empty generates a random name.")]
         [SerializeField]
         private string m_NickName;
@@ -317,7 +319,7 @@ namespace MLAPI.Transports.PhotonRealtime
         {
             if (m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
             {
-                ArraySegment<byte> payload = default;
+                ArraySegment<byte> payload = s_EmptyArraySegment;
                 RaisePhotonEvent(clientId, true, payload, this.m_KickEventCode);
             }
         }
