@@ -27,9 +27,11 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 |**[Enet](/Transports/com.mlapi.contrib.transport.enet)**| Desktop, Mobile\* | |:heavy_check_mark: | :heavy_check_mark: | 
 |**[LiteNetLib](/Transports/com.mlapi.contrib.transport.litenetlib)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
 |**[SteamP2P](/Transports/com.mlapi.contrib.transport.steamp2p)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
-|**WebSocket**| Desktop, Mobile, WebGL | | :x:| :x: | 
+|**WebSocket**| Desktop, Mobile, WebGL | | :x:| :x: |
+|**[Photon Realtime](/Transports/com.mlapi.contrib.transport.photon-realtime)**| Desktop, Mobile, WebGL\** || :heavy_check_mark: | |  
 
-\* Needs manual binary compilation.
+\* Needs manual binary compilation.<br>
+\** Other platforms such as console platforms are also supported but require communication with Exit Games.
 
 #### Extensions
 | **Name** | **Version Specifics** | **Latest MLAPI** | **v12** |

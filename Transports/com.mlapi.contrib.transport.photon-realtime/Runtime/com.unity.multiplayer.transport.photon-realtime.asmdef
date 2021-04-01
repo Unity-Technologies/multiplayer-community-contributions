@@ -1,0 +1,16 @@
+{
+    "name": "Photon Realtime MLAPI Transport",
+    "rootNamespace": "MLAPI.Transports.PhotonRealtime",
+    "references": [
+        "Unity.Multiplayer.MLAPI.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
