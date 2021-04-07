@@ -10,23 +10,32 @@ Follow the [transport installation guide](../README.md) to add the Photon Realti
 Once added, please follow the following steps
 
 1. Access Wizard from Window → Photon Realtime → Wizard
+
 2. Click next until you get to the Photon Cloud Setup Part
-3. If you don't already have an account or an App Id, (More information in the [License](/Transports/com.mlapi.contrib.transport.photon-realtime/Runtime/Photon/LICENSE)) click on the Visit Dashboard button in order to create one	
-    1.  If you just created an account  for the first time you need to also create a New Application from Photon's Dashboard
+
+3. To complete the setup, you need a "Photon Realtime" AppId. If you know yours, enter it and click the Setup button.
+    Alternatively, enter your email address and click Setup. If possible, a new Photon account gets created (more information in the [License](/Transports/com.mlapi.contrib.transport.photon-realtime/Runtime/Photon/LICENSE)) and the AppId is fetched. This completes the setup.
+    If you already got a Photon account, the Wizard can't fetch the AppId, so click the "Visit Dashboard" button and login to the Dashboard to access your AppIds.
+
+    1. If you just created an account  for the first time you need to also create a New Application from Photon's Dashboard
+
     2. NOTE! The Photon Type for this transport is: `Photon Realtime`
-
-    ![Img/Photon-App.png](Img/Photon-App.png)
-
-4. Once an Application is setup, you will be able to get it's App ID from Photon's Dashboard, copy that to your clipboard
-    - NOTE! This App Id **must** be shared with other people in order to be able to connect to your Photon Room!
-
-    ![Img/Photon-Dashboard.png](Img/Photon-Dashboard.png)
-
-5. Go back to the Photon Wizard Window of your Unity Project and paste the App Id there
-6. Click on Setup
-    - It should show something like: "Your AppId is now applied to this Project **Done** "
-7. Click on Next, then Done, you should be all setup now!
-8. You can safely quit the Photon Wizard now!
+       ![Img/Photon-App.png](Img/Photon-App.png)
+    
+    3. Once an Application is setup, you will be able to get it's AppID from Photon's Dashboard, copy that to your clipboard
+       ![Img/Photon-Dashboard.png](Img/Photon-Dashboard.png)
+    
+       NOTE! To connect others to your Photon Room, the AppId **must be the same** in all clients!
+    
+    4. Go back to the Photon Wizard Window of your Unity Project and paste the App Id there
+    
+    5. Click on Setup
+    
+    6. It should show something like: "Your AppId is now applied to this Project **Done** "
+    
+    7. Click on Next, then Done, you should be all setup now!
+    
+4. You can safely quit the Photon Wizard now!
 
 ## Preparing Your Project to be built
 
@@ -35,7 +44,8 @@ Follow these steps in order to prepare your Unity to be packaged and distributed
 ---
 
 1. Find `PhotonAppSettings` asset in your project
-2. The App Id you've set during the setup, should be shared with your friends in case they want to use the Unity Editor, instead of a packaged built, as each developer might have a different App Id/region set in its PhotonAppSettings asset.
+2. The AppId you've set during the setup, should be shared with your friends in case they want to use the Unity Editor, instead of a packaged built, as each developer might have a different AppId/region set in its PhotonAppSettings asset.
+    
     - NOTE! We suggest considering Playing in Editor with your friends only for iteration purposes (when they have access to your project) as we encourage you to distribute your packaged builds to your friends, because sometimes they might have some local changes that would cause different issues.
 3. Select the closest region (token) to where you want to host your session from, you can check out a full list here:
     - [https://doc.photonengine.com/en/pun/current/connection-and-authentication/regions](https://doc.photonengine.com/en/pun/current/connection-and-authentication/regions)
