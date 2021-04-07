@@ -460,7 +460,7 @@ namespace Photon.Realtime.Editor
             }
             else
             {
-                this.inputState = IsAppId(appIdOrEmail) ? InputState.Appid : InputState.NotFinished;
+                this.inputState = AppSettings.IsAppId(appIdOrEmail) ? InputState.Appid : InputState.NotFinished;
             }
 
             // button to skip setup
