@@ -15,27 +15,32 @@ Once added, please follow the following steps
 
 3. To complete the setup, you need a "Photon Realtime" AppId. If you know yours, enter it and click the Setup button.
     Alternatively, enter your email address and click Setup. If possible, a new Photon account gets created (more information in the [License](/Transports/com.mlapi.contrib.transport.photon-realtime/Runtime/Photon/LICENSE)) and the AppId is fetched. This completes the setup.
-    If you already got a Photon account, the Wizard can't fetch the AppId, so click the "Visit Dashboard" button and login to the Dashboard to access your AppIds.
+    If you already got a Photon account, the Wizard can't fetch the AppId, so click the "Visit Dashboard" button and login to the Dashboard to access your AppIds. 
+   
+4. If you just created an account  for the first time you need to also create a New Application from Photon's Dashboard
 
-    1. If you just created an account  for the first time you need to also create a New Application from Photon's Dashboard
-
-    2. NOTE! The Photon Type for this transport is: `Photon Realtime`
-       ![Img/Photon-App.png](Img/Photon-App.png)
-    
-    3. Once an Application is setup, you will be able to get it's AppID from Photon's Dashboard, copy that to your clipboard
+     > **Note:** The Photon Type for this transport is: `Photon Realtime`
+     
+      ![Img/Photon-App.png](Img/Photon-App.png)
+       
+5. Once an Application is setup, you will be able to get it's AppID from Photon's Dashboard, copy that to your clipboard
        ![Img/Photon-Dashboard.png](Img/Photon-Dashboard.png)
     
-       NOTE! To connect others to your Photon Room, the AppId **must be the same** in all clients!
+    > **Note:** To connect others to your Photon Room, the AppId **must be the same** in all clients!
     
-    4. Go back to the Photon Wizard Window of your Unity Project and paste the App Id there
     
-    5. Click on Setup
+6. Go back to the Photon Wizard Window of your Unity Project and paste the App Id there
     
-    6. It should show something like: "Your AppId is now applied to this Project **Done** "
     
-    7. Click on Next, then Done, you should be all setup now!
+5. Click on Setup
     
-4. You can safely quit the Photon Wizard now!
+    
+6. It should show something like: "Your AppId is now applied to this Project **Done** "
+    
+    
+7. Click on Next, then Done, you should be all setup now!
+    
+8. You can safely quit the Photon Wizard now!
 
 ## Preparing Your Project to be built
 
@@ -46,15 +51,15 @@ Follow these steps in order to prepare your Unity to be packaged and distributed
 1. Find `PhotonAppSettings` asset in your project
 2. The AppId you've set during the setup, should be shared with your friends in case they want to use the Unity Editor, instead of a packaged built, as each developer might have a different AppId/region set in its PhotonAppSettings asset.
     
-    - NOTE! We suggest considering Playing in Editor with your friends only for iteration purposes (when they have access to your project) as we encourage you to distribute your packaged builds to your friends, because sometimes they might have some local changes that would cause different issues.
+    > **Note:** We suggest considering Playing in Editor with your friends only for iteration purposes (when they have access to your project) as we encourage you to distribute your packaged builds to your friends, because sometimes they might have some local changes that would cause different issues.
 3. Select the closest region (token) to where you want to host your session from, you can check out a full list here:
     - [https://doc.photonengine.com/en/pun/current/connection-and-authentication/regions](https://doc.photonengine.com/en/pun/current/connection-and-authentication/regions)
 
     ![Img/Photon-Regions.png](Img/Photon-Regions.png)
 
-    - NOTE! As an example, if I would like to host a session/room for players within Europe, then according to the table above the closest location/data centre would be the one from Amsterdam, hence, the token for it is "eu"
+    > **Note:** As an example, if I would like to host a session/room for players within Europe, then according to the table above the closest location/data centre would be the one from Amsterdam, hence, the token for it is "eu"
 4. Once a region token is chosen, put it in the PhotonAppSettings asset of your project in the **Fixed Region** field.
-    - NOTE! It is important for all of your friends/users to have the same region set in their PhotonAppSettings asset, otherwise they will not be able to find nor connect to your room/session, in case they are using a Unity Editor.
+    > **IMPORTANT** All of your friends/users should have the same region set in their PhotonAppSettings asset, otherwise they will not be able to find nor connect to your room/session, in case they are using a Unity Editor.
 
     ![Img/Photon-App-Setting.png](Img/Photon-App-Setting.png)
 
