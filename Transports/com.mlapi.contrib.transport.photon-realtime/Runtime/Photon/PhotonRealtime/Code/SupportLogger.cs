@@ -241,7 +241,7 @@ namespace Photon.Realtime
                 string appIdShort = string.IsNullOrEmpty(this.client.AppId) || this.client.AppId.Length < 8 ? this.client.AppId : string.Concat(this.client.AppId.Substring(0, 8), "***");
 
                 sb.AppendFormat("{0} SupportLogger Info: ", this.GetFormattedTimestamp());
-                sb.AppendFormat("AppID: \"{0}\" AppVersion: \"{1}\" Client: v{2} Build: {3} ", appIdShort, this.client.AppVersion, this.client.LoadBalancingPeer.ClientVersion, string.Join(", ", buildProperties.ToArray()));
+                sb.AppendFormat("AppID: \"{0}\" AppVersion: \"{1}\" Client: v{2} ({4}) Build: {3} ", appIdShort, this.client.AppVersion, this.client.LoadBalancingPeer.ClientVersion, string.Join(", ", buildProperties.ToArray()), this.client.LoadBalancingPeer.TargetFramework);
                 if (this.client != null && this.client.LoadBalancingPeer != null && this.client.LoadBalancingPeer.SocketImplementation != null)
                 {
                     sb.AppendFormat("Socket: {0} ", this.client.LoadBalancingPeer.SocketImplementation.Name);

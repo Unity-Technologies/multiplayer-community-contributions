@@ -94,7 +94,7 @@ namespace Photon.Realtime
             }
             if (websocketType == null)
             {
-                Debug.LogError("UNITY_XBOXONE is defined but peer could not find SocketNativeSource. Check your project files to make sure the native WSS implementation is available. Won't connect.");
+                UnityEngine.Debug.LogError("XBOX is defined but peer could not find SocketNativeSource. Check your project files to make sure the native WSS implementation is available. Won't connect.");
             }
             #else
             // to support WebGL export in Unity, we find and assign the SocketWebTcp class (if it's in the project).
@@ -348,7 +348,7 @@ namespace Photon.Realtime
                     op[ParameterCode.LobbyName] = opParams.Lobby.Name;
                     op[ParameterCode.LobbyType] = (byte)opParams.Lobby.Type;
                 }
-            } 
+            }
             else if (opParams.JoinMode == JoinMode.RejoinOnly)
             {
                 op[ParameterCode.JoinMode] = (byte)JoinMode.RejoinOnly; // changed from JoinMode.JoinOrRejoin
@@ -2065,7 +2065,7 @@ namespace Photon.Realtime
     /// </summary>
     public enum CustomAuthenticationType : byte
     {
-        /// <summary>Use a custom authentification service. Currently the only implemented option.</summary>
+        /// <summary>Use a custom authentication service. Currently the only implemented option.</summary>
         Custom = 0,
 
         /// <summary>Authenticates users by their Steam Account. Set auth values accordingly!</summary>
@@ -2088,6 +2088,9 @@ namespace Photon.Realtime
 
         /// <summary>Authenticates users by their NSA ID.</summary>
         NintendoSwitch = 11,
+        
+        /// <summary>Authenticates users by their PSN Account and token (on PS5).</summary>
+        Playstation5 = 12,
 
         /// <summary>Disables custom authentification. Same as not providing any AuthenticationValues for connect (more precisely for: OpAuthenticate).</summary>
         None = byte.MaxValue

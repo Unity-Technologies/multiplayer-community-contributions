@@ -248,10 +248,10 @@ namespace Photon.Realtime
                 while (w.isDone == false)
                     yield return null;
 
-                #if UNITY_2017_1_OR_NEWER
+                #if UNITY_2020_2_OR_NEWER
+                if (w.result == UnityWebRequest.Result.ProtocolError || w.result == UnityWebRequest.Result.ConnectionError || w.result == UnityWebRequest.Result.DataProcessingError)
+                #elif UNITY_2017_1_OR_NEWER
                 if (w.isNetworkError || w.isHttpError)
-                #else
-                if (w.isError)
                 #endif
                 {
                     if (errorCallback != null)

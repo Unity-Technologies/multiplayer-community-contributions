@@ -17,39 +17,40 @@ PluginImporter:
   validateReferences: 1
   platformData:
   - first:
-      : Any
+      '': Any
     second:
       enabled: 0
       settings:
-        Exclude Android: 0
-        Exclude Editor: 0
-        Exclude Linux: 0
-        Exclude Linux64: 0
-        Exclude LinuxUniversal: 0
-        Exclude OSXUniversal: 0
-        Exclude WebGL: 0
-        Exclude Win: 0
-        Exclude Win64: 0
-        Exclude WindowsStoreApps: 0
+        Exclude Android: 1
+        Exclude Editor: 1
+        Exclude Linux: 1
+        Exclude Linux64: 1
+        Exclude LinuxUniversal: 1
+        Exclude OSXUniversal: 1
+        Exclude WebGL: 1
+        Exclude Win: 1
+        Exclude Win64: 1
+        Exclude WindowsStoreApps: 1
+        Exclude iOS: 1
   - first:
-      : Lumin
+      '': Lumin
     second:
       enabled: 1
       settings: {}
   - first:
-      : OSXIntel
+      '': OSXIntel
     second:
       enabled: 1
       settings:
         CPU: AnyCPU
   - first:
-      : OSXIntel64
+      '': OSXIntel64
     second:
       enabled: 1
       settings:
         CPU: AnyCPU
   - first:
-      : WP8
+      '': WP8
     second:
       enabled: 1
       settings:
@@ -59,30 +60,30 @@ PluginImporter:
         SDK: AnySDK
         ScriptingBackend: Il2Cpp
   - first:
-      : Web
+      '': Web
     second:
       enabled: 1
       settings: {}
   - first:
-      : WebStreamed
+      '': WebStreamed
     second:
       enabled: 1
       settings: {}
   - first:
       Android: Android
     second:
-      enabled: 1
+      enabled: 0
       settings:
         CPU: ARMv7
   - first:
       Any: 
     second:
-      enabled: 1
+      enabled: 0
       settings: {}
   - first:
       Editor: Editor
     second:
-      enabled: 1
+      enabled: 0
       settings:
         CPU: AnyCPU
         DefaultValueInitialized: true
@@ -117,51 +118,51 @@ PluginImporter:
   - first:
       Standalone: Linux
     second:
-      enabled: 1
+      enabled: 0
       settings:
         CPU: x86
   - first:
       Standalone: Linux64
     second:
-      enabled: 1
+      enabled: 0
       settings:
-        CPU: AnyCPU
+        CPU: x86_64
   - first:
       Standalone: LinuxUniversal
     second:
-      enabled: 1
+      enabled: 0
       settings:
-        CPU: 
+        CPU: None
   - first:
       Standalone: OSXUniversal
     second:
-      enabled: 1
+      enabled: 0
       settings:
         CPU: AnyCPU
   - first:
       Standalone: Win
     second:
-      enabled: 1
+      enabled: 0
       settings:
         CPU: AnyCPU
   - first:
       Standalone: Win64
     second:
-      enabled: 1
+      enabled: 0
       settings:
         CPU: AnyCPU
   - first:
       WebGL: WebGL
     second:
-      enabled: 1
+      enabled: 0
       settings: {}
   - first:
       Windows Store Apps: WindowsStoreApps
     second:
-      enabled: 1
+      enabled: 0
       settings:
         CPU: AnyCPU
-        DontProcess: False
+        DontProcess: false
         PlaceholderPath: 
         SDK: AnySDK
         ScriptingBackend: Il2Cpp
@@ -173,8 +174,9 @@ PluginImporter:
   - first:
       iPhone: iOS
     second:
-      enabled: 1
+      enabled: 0
       settings:
+        AddToEmbeddedBinaries: false
         CompileFlags: 
         FrameworkDependencies: 
   - first:
