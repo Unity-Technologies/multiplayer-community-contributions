@@ -38,6 +38,7 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 |:------------:|:-------------:|:-------:|:---:|
 |**[NetworkObjectPool](/com.mlapi.contrib.extensions/Runtime/NetworkObjectPool)**| | :heavy_check_mark: | |
 |**[NetworkManagerHud](/com.mlapi.contrib.extensions/Runtime/NetworkManagerHud)**| | :heavy_check_mark: | |
+|**[NetworkRigidBody](/com.mlapi.contrib.extensions/Runtime/NetworkRigidbody)**| | :heavy_check_mark: | |
 
 
 ### Releases
