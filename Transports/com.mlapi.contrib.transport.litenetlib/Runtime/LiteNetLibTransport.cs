@@ -200,8 +200,12 @@ namespace MLAPI.Transports.LiteNetLib
 
         public override void Shutdown()
         {
-            m_NetManager.Flush();
-            m_NetManager.Stop();
+            if (m_NetManager != null)
+            {
+                m_NetManager.Flush();
+                m_NetManager.Stop();
+            }
+
             m_Peers.Clear();
 
             m_HostType = HostType.None;
