@@ -1,0 +1,11 @@
+{
+  "name": "com.mlapi.contrib.transport.chacha20",
+  "displayName": "ChaCha20 Transport for MLAPI",
+  "version": "1.0.0",
+  "unity": "2019.4",
+  "description": "ChaCha20 Transport for MLAPI",
+  "author": "Albin Corén",
+  "dependencies": {
+    "com.unity.multiplayer.mlapi": "0.0.1-preview.1"
+  }
+}
