@@ -19,6 +19,7 @@ namespace Photon.Realtime.Editor
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using ExitGames.Client.Photon;
     using UnityEditor;
     using UnityEngine;
     using EditorUtility = UnityEditor.EditorUtility;
@@ -32,6 +33,7 @@ namespace Photon.Realtime.Editor
 
         private WizardStage currentStage = WizardStage.Intro;
         private static bool? ready; // true after InitContent(), reset onDestroy, onEnable, etc.
+        private string originAssetVersion;
 
         private static volatile bool requestingAppId = false;
         private static string appIdOrEmail = "";
@@ -60,7 +62,7 @@ namespace Photon.Realtime.Editor
 
         // GUI
 
-        // Textures 
+        // Textures
         private Texture2D introIcon;
         private Texture2D photonCloudIcon;
         private Texture2D discordIcon;
@@ -153,6 +155,9 @@ namespace Photon.Realtime.Editor
             {
                 appIdOrEmail = "";
             }
+
+            bool HasMlapiTransport = Type.GetType("Photon.Realtime.LoadBalancingClient, Photon Realtime MLAPI Transport") != null;
+            this.originAssetVersion = string.Format("{0}{1}",HasMlapiTransport ? "MLAPI" : "RT", new PhotonPeer(ConnectionProtocol.Udp).ClientVersion);
 
             // Pre-load Release History
             this.PrepareReleaseHistoryText();
@@ -480,7 +485,7 @@ namespace Photon.Realtime.Editor
                 GUIUtility.keyboardControl = 0;
                 if (this.inputState == InputState.Email && !requestingAppId)
                 {
-                    requestingAppId = new AccountService().RegisterByEmail(appIdOrEmail, new List<ServiceTypes>() { ServiceTypes.Realtime }, SuccessCallback, ErrorCallback);
+                    requestingAppId = new AccountService().RegisterByEmail(appIdOrEmail, new List<ServiceTypes>() { ServiceTypes.Realtime }, SuccessCallback, ErrorCallback, this.originAssetVersion);
                     if (requestingAppId)
                     {
                         EditorUtility.DisplayProgressBar(WizardText.CONNECTION_TITLE, WizardText.CONNECTION_INFO, 0.5f);
@@ -490,7 +495,7 @@ namespace Photon.Realtime.Editor
                 else if (this.inputState == InputState.Appid)
                 {
                     this.setupState = SetupState.AppIdApplied;
-                    
+
                     // Save App ID
                     AppSettingsInstance.AppIdRealtime = appIdOrEmail;
                 }
