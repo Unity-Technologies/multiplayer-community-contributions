@@ -339,6 +339,8 @@ namespace MLAPI.Transports.Enet
                 host.Flush();
                 host.Dispose();
             }
+            
+            connectedEnetPeers.Clear();
 
             Library.Deinitialize();
         }
