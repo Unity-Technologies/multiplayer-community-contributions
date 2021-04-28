@@ -338,6 +338,7 @@ namespace MLAPI.Transports.Enet
             {
                 host.Flush();
                 host.Dispose();
+                host = null;
             }
 
             Library.Deinitialize();
