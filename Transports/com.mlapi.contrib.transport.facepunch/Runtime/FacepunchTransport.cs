@@ -162,16 +162,20 @@ namespace MLAPI.Transports.Facepunch
                     sendType = SendType.Reliable;
 
             if (clientId == ServerClientId)
-                fixed (byte* pointer = data.Array, buffer = new byte[data.Count + 1])
+                fixed (byte* pointer = data.Array)
                 {
+                    byte* buffer = stackalloc byte[data.Count + 1];
+
                     Buffer.MemoryCopy(pointer + data.Offset, buffer, data.Count, data.Count);
                     buffer[data.Count] = (byte)networkChannel;
 
                     connectionManager.Connection.SendMessage((IntPtr)buffer, data.Count + 1, sendType);
                 }
             else if (connectedClients.TryGetValue(clientId, out Client user))
-                fixed (byte* pointer = data.Array, buffer = new byte[data.Count + 1])
+                fixed (byte* pointer = data.Array)
                 {
+                    byte* buffer = stackalloc byte[data.Count + 1];
+
                     Buffer.MemoryCopy(pointer + data.Offset, buffer, data.Count, data.Count);
                     buffer[data.Count] = (byte)networkChannel;
 
