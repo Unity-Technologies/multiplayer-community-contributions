@@ -41,7 +41,6 @@ namespace MLAPI.Transports.Facepunch
         {
             public SteamId steamId;
             public SocketConnection connection;
-            public ulong? ping;
         }
 
         private struct ConnectionEvent
