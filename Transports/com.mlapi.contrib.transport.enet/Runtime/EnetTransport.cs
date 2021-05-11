@@ -340,6 +340,8 @@ namespace MLAPI.Transports.Enet
                 host.Dispose();
                 host = null;
             }
+            
+            connectedEnetPeers.Clear();
 
             Library.Deinitialize();
         }
