@@ -28,14 +28,12 @@ namespace MLAPI.Transports.Facepunch
         [SerializeField] private uint steamAppId = 480;
 
         [Tooltip("The Steam ID of the user targeted when joining as a client.")]
-        [SerializeField] private ulong targetSteamId;
+        [SerializeField] public ulong targetSteamId;
 
         [Header("Info")]
         [ReadOnly]
         [Tooltip("When in play mode, this will display your Steam ID.")]
         [SerializeField] private ulong userSteamId;
-
-        public SteamId TargetSteamId { get => targetSteamId; set => targetSteamId = value; }
 
         private LogLevel LogLevel => NetworkManager.Singleton.LogLevel;
 
@@ -43,6 +41,7 @@ namespace MLAPI.Transports.Facepunch
         {
             public SteamId steamId;
             public SocketConnection connection;
+            public ulong? ping;
         }
 
         private struct ConnectionEvent
@@ -65,7 +64,7 @@ namespace MLAPI.Transports.Facepunch
             catch (Exception e)
             {
                 if (LogLevel <= LogLevel.Error)
-                    NetworkLog.LogErrorServer($"[{nameof(FacepunchTransport)}] - Caught an exeption during initialization of Steam client: {e}");
+                    Debug.LogError($"[{nameof(FacepunchTransport)}] - Caught an exeption during initialization of Steam client: {e}");
             }
             finally
             {
@@ -94,7 +93,7 @@ namespace MLAPI.Transports.Facepunch
             connectionManager.Connection.Close();
 
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Disconnecting local client.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnecting local client.");
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
@@ -105,10 +104,10 @@ namespace MLAPI.Transports.Facepunch
                 connectedClients.Remove(clientId);
 
                 if (LogLevel <= LogLevel.Developer)
-                    NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Disconnecting remote client with ID {clientId}.");
+                    Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnecting remote client with ID {clientId}.");
             }
             else if (LogLevel <= LogLevel.Normal)
-                NetworkLog.LogWarningServer($"[{nameof(FacepunchTransport)}] - Failed to disconnect remote client with ID {clientId}, client not connected.");
+                Debug.LogWarning($"[{nameof(FacepunchTransport)}] - Failed to disconnect remote client with ID {clientId}, client not connected.");
         }
 
         public override unsafe ulong GetCurrentRtt(ulong clientId)
@@ -143,7 +142,7 @@ namespace MLAPI.Transports.Facepunch
             try
             {
                 if (LogLevel <= LogLevel.Developer)
-                    NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Shutting down.");
+                    Debug.Log($"[{nameof(FacepunchTransport)}] - Shutting down.");
 
                 connectionManager?.Close();
                 socketManager?.Close();
@@ -151,7 +150,7 @@ namespace MLAPI.Transports.Facepunch
             catch (Exception e)
             {
                 if (LogLevel <= LogLevel.Error)
-                    NetworkLog.LogErrorServer($"[{nameof(FacepunchTransport)}] - Caught an exception while shutting down: {e}");
+                    Debug.LogError($"[{nameof(FacepunchTransport)}] - Caught an exception while shutting down: {e}");
             }
         }
 
@@ -161,28 +160,17 @@ namespace MLAPI.Transports.Facepunch
                 if (!channelSendTypes.TryGetValue(NetworkChannel.DefaultMessage, out sendType))
                     sendType = SendType.Reliable;
 
+            byte* buffer = stackalloc byte[data.Count + 1];
+            fixed (byte* pointer = data.Array)
+                Buffer.MemoryCopy(pointer + data.Offset, buffer, data.Count, data.Count);
+            buffer[data.Count] = (byte)networkChannel;
+
             if (clientId == ServerClientId)
-                fixed (byte* pointer = data.Array)
-                {
-                    byte* buffer = stackalloc byte[data.Count + 1];
-
-                    Buffer.MemoryCopy(pointer + data.Offset, buffer, data.Count, data.Count);
-                    buffer[data.Count] = (byte)networkChannel;
-
-                    connectionManager.Connection.SendMessage((IntPtr)buffer, data.Count + 1, sendType);
-                }
+                connectionManager.Connection.SendMessage((IntPtr)buffer, data.Count + 1, sendType);
             else if (connectedClients.TryGetValue(clientId, out Client user))
-                fixed (byte* pointer = data.Array)
-                {
-                    byte* buffer = stackalloc byte[data.Count + 1];
-
-                    Buffer.MemoryCopy(pointer + data.Offset, buffer, data.Count, data.Count);
-                    buffer[data.Count] = (byte)networkChannel;
-
-                    user.connection.SendMessage((IntPtr)buffer, data.Count + 1, sendType);
-                }
+                user.connection.SendMessage((IntPtr)buffer, data.Count + 1, sendType);
             else if (LogLevel <= LogLevel.Normal)
-                NetworkLog.LogWarningServer($"[{nameof(FacepunchTransport)}] - Failed to send packet to remote client with ID {clientId}, client not connected.");
+                Debug.LogWarning($"[{nameof(FacepunchTransport)}] - Failed to send packet to remote client with ID {clientId}, client not connected.");
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
@@ -211,9 +199,9 @@ namespace MLAPI.Transports.Facepunch
         public override SocketTasks StartClient()
         {
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Starting as client.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Starting as client.");
 
-            connectionManager = SteamNetworkingSockets.ConnectRelay<ConnectionManager>(TargetSteamId);
+            connectionManager = SteamNetworkingSockets.ConnectRelay<ConnectionManager>(targetSteamId);
             connectionManager.Interface = this;
             return SocketTask.Working.AsTasks();
         }
@@ -221,7 +209,7 @@ namespace MLAPI.Transports.Facepunch
         public override SocketTasks StartServer()
         {
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Starting as server.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Starting as server.");
 
             socketManager = SteamNetworkingSockets.CreateRelaySocket<SocketManager>();
             socketManager.Interface = this;
@@ -235,7 +223,7 @@ namespace MLAPI.Transports.Facepunch
         void IConnectionManager.OnConnecting(ConnectionInfo info)
         {
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Connecting with Steam user {info.Identity.SteamId}.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Connecting with Steam user {info.Identity.SteamId}.");
         }
 
         void IConnectionManager.OnConnected(ConnectionInfo info)
@@ -248,7 +236,7 @@ namespace MLAPI.Transports.Facepunch
             });
 
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Connected with Steam user {info.Identity.SteamId}.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Connected with Steam user {info.Identity.SteamId}.");
         }
 
         void IConnectionManager.OnDisconnected(ConnectionInfo info)
@@ -261,7 +249,7 @@ namespace MLAPI.Transports.Facepunch
             });
 
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}.");
         }
 
         void IConnectionManager.OnMessage(IntPtr data, int size, long messageNum, long recvTime, int channel)
@@ -285,7 +273,7 @@ namespace MLAPI.Transports.Facepunch
         void ISocketManager.OnConnecting(SocketConnection connection, ConnectionInfo info)
         {
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Accepting connection from Steam user {info.Identity.SteamId}.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Accepting connection from Steam user {info.Identity.SteamId}.");
 
             connection.Accept();
         }
@@ -308,10 +296,10 @@ namespace MLAPI.Transports.Facepunch
                 });
 
                 if (LogLevel <= LogLevel.Developer)
-                    NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Connected with Steam user {info.Identity.SteamId}.");
+                    Debug.Log($"[{nameof(FacepunchTransport)}] - Connected with Steam user {info.Identity.SteamId}.");
             }
             else if (LogLevel <= LogLevel.Normal)
-                NetworkLog.LogWarningServer($"[{nameof(FacepunchTransport)}] - Failed to connect client with ID {connection.Id}, client already connected.");
+                Debug.LogWarning($"[{nameof(FacepunchTransport)}] - Failed to connect client with ID {connection.Id}, client already connected.");
         }
 
         void ISocketManager.OnDisconnected(SocketConnection connection, ConnectionInfo info)
@@ -326,7 +314,7 @@ namespace MLAPI.Transports.Facepunch
             });
 
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}");
         }
 
         void ISocketManager.OnMessage(SocketConnection connection, NetIdentity identity, IntPtr data, int size, long messageNum, long recvTime, int channel)
@@ -354,12 +342,12 @@ namespace MLAPI.Transports.Facepunch
             SteamNetworkingUtils.InitRelayNetworkAccess();
 
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Initialized access to Steam Relay Network.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Initialized access to Steam Relay Network.");
 
             userSteamId = SteamClient.SteamId;
 
             if (LogLevel <= LogLevel.Developer)
-                NetworkLog.LogInfoServer($"[{nameof(FacepunchTransport)}] - Fetched user Steam ID.");
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Fetched user Steam ID.");
         }
 
         #endregion
