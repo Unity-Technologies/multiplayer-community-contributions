@@ -329,7 +329,7 @@ namespace MLAPI.Transports.PhotonRealtime
         ///<inheritdoc/>
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            if (m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
+            if (this.m_Client!= null && m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
             {
                 ArraySegment<byte> payload = s_EmptyArraySegment;
                 RaisePhotonEvent(clientId, true, payload, this.m_KickEventCode);
