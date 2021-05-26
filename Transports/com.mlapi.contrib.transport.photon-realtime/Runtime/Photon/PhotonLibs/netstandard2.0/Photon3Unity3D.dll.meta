@@ -18,15 +18,23 @@ PluginImporter:
       settings:
         Exclude Android: 0
         Exclude Editor: 0
+        Exclude GameCoreScarlett: 0
+        Exclude GameCoreXboxOne: 0
         Exclude Linux: 0
         Exclude Linux64: 0
         Exclude LinuxUniversal: 0
+        Exclude Lumin: 0
         Exclude OSXUniversal: 0
+        Exclude PS4: 0
+        Exclude PS5: 0
+        Exclude Switch: 0
         Exclude WebGL: 0
         Exclude Win: 0
         Exclude Win64: 0
         Exclude WindowsStoreApps: 0
+        Exclude XboxOne: 0
         Exclude iOS: 0
+        Exclude tvOS: 0
   - first:
       Android: Android
     second:
@@ -34,7 +42,7 @@ PluginImporter:
       settings:
         CPU: ARMv7
   - first:
-      Any: 
+      Any:
     second:
       enabled: 1
       settings: {}
@@ -69,7 +77,7 @@ PluginImporter:
     second:
       enabled: 1
       settings:
-        CPU: x86_64
+        CPU: AnyCPU
   - first:
       Standalone: LinuxUniversal
     second:
@@ -106,7 +114,7 @@ PluginImporter:
       settings:
         CPU: AnyCPU
         DontProcess: false
-        PlaceholderPath: 
+        PlaceholderPath:
         SDK: AnySDK
         ScriptingBackend: Il2Cpp
   - first:
@@ -115,8 +123,43 @@ PluginImporter:
       enabled: 1
       settings:
         AddToEmbeddedBinaries: false
-        CompileFlags: 
-        FrameworkDependencies: 
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+        CompileFlags:
+        FrameworkDependencies:
+  - first:
+      PS4: PS4
+    second:
+      enabled: 1
+      settings: {}
+  - first:
+      PS5: PS5
+    second:
+      enabled: 1
+      settings: {}
+  - first:
+      Nintendo Switch: Switch
+    second:
+      enabled: 1
+      settings: {}
+  - first:
+      XboxOne: XboxOne
+    second:
+      enabled: 1
+      settings: {}
+  - first:
+      GameCoreScarlett: GameCoreScarlett
+    second:
+      enabled: 1
+      settings: {}
+  - first:
+      GameCoreXboxOne: GameCoreXboxOne
+    second:
+      enabled: 1
+      settings: {}
+  - first:
+      Lumin: Lumin
+    second:
+      enabled: 1
+      settings: {}
+  userData:
+  assetBundleName:
+  assetBundleVariant:
