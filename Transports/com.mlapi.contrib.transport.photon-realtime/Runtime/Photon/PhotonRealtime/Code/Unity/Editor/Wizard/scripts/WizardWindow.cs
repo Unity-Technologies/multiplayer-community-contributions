@@ -150,7 +150,10 @@ namespace Photon.Realtime.Editor
             this.buttonWidth = 120;
             this.beforeNextCallback = null;
 
-            appIdOrEmail = AppSettingsInstance.AppIdRealtime;
+            if (AppSettingsInstance != null)
+            {
+                appIdOrEmail = AppSettingsInstance.AppIdRealtime;
+            }
             if (string.IsNullOrEmpty(appIdOrEmail))
             {
                 appIdOrEmail = "";
