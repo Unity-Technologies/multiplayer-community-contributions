@@ -77,6 +77,11 @@ namespace MLAPI.Transports.PhotonRealtime
         private RaiseEventOptions m_CachedRaiseEventOptions = new RaiseEventOptions() { TargetActors = new int[1] };
 
         /// <summary>
+        /// Limits the number of datagrams sent in a single frame.
+        /// </summary>
+        private const int MAX_DGRAM_PER_FRAME = 4;
+
+        /// <summary>
         /// Gets or sets the room name to create or join.
         /// </summary>
         public string RoomName
@@ -111,11 +116,18 @@ namespace MLAPI.Transports.PhotonRealtime
         /// </summary>
         void LateUpdate()
         {
+            if (m_Client != null)
+        {
             FlushAllSendQueues();
 
-            if (m_Client != null)
+                for (int i = 0; i < MAX_DGRAM_PER_FRAME; i++)
             {
-                do { } while (m_Client.LoadBalancingPeer.SendOutgoingCommands());
+                    bool anythingLeftToSend = m_Client.LoadBalancingPeer.SendOutgoingCommands();
+                    if (!anythingLeftToSend)
+                    {
+                        break;
+                    }
+                }
             }
         }
 
