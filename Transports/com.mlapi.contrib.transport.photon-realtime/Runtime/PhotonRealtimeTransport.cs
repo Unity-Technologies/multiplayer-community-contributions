@@ -117,11 +117,11 @@ namespace MLAPI.Transports.PhotonRealtime
         void LateUpdate()
         {
             if (m_Client != null)
-        {
-            FlushAllSendQueues();
+            {
+                FlushAllSendQueues();
 
                 for (int i = 0; i < MAX_DGRAM_PER_FRAME; i++)
-            {
+                {
                     bool anythingLeftToSend = m_Client.LoadBalancingPeer.SendOutgoingCommands();
                     if (!anythingLeftToSend)
                     {
@@ -254,6 +254,13 @@ namespace MLAPI.Transports.PhotonRealtime
         /// <param name="eventCode">Event Code ID</param>
         private void RaisePhotonEvent(ulong clientId, bool isReliable, ArraySegment<byte> data, byte eventCode)
         {
+            if (m_Client == null || !m_Client.InRoom)
+            {
+                // the local client is set to null or it's not in a room. can't send events, so it makes sense to disconnect MLAPI layer.
+                this.InvokeTransportEvent(NetworkEvent.Disconnect);
+                return;
+            }
+
             m_CachedRaiseEventOptions.TargetActors[0] = GetPhotonRealtimeId(clientId);
             var sendOptions = isReliable ? SendOptions.SendReliable : SendOptions.SendUnreliable;
 
