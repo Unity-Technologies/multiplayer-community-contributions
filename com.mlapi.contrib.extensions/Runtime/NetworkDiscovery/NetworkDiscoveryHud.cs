@@ -1,16 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using MLAPI;
 using MLAPI.Transports.UNET;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.Events;
+#endif
+
 [RequireComponent(typeof(NetworkDiscovery))]
 [RequireComponent(typeof(NetworkManager))]
 public class NetworkDiscoveryHud : MonoBehaviour
 {
+    [SerializeField, HideInInspector]
     NetworkDiscovery m_Discovery;
+    
     NetworkManager m_NetworkManager;
 
     Dictionary<string, (IPEndPoint, DiscoveryResponseData)> discoveredServers = new Dictionary<string, (IPEndPoint, DiscoveryResponseData)>();
@@ -26,11 +32,11 @@ public class NetworkDiscoveryHud : MonoBehaviour
 #if UNITY_EDITOR
     void OnValidate()
     {
-        if (m_Discovery == null)
+        if (m_Discovery == null) // This will only happen once because m_Discovery is a serialize field
         {
             m_Discovery = GetComponent<NetworkDiscovery>();
-            UnityEditor.Events.UnityEventTools.AddPersistentListener(m_Discovery.OnServerFound, OnServerFound);
-            UnityEditor.Undo.RecordObjects(new Object[] { this, m_Discovery}, "Set NetworkDiscovery");
+            UnityEventTools.AddPersistentListener(m_Discovery.OnServerFound, OnServerFound);
+            Undo.RecordObjects(new Object[] { this, m_Discovery}, "Set NetworkDiscovery");
         }
     }
 #endif
@@ -68,13 +74,19 @@ public class NetworkDiscoveryHud : MonoBehaviour
                 m_Discovery.StopDiscovery();
                 discoveredServers.Clear();
             }
+            
+            if (GUILayout.Button("Refresh List"))
+            {
+                discoveredServers.Clear();
+                m_Discovery.ClientBroadcast(new DiscoveryBroadcastData());
+            }
         }
         else
         {
             if (GUILayout.Button("Discover Servers"))
             {
                 m_Discovery.StartClient();
-                m_Discovery.ClientBroadcast(new DiscoveryBroadcastData { UniqueApplicationId = m_Discovery.UniqueApplicationId });
+                m_Discovery.ClientBroadcast(new DiscoveryBroadcastData());
             }
         }
     }
@@ -86,11 +98,6 @@ public class NetworkDiscoveryHud : MonoBehaviour
             if (GUILayout.Button("Stop Server Discovery"))
             {
                 m_Discovery.StopDiscovery();
-            }
-            if (GUILayout.Button("Refresh List"))
-            {
-                discoveredServers.Clear();
-                m_Discovery.ClientBroadcast(new DiscoveryBroadcastData { UniqueApplicationId = m_Discovery.UniqueApplicationId });
             }
 
             foreach (var discoveredServer in discoveredServers)

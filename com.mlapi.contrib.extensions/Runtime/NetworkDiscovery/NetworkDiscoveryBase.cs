@@ -1,21 +1,29 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 [DisallowMultipleComponent]
 public abstract class NetworkDiscoveryBase<TBroadCast, TResponse> : MonoBehaviour
     where TBroadCast : INetworkSerializable, new()
     where TResponse : INetworkSerializable, new()
 {
+    private enum MessageType : byte
+    {
+        BroadCast = 0,
+        Response = 1,
+    }
+
     UdpClient m_Client;
 
-    [SerializeField]
-    ushort m_Port = 47777;
+    [SerializeField] ushort m_Port = 47777;
+
+    // This is long because unity inspector does not like ulong.
+    [SerializeField] private long m_UniqueApplicationId;
 
     /// <summary>
     /// Gets a value indicating whether the discovery is running.
@@ -37,6 +45,16 @@ public abstract class NetworkDiscoveryBase<TBroadCast, TResponse> : MonoBehaviou
         StopDiscovery();
     }
 
+    void OnValidate()
+    {
+        if (m_UniqueApplicationId == 0)
+        {
+            var value1 = (long) Random.Range(int.MinValue, int.MaxValue);
+            var value2 = (long) Random.Range(int.MinValue, int.MaxValue);
+            m_UniqueApplicationId = value1 + (value2 << 32);
+        }
+    }
+
     public void ClientBroadcast(TBroadCast broadCast)
     {
         if (!IsClient)
@@ -50,8 +68,10 @@ public abstract class NetworkDiscoveryBase<TBroadCast, TResponse> : MonoBehaviou
         {
             using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
             {
+                WriteHeader(writer, MessageType.BroadCast);
+
                 broadCast.NetworkSerialize(writer.Serializer);
-                var data = new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length);
+                var data = new ArraySegment<byte>(buffer.GetBuffer(), 0, (int) buffer.Length);
 
                 try
                 {
@@ -127,9 +147,12 @@ public abstract class NetworkDiscoveryBase<TBroadCast, TResponse> : MonoBehaviou
         IsServer = isServer;
         IsClient = !isServer;
 
-        m_Client = new UdpClient(m_Port) { EnableBroadcast = true, MulticastLoopback = false, };
+        // If we are not a server we use the 0 port (let udp client assign a free port to us)
+        var port = isServer ? m_Port : 0;
 
-        _ = ListenAsync( isServer ?  ReceiveBroadcastAsync: new Func<Task>(ReceiveResponseAsync));
+        m_Client = new UdpClient(port) {EnableBroadcast = true, MulticastLoopback = false};
+
+        _ = ListenAsync(isServer ? ReceiveBroadcastAsync : new Func<Task>(ReceiveResponseAsync));
 
         IsRunning = true;
     }
@@ -147,7 +170,9 @@ public abstract class NetworkDiscoveryBase<TBroadCast, TResponse> : MonoBehaviou
                 // socket has been closed
                 break;
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+            }
         }
     }
 
@@ -163,19 +188,22 @@ public abstract class NetworkDiscoveryBase<TBroadCast, TResponse> : MonoBehaviou
             return;
         }
 
-        if (ipEndPoint.Address == IPAddress.None)
-        {
-            
-        }
-
-        Debug.Log(udpReceiveResult.RemoteEndPoint.Address);
-        Debug.Log(ipEndPoint.Address);
-
         var segment = new ArraySegment<byte>(udpReceiveResult.Buffer, 0, udpReceiveResult.Buffer.Length);
+
+        // Create a network buffer and put the received data into it
+        using var buffer = PooledNetworkBuffer.Get();
+        using var reader = PooledNetworkReader.Get(buffer);
+        SetBufferContent(buffer, segment);
 
         try
         {
-            var receivedResponse = SerializableFromArraySegment<TResponse>(segment);
+            if (ReadAndCheckHeader(reader, MessageType.Response) == false)
+            {
+                return;
+            }
+
+            var receivedResponse = new TResponse();
+            receivedResponse.NetworkSerialize(reader.Serializer);
             ResponseReceived(udpReceiveResult.RemoteEndPoint, receivedResponse);
         }
         catch (Exception e)
@@ -198,13 +226,41 @@ public abstract class NetworkDiscoveryBase<TBroadCast, TResponse> : MonoBehaviou
 
         var segment = new ArraySegment<byte>(udpReceiveResult.Buffer, 0, udpReceiveResult.Buffer.Length);
 
+        // Create a network buffer and put the received data into it
+        using var buffer = PooledNetworkBuffer.Get();
+        using var reader = PooledNetworkReader.Get(buffer);
+        SetBufferContent(buffer, segment);
+
         try
         {
-            var receivedBroadcast = SerializableFromArraySegment<TBroadCast>(segment);
+            if (ReadAndCheckHeader(reader, MessageType.BroadCast) == false)
+            {
+                return;
+            }
+
+            var receivedBroadcast = new TBroadCast();
+            receivedBroadcast.NetworkSerialize(reader.Serializer);
+
             if (ProcessBroadcast(udpReceiveResult.RemoteEndPoint, receivedBroadcast, out TResponse response))
             {
-                var data = SerializableToArraySegment(response);
-                m_Client.Send(data.Array, data.Count, udpReceiveResult.RemoteEndPoint);
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
+                {
+                    WriteHeader(writer, MessageType.Response);
+
+                    response.NetworkSerialize(writer.Serializer);
+                    var data = new ArraySegment<byte>(buffer.GetBuffer(), 0, (int) buffer.Length);
+
+                    try
+                    {
+                        // This works because PooledBitStream.Get resets the position to 0 so the array segment will always start from 0.
+                        m_Client.SendAsync(data.Array, data.Count, udpReceiveResult.RemoteEndPoint);
+                    }
+                    catch (Exception e)
+                    {
+                        // No need to throw when we encounter a networking exception.
+                        Debug.LogWarning(e);
+                    }
+                }
             }
         }
         catch (Exception e)
@@ -213,34 +269,39 @@ public abstract class NetworkDiscoveryBase<TBroadCast, TResponse> : MonoBehaviou
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ArraySegment<byte> SerializableToArraySegment<T>(T serializable) where T : INetworkSerializable
+    private static void SetBufferContent(NetworkBuffer buffer, ArraySegment<byte> arraySegment)
     {
-        using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
+        using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
         {
-            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
-            {
-                serializable.NetworkSerialize(writer.Serializer);
-                return new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length);
-            }
+            writer.WriteBytes(arraySegment.Array, arraySegment.Count);
         }
+
+        buffer.BitPosition = 0;
     }
 
-    private static T SerializableFromArraySegment<T>(ArraySegment<byte> arraySegment) where T : INetworkSerializable, new()
+    private void WriteHeader(NetworkWriter writer, MessageType messageType)
     {
-        using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
+        // Serialize unique application id to make sure packet received is from same application.
+        writer.WriteInt64(m_UniqueApplicationId);
+
+        // Write a flag indicating whether this is a broadcast
+        writer.WriteByte((byte) messageType);
+    }
+
+    private bool ReadAndCheckHeader(NetworkReader reader, MessageType expectedType)
+    {
+        var receivedApplicationId = reader.ReadInt64();
+        if (receivedApplicationId != m_UniqueApplicationId)
         {
-            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
-            {
-                writer.WriteBytes(arraySegment.Array, arraySegment.Count);
-            }
-            buffer.BitPosition = 0;
-            using (PooledNetworkReader reader = PooledNetworkReader.Get(buffer))
-            {
-                var serializable = new T();
-                serializable.NetworkSerialize(reader.Serializer);
-                return serializable;
-            }
+            return false;
         }
+
+        byte messageType = reader.ReadByteDirect();
+        if (messageType != (byte) expectedType)
+        {
+            return false;
+        }
+
+        return true;
     }
 }
