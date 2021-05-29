@@ -5,11 +5,11 @@ using UnityEngine;
 
 public class NetworkRigidbody : NetworkBehaviour
 {
-    public NetworkVariableVector3 netVelocity = new NetworkVariableVector3(NetworkVariableSettingsUtility.OwnerWrite);
-    public NetworkVariableVector3 netAngularVelocity = new NetworkVariableVector3(NetworkVariableSettingsUtility.OwnerWrite);
-    public NetworkVariableVector3 netPosition = new NetworkVariableVector3(NetworkVariableSettingsUtility.OwnerWrite);
-    public NetworkVariableQuaternion netRotation = new NetworkVariableQuaternion(NetworkVariableSettingsUtility.OwnerWrite);
-    public NetworkVariableUInt netUpdateId = new NetworkVariableUInt(NetworkVariableSettingsUtility.OwnerWrite);
+    public NetworkVariableVector3 netVelocity = new NetworkVariableVector3(new NetworkVariableSettings(){WritePermission = NetworkVariablePermission.OwnerOnly});
+    public NetworkVariableVector3 netAngularVelocity = new NetworkVariableVector3(new NetworkVariableSettings(){WritePermission = NetworkVariablePermission.OwnerOnly});
+    public NetworkVariableVector3 netPosition = new NetworkVariableVector3(new NetworkVariableSettings(){WritePermission = NetworkVariablePermission.OwnerOnly});
+    public NetworkVariableQuaternion netRotation = new NetworkVariableQuaternion(new NetworkVariableSettings(){WritePermission = NetworkVariablePermission.OwnerOnly});
+    public NetworkVariableUInt netUpdateId = new NetworkVariableUInt(new NetworkVariableSettings(){WritePermission = NetworkVariablePermission.OwnerOnly});
 
     [SerializeField]
     bool m_SyncVelocity = true;
