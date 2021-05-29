@@ -1,5 +1,6 @@
-Facepunch Transport for MLAPI
+# Facepunch Transport for MLAPI
 
-by Nico Thomas, Floris van Onna
+By **Nico Thomas**, **Floris van Onna**<br>
+Credits to **Garry Newman** (Author of Facepunch.Steamworks)
 
-credits to Garry Newman (Author of Facepunch.Steamworks)
+Uses Facepunch.Steamworks version 2.3.2
