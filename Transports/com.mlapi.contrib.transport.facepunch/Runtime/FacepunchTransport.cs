@@ -19,7 +19,6 @@ namespace MLAPI.Transports.Facepunch
         private SocketManager socketManager;
         private Dictionary<ulong, Client> connectedClients;
         private Dictionary<NetworkChannel, SendType> channelSendTypes;
-        private Queue<ConnectionEvent> eventQueue;
 
         [SerializeField] private List<TransportChannel> channels = new List<TransportChannel>();
 
@@ -43,15 +42,6 @@ namespace MLAPI.Transports.Facepunch
             public SocketConnection connection;
         }
 
-        private struct ConnectionEvent
-        {
-            public NetworkEvent type;
-            public ulong clientId;
-            public NetworkChannel channel;
-            public ArraySegment<byte> payload;
-            public float receiveTime;
-        }
-
         #region MonoBehaviour Messages
 
         private void Awake()
@@ -71,7 +61,7 @@ namespace MLAPI.Transports.Facepunch
             }
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
             SteamClient.RunCallbacks();
         }
@@ -111,14 +101,13 @@ namespace MLAPI.Transports.Facepunch
 
         public override unsafe ulong GetCurrentRtt(ulong clientId)
         {
-            return 69;
+            return 0;
         }
 
         public override void Init()
         {
             connectedClients = new Dictionary<ulong, Client>();
             channelSendTypes = new Dictionary<NetworkChannel, SendType>();
-            eventQueue = new Queue<ConnectionEvent>();
 
             foreach (TransportChannel channel in MLAPI_CHANNELS.Concat(channels))
             {
@@ -177,22 +166,10 @@ namespace MLAPI.Transports.Facepunch
             connectionManager?.Receive();
             socketManager?.Receive();
 
-            if (eventQueue.Count > 0)
-            {
-                ConnectionEvent e = eventQueue.Dequeue();
-                clientId = e.clientId;
-                networkChannel = e.channel;
-                payload = e.payload;
-                receiveTime = e.receiveTime;
-                return e.type;
-            }
-            else
-            {
-                clientId = 0;
-                networkChannel = default;
-                receiveTime = Time.realtimeSinceStartup;
-                return NetworkEvent.Nothing;
-            }
+            clientId = 0;
+            networkChannel = default;
+            receiveTime = Time.realtimeSinceStartup;
+            return NetworkEvent.Nothing;
         }
 
         public override SocketTasks StartClient()
@@ -227,12 +204,7 @@ namespace MLAPI.Transports.Facepunch
 
         void IConnectionManager.OnConnected(ConnectionInfo info)
         {
-            eventQueue.Enqueue(new ConnectionEvent()
-            {
-                type = NetworkEvent.Connect,
-                clientId = ServerClientId,
-                receiveTime = Time.realtimeSinceStartup
-            });
+            InvokeOnTransportEvent(NetworkEvent.Connect, ServerClientId, NetworkChannel.ChannelUnused, default, Time.realtimeSinceStartup);
 
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Connected with Steam user {info.Identity.SteamId}.");
@@ -240,12 +212,7 @@ namespace MLAPI.Transports.Facepunch
 
         void IConnectionManager.OnDisconnected(ConnectionInfo info)
         {
-            eventQueue.Enqueue(new ConnectionEvent()
-            {
-                type = NetworkEvent.Disconnect,
-                clientId = ServerClientId,
-                receiveTime = Time.realtimeSinceStartup
-            });
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, ServerClientId, NetworkChannel.ChannelUnused, default, Time.realtimeSinceStartup);
 
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}.");
@@ -255,14 +222,7 @@ namespace MLAPI.Transports.Facepunch
         {
             byte[] payload = new byte[size];
             Marshal.Copy(data, payload, 0, size);
-            eventQueue.Enqueue(new ConnectionEvent()
-            {
-                channel = (NetworkChannel)payload[size - 1],
-                clientId = ServerClientId,
-                payload = new ArraySegment<byte>(payload, 0, size - 1),
-                receiveTime = Time.realtimeSinceStartup,
-                type = NetworkEvent.Data
-            });
+            InvokeOnTransportEvent(NetworkEvent.Data, ServerClientId, (NetworkChannel)payload[size - 1], new ArraySegment<byte>(payload, 0, size - 1), Time.realtimeSinceStartup);
         }
 
         #endregion
@@ -287,12 +247,7 @@ namespace MLAPI.Transports.Facepunch
                     steamId = info.Identity.SteamId
                 });
 
-                eventQueue.Enqueue(new ConnectionEvent()
-                {
-                    type = NetworkEvent.Connect,
-                    clientId = connection.Id,
-                    receiveTime = Time.realtimeSinceStartup
-                });
+                InvokeOnTransportEvent(NetworkEvent.Connect, connection.Id, NetworkChannel.ChannelUnused, default, Time.realtimeSinceStartup);
 
                 if (LogLevel <= LogLevel.Developer)
                     Debug.Log($"[{nameof(FacepunchTransport)}] - Connected with Steam user {info.Identity.SteamId}.");
@@ -305,12 +260,7 @@ namespace MLAPI.Transports.Facepunch
         {
             connectedClients.Remove(connection.Id);
 
-            eventQueue.Enqueue(new ConnectionEvent()
-            {
-                type = NetworkEvent.Disconnect,
-                clientId = connection.Id,
-                receiveTime = Time.realtimeSinceStartup
-            });
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, connection.Id, NetworkChannel.ChannelUnused, default, Time.realtimeSinceStartup);
 
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}");
@@ -320,14 +270,7 @@ namespace MLAPI.Transports.Facepunch
         {
             byte[] payload = new byte[size];
             Marshal.Copy(data, payload, 0, size);
-            eventQueue.Enqueue(new ConnectionEvent()
-            {
-                channel = (NetworkChannel)payload[size - 1],
-                clientId = connection.Id,
-                payload = new ArraySegment<byte>(payload, 0, size - 1),
-                receiveTime = Time.realtimeSinceStartup,
-                type = NetworkEvent.Data
-            });
+            InvokeOnTransportEvent(NetworkEvent.Data, connection.Id, (NetworkChannel)payload[size - 1], new ArraySegment<byte>(payload, 0, size - 1), Time.realtimeSinceStartup);
         }
 
         #endregion
