@@ -77,6 +77,11 @@ namespace MLAPI.Transports.PhotonRealtime
         private RaiseEventOptions m_CachedRaiseEventOptions = new RaiseEventOptions() { TargetActors = new int[1] };
 
         /// <summary>
+        /// Limits the number of datagrams sent in a single frame.
+        /// </summary>
+        private const int MAX_DGRAM_PER_FRAME = 4;
+
+        /// <summary>
         /// Gets or sets the room name to create or join.
         /// </summary>
         public string RoomName
@@ -111,11 +116,18 @@ namespace MLAPI.Transports.PhotonRealtime
         /// </summary>
         void LateUpdate()
         {
-            FlushAllSendQueues();
-
             if (m_Client != null)
             {
-                do { } while (m_Client.LoadBalancingPeer.SendOutgoingCommands());
+                FlushAllSendQueues();
+
+                for (int i = 0; i < MAX_DGRAM_PER_FRAME; i++)
+                {
+                    bool anythingLeftToSend = m_Client.LoadBalancingPeer.SendOutgoingCommands();
+                    if (!anythingLeftToSend)
+                    {
+                        break;
+                    }
+                }
             }
         }
 
@@ -242,6 +254,13 @@ namespace MLAPI.Transports.PhotonRealtime
         /// <param name="eventCode">Event Code ID</param>
         private void RaisePhotonEvent(ulong clientId, bool isReliable, ArraySegment<byte> data, byte eventCode)
         {
+            if (m_Client == null || !m_Client.InRoom)
+            {
+                // the local client is set to null or it's not in a room. can't send events, so it makes sense to disconnect MLAPI layer.
+                this.InvokeTransportEvent(NetworkEvent.Disconnect);
+                return;
+            }
+
             m_CachedRaiseEventOptions.TargetActors[0] = GetPhotonRealtimeId(clientId);
             var sendOptions = isReliable ? SendOptions.SendReliable : SendOptions.SendUnreliable;
 
@@ -317,7 +336,7 @@ namespace MLAPI.Transports.PhotonRealtime
         ///<inheritdoc/>
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            if (m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
+            if (this.m_Client!= null && m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
             {
                 ArraySegment<byte> payload = s_EmptyArraySegment;
                 RaisePhotonEvent(clientId, true, payload, this.m_KickEventCode);

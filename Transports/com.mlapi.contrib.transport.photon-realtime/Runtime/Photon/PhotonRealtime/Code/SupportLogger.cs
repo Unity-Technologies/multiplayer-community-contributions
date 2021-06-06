@@ -18,6 +18,7 @@
 
 namespace Photon.Realtime
 {
+    using System;
     using System.Text;
     using System.Collections;
     using System.Collections.Generic;
@@ -100,7 +101,7 @@ namespace Photon.Realtime
 
         protected void OnDestroy()
         {
-            this.Client = null; // will remove this SupportLogger as callback target 
+            this.Client = null; // will remove this SupportLogger as callback target
         }
 
         protected void OnApplicationPause(bool pause)
@@ -157,7 +158,14 @@ namespace Photon.Realtime
                 this.startStopwatch = new Stopwatch();
                 this.startStopwatch.Start();
             }
-            return string.Format("[{0}.{1}]", this.startStopwatch.Elapsed.Seconds, this.startStopwatch.Elapsed.Milliseconds);
+
+            TimeSpan span = this.startStopwatch.Elapsed;
+            if (span.Minutes > 0)
+            {
+                return string.Format("[{0}:{1}.{1}]", span.Minutes, span.Seconds, span.Milliseconds);
+            }
+
+            return string.Format("[{0}.{1}]", span.Seconds, span.Milliseconds);
         }
 
 
@@ -241,12 +249,12 @@ namespace Photon.Realtime
                 string appIdShort = string.IsNullOrEmpty(this.client.AppId) || this.client.AppId.Length < 8 ? this.client.AppId : string.Concat(this.client.AppId.Substring(0, 8), "***");
 
                 sb.AppendFormat("{0} SupportLogger Info: ", this.GetFormattedTimestamp());
-                sb.AppendFormat("AppID: \"{0}\" AppVersion: \"{1}\" Client: v{2} ({4}) Build: {3} ", appIdShort, this.client.AppVersion, this.client.LoadBalancingPeer.ClientVersion, string.Join(", ", buildProperties.ToArray()), this.client.LoadBalancingPeer.TargetFramework);
+                sb.AppendFormat("AppID: \"{0}\" AppVersion: \"{1}\" Client: v{2} ({4}) Build: {3} ", appIdShort, this.client.AppVersion, PhotonPeer.Version, string.Join(", ", buildProperties.ToArray()), this.client.LoadBalancingPeer.TargetFramework);
                 if (this.client != null && this.client.LoadBalancingPeer != null && this.client.LoadBalancingPeer.SocketImplementation != null)
                 {
                     sb.AppendFormat("Socket: {0} ", this.client.LoadBalancingPeer.SocketImplementation.Name);
                 }
-                
+
                 sb.AppendFormat("UserId: \"{0}\" AuthType: {1} AuthMode: {2} {3} ", this.client.UserId, (this.client.AuthValues != null) ? this.client.AuthValues.AuthType.ToString() : "N/A", this.client.AuthMode, this.client.EncryptionMode);
 
                 sb.AppendFormat("State: {0} ", this.client.State);

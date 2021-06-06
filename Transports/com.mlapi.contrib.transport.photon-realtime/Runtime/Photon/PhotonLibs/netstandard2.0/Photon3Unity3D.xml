@@ -179,6 +179,28 @@
             </remarks>
             <returns>Shallow copy of the Hashtable.</returns>
         </member>
+        <member name="T:ExitGames.Client.Photon.UnknownType">
+            <summary>
+            Used as container for unknown types the client could not deserialize.
+            </summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.UnknownType.TypeCode">
+            <summary>
+            The type code which was read for this type.
+            </summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.UnknownType.Size">
+            <summary>
+            The size/length value that was read for this type.
+            </summary>
+            <remarks>May be larger than Data.Length, if the Size exceeded the remaining message content.</remarks>
+        </member>
+        <member name="F:ExitGames.Client.Photon.UnknownType.Data">
+            <summary>
+            Container for the data that arrived.
+            </summary>
+            <remarks>If the Size exceeded the remaining message length, only the remaining data is read. This may be null, if the size was somehow less than 1.</remarks>
+        </member>
         <member name="T:ExitGames.Client.Photon.Encryption.IPhotonEncryptor">
             <summary>Interface for DatagramEncryptor implementations.</summary>
         </member>
@@ -217,10 +239,16 @@
         <member name="F:ExitGames.Client.Photon.EnetChannel.reliableUnsequencedNumbersReceived">
             <summary>Any reliable unsequenced number that's been received, which is higher than the current highest in complete sequence (reliableUnsequencedNumbersCompletelyReceived).</summary>
         </member>
+        <member name="F:ExitGames.Client.Photon.EnetChannel.highestReceivedAck">
+            <summary>To store the highest acknowledged sequence number (and get some impression what the server already received and stored).</summary>
+        </member>
         <member name="M:ExitGames.Client.Photon.EnetChannel.QueueIncomingReliableUnsequenced(ExitGames.Client.Photon.NCommand)">
             <summary>Checks and queues incoming reliable unsequenced commands ("send" or "fragment"), if they haven't been received yet.</summary>
             <param name="command">The command to check and queue.</param>
             <returns>True if the command is new and got queued (or could be executed/dispatched).</returns>
+        </member>
+        <member name="F:ExitGames.Client.Photon.EnetPeer.QUICK_RESEND_QUEUELIMIT">
+            <summary>Quick Resends are suspended if the sent queue is this size or larger.</summary>
         </member>
         <member name="F:ExitGames.Client.Photon.EnetPeer.sentReliableCommands">
             <summary>One list for all channels keeps sent commands (for re-sending).</summary>
@@ -256,9 +284,6 @@
             gathers acks until udp-packet is full and sends it!
             </summary>
         </member>
-        <member name="F:ExitGames.Client.Photon.EnetPeer.commandsToResend">
-            <summary>Queue of commands that need resending. Used instead of a method local field as optimization.</summary>
-        </member>
         <member name="F:ExitGames.Client.Photon.EnetPeer.CommandQueue">
             <summary>Queue of received commands. ReceiveIncomingCommands will queue commands, except ACKs which Execute immediately.</summary>
         </member>
@@ -292,7 +317,7 @@
             <returns>If queued or not.</returns>
         </member>
         <member name="M:ExitGames.Client.Photon.EnetPeer.RemoveSentReliableCommand(System.Int32,System.Int32,System.Boolean)">
-            <summary>removes commands which are acknowledged*</summary>
+            <summary>removes commands which are acknowledged</summary>
         </member>
         <member name="T:ExitGames.Client.Photon.StatusCode">
             <summary>
@@ -1127,6 +1152,9 @@
         <member name="P:ExitGames.Client.Photon.PhotonPeer.ClientVersion">
             <summary>Version of this library as string.</summary>
         </member>
+        <member name="P:ExitGames.Client.Photon.PhotonPeer.Version">
+            <summary>Version of this library as string.</summary>
+        </member>
         <member name="P:ExitGames.Client.Photon.PhotonPeer.NativeSocketLibAvailable">
              <summary>Checks if a native library for network sockets (PhotonSocketPlugin.dll) is available. To use it, see remarks.</summary>
              <remarks>
@@ -1268,6 +1296,22 @@
             <summary>
             This debug setting enables a new send-ordering for commands. Defaults to true and commands are sent in the order they are created. Set to false to use Enet ordering.
             </summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.PhotonPeer.SequenceDeltaLimitResends">
+            <summary>Skips resending (individual) commands if their reliable sequence number is this amount larger than the highest acknowledged sequence number.</summary>
+            <remarks>
+            This puts focus on resending commands that are older and are needed on the receiver side to dispatch commands.
+            It queues more on the client side than on the server.
+            Affects only reliable UDP (based on enet).
+            </remarks>
+        </member>
+        <member name="F:ExitGames.Client.Photon.PhotonPeer.SequenceDeltaLimitSends">
+            <summary>Skips sending reliable and unreliable commands if their reliable sequence number is this amount larger than the highest acknowledged sequence number.</summary>
+            <remarks>
+            This puts focus on resending commands that are older and are needed on the receiver side to dispatch commands.
+            It queues more on the client side than on the server.
+            Affects only reliable UDP (based on enet).
+            </remarks>
         </member>
         <member name="P:ExitGames.Client.Photon.PhotonPeer.BytesIn">
             <summary>
@@ -1501,23 +1545,17 @@
             <summary>
             This setter for the (local-) timestamp delegate replaces the default Environment.TickCount with any equal function.
             </summary>
-            <remarks>
-            About Environment.TickCount:
-            The value of this property is derived from the system timer and is stored as a 32-bit signed integer.
-            Consequently, if the system runs continuously, TickCount will increment from zero to Int32..::.MaxValue
-            for approximately 24.9 days, then jump to Int32..::.MinValue, which is a negative number, then increment
-            back to zero during the next 24.9 days.
-            </remarks>
-            <exception cref="T:System.Exception">Exception is thrown peer.PeerState is not PS_DISCONNECTED.</exception>
         </member>
         <member name="P:ExitGames.Client.Photon.PhotonPeer.ConnectionTime">
-            <summary>The internally used "per connection" time value, which is updated infrequently, when the library executes some connectio-related tasks.</summary>
-            <remarks>
-            This integer value is an infrequently updated value by design.
-            The lib internally sets the value when it sends outgoing commands or reads incoming packages.
-            This is based on SupportClass.GetTickCount() and an initial time value per (server) connection.
-            This value is also used in low level Enet commands as sent time and optional logging.
-            </remarks>
+             <summary>The internally used per PhotonPeer time value.</summary>
+             <remarks>
+             Returns the integer part of a Stopwatch ElapsedMilliseconds value.
+             If the PhotonPeer runs continuously the ClientTime will increment from zero to Int32..::.MaxValue
+             for approximately 24.9 days, then jump to Int32..::.MinValue (a negative number), then increment
+             back to zero during the next 24.9 days.
+            
+             It is recommended to use this int only for delta times, to avoid handling the overflow.
+             </remarks>
         </member>
         <member name="P:ExitGames.Client.Photon.PhotonPeer.LastSendAckTime">
             <summary>The last ConnectionTime value, when some ACKs were sent out by this client.</summary>
@@ -1675,6 +1713,11 @@
         <member name="M:ExitGames.Client.Photon.PhotonPeer.TrafficStatsReset">
             <summary>
             Creates new instances of TrafficStats and starts a new timer for those.
+            </summary>
+        </member>
+        <member name="M:ExitGames.Client.Photon.PhotonPeer.InitializeTrafficStats">
+            <summary>
+            Creates new TrafficStats values and the related Stopwatch instance. To be called when the peer is created / reset.
             </summary>
         </member>
         <member name="M:ExitGames.Client.Photon.PhotonPeer.VitalStatsToString(System.Boolean)">
@@ -2496,6 +2539,11 @@
         <member name="M:ExitGames.Client.Photon.StreamBuffer.GetBufferAndAdvance(System.Int32,System.Int32@)">
             <summary>
             Brings StreamBuffer to the state as after writing of 'length' bytes. Returned buffer and offset can be used to actually fill "written" segment with data.
+            </summary>
+        </member>
+        <member name="P:ExitGames.Client.Photon.StreamBuffer.Available">
+            <summary>
+            Remaining bytes in this StreamBuffer. Returns 0 if len - pos is less than 0.
             </summary>
         </member>
         <member name="M:ExitGames.Client.Photon.StreamBuffer.SetLength(System.Int64)">

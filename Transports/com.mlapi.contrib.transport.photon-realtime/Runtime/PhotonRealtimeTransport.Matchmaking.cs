@@ -12,7 +12,7 @@ namespace MLAPI.Transports.PhotonRealtime
 		/// Gets the current Master client of the current Room.
 		/// </summary>
 		/// <returns>The master client ID if the client in inside a Room, -1 otherwise.</returns>
-		private int CurrentMasterId => this.m_Client.CurrentRoom != null ? this.m_Client.CurrentRoom.MasterClientId : -1;
+		private int CurrentMasterId => this.m_Client != null && this.m_Client.CurrentRoom != null ? this.m_Client.CurrentRoom.MasterClientId : -1;
 
         /// <summary>Photon ActorNumber of the host/server.</summary>
         private int m_originalRoomMasterClient = -1;
