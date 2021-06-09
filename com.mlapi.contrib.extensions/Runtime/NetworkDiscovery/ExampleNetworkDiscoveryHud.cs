@@ -10,22 +10,22 @@ using UnityEditor;
 using UnityEditor.Events;
 #endif
 
-[RequireComponent(typeof(NetworkDiscovery))]
+[RequireComponent(typeof(ExampleNetworkDiscovery))]
 [RequireComponent(typeof(NetworkManager))]
-public class NetworkDiscoveryHud : MonoBehaviour
+public class ExampleNetworkDiscoveryHud : MonoBehaviour
 {
     [SerializeField, HideInInspector]
-    NetworkDiscovery m_Discovery;
+    ExampleNetworkDiscovery m_Discovery;
     
     NetworkManager m_NetworkManager;
 
-    Dictionary<string, (IPEndPoint, DiscoveryResponseData)> discoveredServers = new Dictionary<string, (IPEndPoint, DiscoveryResponseData)>();
+    Dictionary<IPAddress, DiscoveryResponseData> discoveredServers = new Dictionary<IPAddress, DiscoveryResponseData>();
 
     public Vector2 DrawOffset = new Vector2(10, 210);
 
     void Awake()
     {
-        m_Discovery = GetComponent<NetworkDiscovery>();
+        m_Discovery = GetComponent<ExampleNetworkDiscovery>();
         m_NetworkManager = GetComponent<NetworkManager>();
     }
 
@@ -34,7 +34,7 @@ public class NetworkDiscoveryHud : MonoBehaviour
     {
         if (m_Discovery == null) // This will only happen once because m_Discovery is a serialize field
         {
-            m_Discovery = GetComponent<NetworkDiscovery>();
+            m_Discovery = GetComponent<ExampleNetworkDiscovery>();
             UnityEventTools.AddPersistentListener(m_Discovery.OnServerFound, OnServerFound);
             Undo.RecordObjects(new Object[] { this, m_Discovery}, "Set NetworkDiscovery");
         }
@@ -43,7 +43,7 @@ public class NetworkDiscoveryHud : MonoBehaviour
 
     void OnServerFound(IPEndPoint sender, DiscoveryResponseData response)
     {
-        discoveredServers[response.ServerName] = (sender, response);
+        discoveredServers[sender.Address] = response;
     }
 
     void OnGUI()
@@ -80,6 +80,19 @@ public class NetworkDiscoveryHud : MonoBehaviour
                 discoveredServers.Clear();
                 m_Discovery.ClientBroadcast(new DiscoveryBroadcastData());
             }
+            
+            GUILayout.Space(40);
+            
+            foreach (var discoveredServer in discoveredServers)
+            {
+                if (GUILayout.Button($"{discoveredServer.Value.ServerName}[{discoveredServer.Key.ToString()}]"))
+                {
+                    UNetTransport transport = (UNetTransport)m_NetworkManager.NetworkConfig.NetworkTransport;
+                    transport.ConnectAddress = discoveredServer.Key.ToString();
+                    transport.ConnectPort = discoveredServer.Value.Port;
+                    m_NetworkManager.StartClient();
+                }
+            }
         }
         else
         {
@@ -98,17 +111,6 @@ public class NetworkDiscoveryHud : MonoBehaviour
             if (GUILayout.Button("Stop Server Discovery"))
             {
                 m_Discovery.StopDiscovery();
-            }
-
-            foreach (var discoveredServer in discoveredServers)
-            {
-                if (GUILayout.Button(discoveredServer.Key))
-                {
-                    UNetTransport transport = (UNetTransport)m_NetworkManager.NetworkConfig.NetworkTransport;
-                    transport.ConnectAddress = discoveredServer.Value.Item1.Address.ToString();
-                    transport.ConnectPort = discoveredServer.Value.Item2.Port;
-                    m_NetworkManager.StartClient();
-                }
             }
         }
         else
