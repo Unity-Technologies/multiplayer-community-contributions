@@ -326,12 +326,13 @@ namespace MLAPI.Transports.LiteNetLib
         void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
         {
             int size = reader.UserDataSize;
-            byte[] data = m_MessageBuffer;
 
             if (size > m_MessageBuffer.Length)
             {
                 ResizeMessageBuffer(size);
             }
+            
+            byte[] data = m_MessageBuffer;
 
             Buffer.BlockCopy(reader.RawData, reader.UserDataOffset, data, 0, size);
 
