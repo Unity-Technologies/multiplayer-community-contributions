@@ -1,0 +1,19 @@
+{
+    "name": "MLAPI Community Extensions Editor",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Multiplayer.MLAPI.Runtime",
+        "MLAPI Community Extensions"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

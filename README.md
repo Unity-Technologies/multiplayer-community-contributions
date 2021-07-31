@@ -23,17 +23,22 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 #### Transports
 | **Name** | **Platforms** | **Version Specifics** | **Latest MLAPI** | **v12** |
 |:------------:|:---------:|:-------------:|:-------:|:---:|
-| **[Ruffles](MLAPI.Transports/tree/master/Transports/com.mlapi.contrib.transport.ruffles)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
-|**[Enet](https://github.com/Unity-Technologies/MLAPI.Transports/tree/master/Transports/com.mlapi.contrib.transport.enet)**| Desktop, Mobile\* | |:heavy_check_mark: | :heavy_check_mark: | 
-|**[LiteNetLib](https://github.com/Unity-Technologies/MLAPI.Transports/tree/master/Transports/com.mlapi.contrib.transport.litenetlib)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
-|**[SteamP2P](todo-link)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
-|**WebSocket**| Desktop, Mobile, WebGL | | :x:| :x: | 
+| **[Ruffles](/Transports/com.mlapi.contrib.transport.ruffles)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
+|**[Enet](/Transports/com.mlapi.contrib.transport.enet)**| Desktop, Mobile\* | |:heavy_check_mark: | :heavy_check_mark: | 
+|**[LiteNetLib](/Transports/com.mlapi.contrib.transport.litenetlib)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
+|**[SteamP2P](/Transports/com.mlapi.contrib.transport.steamp2p)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
+|**WebSocket**| Desktop, Mobile, WebGL | | :x:| :x: |
+|**[Photon Realtime](/Transports/com.mlapi.contrib.transport.photon-realtime)**| Desktop, Mobile, WebGL\** || :heavy_check_mark: | |  
 
-\* Needs manual binary compilation.
+\* Needs manual binary compilation.<br>
+\** Other platforms such as console platforms are also supported but require communication with Exit Games.
 
 #### Extensions
 | **Name** | **Version Specifics** | **Latest MLAPI** | **v12** |
 |:------------:|:-------------:|:-------:|:---:|
+|**[NetworkObjectPool](/com.mlapi.contrib.extensions/Runtime/NetworkObjectPool)**| | :heavy_check_mark: | |
+|**[NetworkManagerHud](/com.mlapi.contrib.extensions/Runtime/NetworkManagerHud)**| | :heavy_check_mark: | |
+|**[NetworkRigidBody](/com.mlapi.contrib.extensions/Runtime/NetworkRigidbody)**| | :heavy_check_mark: | |
 
 
 ### Releases

@@ -1,24 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
-using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
 using Ruffles.Configuration;
-using Ruffles.Connections;
 using Ruffles.Core;
 using Ruffles.Time;
+using Ruffles.Channeling;
+using Ruffles.Simulation;
 using Ruffles.Utils;
 using UnityEngine;
+using UnityEngine.Assertions;
+using RufflesConnection = Ruffles.Connections.Connection;
+using RufflesNetworkEvent = Ruffles.Core.NetworkEvent;
+using RufflesLogging = Ruffles.Utils.Logging;
 
-namespace RufflesTransport
+namespace MLAPI.Transports.Ruffles
 {
-    public class RufflesTransport : Transport
+    public class RufflesTransport : NetworkTransport
     {
         [Serializable]
         public class RufflesChannel
         {
-            public string Name;
-            public Ruffles.Channeling.ChannelType Type;
+            public byte ChannelId;
+            public ChannelType Type;
         }
 
         public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
@@ -40,7 +45,7 @@ namespace RufflesTransport
         public int HeapMemoryPoolSize = 1024;
         public int MemoryWrapperPoolSize = 1024;
         public int ChannelPoolSize = 1024;
-        public Ruffles.Channeling.PooledChannelType PooledChannels = Ruffles.Channeling.PooledChannelType.All;
+        public PooledChannelType PooledChannels = PooledChannelType.All;
         public IPAddress IPv4ListenAddress = IPAddress.Any;
         public IPAddress IPv6ListenAddress = IPAddress.IPv6Any;
         public bool UseIPv6Dual = true;
@@ -97,39 +102,38 @@ namespace RufflesTransport
         public bool EnableConnectionRequestResends = true;
         public bool EnablePacketMerging = true;
 
-
         // Runtime / state
         private byte[] messageBuffer;
         private WeakReference temporaryBufferReference;
         private bool isConnector = false;
 
         // Lookup / translation
-        private readonly Dictionary<ulong, Connection> connections = new Dictionary<ulong, Connection>();
+        private readonly Dictionary<ulong, RufflesConnection> connections = new Dictionary<ulong, RufflesConnection>();
 
-        private readonly Dictionary<string, byte> channelNameToId = new Dictionary<string, byte>();
-        private readonly Dictionary<byte, string> channelIdToName = new Dictionary<byte, string>();
+        private readonly Dictionary<NetworkChannel, byte> channelNameToId = new Dictionary<NetworkChannel, byte>();
+        private readonly Dictionary<byte, NetworkChannel> channelIdToName = new Dictionary<byte, NetworkChannel>();
 
         // Ruffles
         private RuffleSocket socket;
 
         // Connector task
         private SocketTask connectTask;
-        private Connection serverConnection;
+        private RufflesConnection serverConnection;
 
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
         {
             GetRufflesConnectionDetails(clientId, out ulong connectionId);
 
-            byte channelId = channelNameToId[channelName];
+            byte channelId = channelNameToId[channel];
 
             connections[connectionId].Send(data, channelId, false, 0);
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
-            NetworkEvent @event = socket.Poll();
+            RufflesNetworkEvent @event = socket.Poll();
 
             receiveTime = Time.realtimeSinceStartup - (float)(NetTime.Now - @event.SocketReceiveTime).TotalSeconds;
 
@@ -158,7 +162,7 @@ namespace RufflesTransport
                 payload = new ArraySegment<byte>();
             }
 
-            channelName = channelIdToName[@event.ChannelId];
+            channel = channelIdToName[@event.ChannelId];
 
             if (@event.Connection != null)
             {
@@ -174,42 +178,42 @@ namespace RufflesTransport
             {
                 case NetworkEventType.Data:
                     @event.Recycle();
-                    return NetEventType.Data;
+                    return NetworkEvent.Data;
                 case NetworkEventType.Connect:
+                {
+                    if (isConnector && @event.Connection == serverConnection && connectTask != null)
                     {
-                        if (isConnector && @event.Connection == serverConnection && connectTask != null)
-                        {
-                            // Connection successful
-                            connectTask.Success = true;
-                            connectTask.IsDone = true;
-                            connectTask = null;
-                        }
-
-                        // Add the connection
-                        connections.Add(@event.Connection.Id, @event.Connection);
-
-                        @event.Recycle();
-                        return NetEventType.Connect;
+                        // Connection successful
+                        connectTask.Success = true;
+                        connectTask.IsDone = true;
+                        connectTask = null;
                     }
+
+                    // Add the connection
+                    connections.Add(@event.Connection.Id, @event.Connection);
+
+                    @event.Recycle();
+                    return NetworkEvent.Connect;
+                }
                 case NetworkEventType.Timeout:
                 case NetworkEventType.Disconnect:
+                {
+                    if (isConnector && @event.Connection == serverConnection && connectTask != null)
                     {
-                        if (isConnector && @event.Connection == serverConnection && connectTask != null)
-                        {
-                            // Connection failed
-                            connectTask.Success = false;
-                            connectTask.IsDone = true;
-                            connectTask = null;
-                        }
-
-                        connections.Remove(@event.Connection.Id);
-
-                        @event.Recycle();
-                        return NetEventType.Disconnect;
+                        // Connection failed
+                        connectTask.Success = false;
+                        connectTask.IsDone = true;
+                        connectTask = null;
                     }
+
+                    connections.Remove(@event.Connection.Id);
+
+                    @event.Recycle();
+                    return NetworkEvent.Disconnect;
+                }
                 default:
                     @event.Recycle();
-                    return NetEventType.Nothing;
+                    return NetworkEvent.Nothing;
             }
         }
 
@@ -310,7 +314,7 @@ namespace RufflesTransport
         {
             messageBuffer = new byte[TransportBufferSize];
 
-            Logging.CurrentLogLevel = LogLevel;
+            RufflesLogging.CurrentLogLevel = LogLevel;
         }
 
         public ulong GetMLAPIClientId(ulong connectionId, bool isServer)
@@ -379,7 +383,7 @@ namespace RufflesTransport
                 ReliabilityResendRoundtripMultiplier = ReliabilityResendRoundtripMultiplier,
                 ReliabilityWindowSize = ReliableAckFlowWindowSize,
                 ReliableAckFlowWindowSize = ReliableAckFlowWindowSize,
-                SimulatorConfig = new Ruffles.Simulation.SimulatorConfig()
+                SimulatorConfig = new SimulatorConfig()
                 {
                     DropPercentage = DropPercentage,
                     MaxLatency = MaxLatency,
@@ -409,42 +413,46 @@ namespace RufflesTransport
             };
 
             int channelCount = MLAPI_CHANNELS.Length + Channels.Count;
-            config.ChannelTypes = new Ruffles.Channeling.ChannelType[channelCount];
+            config.ChannelTypes = new ChannelType[channelCount];
 
             for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
-                config.ChannelTypes[i] = ConvertChannelType(MLAPI_CHANNELS[i].Type);
-                channelIdToName.Add(i, MLAPI_CHANNELS[i].Name);
-                channelNameToId.Add(MLAPI_CHANNELS[i].Name, i);
+                config.ChannelTypes[i] = ConvertChannelType(MLAPI_CHANNELS[i].Delivery);
+                channelIdToName.Add(i, MLAPI_CHANNELS[i].Channel);
+                channelNameToId.Add(MLAPI_CHANNELS[i].Channel, i);
             }
 
             for (byte i = (byte)MLAPI_CHANNELS.Length; i < Channels.Count + MLAPI_CHANNELS.Length; i++)
             {
-                config.ChannelTypes[i] = Channels[config.ChannelTypes.Length - 1 - i].Type;
-                channelIdToName.Add(i, Channels[config.ChannelTypes.Length - 1 - i].Name);
-                channelNameToId.Add(Channels[config.ChannelTypes.Length - 1 - i].Name, i);
+                var channel = Channels[config.ChannelTypes.Length - 1 - i];
+                Assert.IsFalse(MLAPI_CHANNELS.Any(t => t.Channel == (NetworkChannel)channel.ChannelId), 
+                    $"Channel with id: {channel.ChannelId} is already used by MLAPI. Use a different id.");
+                
+                config.ChannelTypes[i] = channel.Type;
+                channelIdToName.Add(i, (NetworkChannel)channel.ChannelId);
+                channelNameToId.Add((NetworkChannel)channel.ChannelId, i);
             }
 
             return config;
         }
 
-        private Ruffles.Channeling.ChannelType ConvertChannelType(ChannelType type)
+        private ChannelType ConvertChannelType(NetworkDelivery type)
         {
             switch (type)
             {
-                case ChannelType.Reliable:
-                    return Ruffles.Channeling.ChannelType.Reliable;
-                case ChannelType.ReliableFragmentedSequenced:
-                    return Ruffles.Channeling.ChannelType.ReliableSequencedFragmented;
-                case ChannelType.ReliableSequenced:
-                    return Ruffles.Channeling.ChannelType.ReliableSequenced;
-                case ChannelType.Unreliable:
-                    return Ruffles.Channeling.ChannelType.Unreliable;
-                case ChannelType.UnreliableSequenced:
-                    return Ruffles.Channeling.ChannelType.UnreliableOrdered;
+                case NetworkDelivery.Reliable:
+                    return ChannelType.Reliable;
+                case NetworkDelivery.ReliableFragmentedSequenced:
+                    return ChannelType.ReliableSequencedFragmented;
+                case NetworkDelivery.ReliableSequenced:
+                    return ChannelType.ReliableSequenced;
+                case NetworkDelivery.Unreliable:
+                    return ChannelType.Unreliable;
+                case NetworkDelivery.UnreliableSequenced:
+                    return ChannelType.UnreliableOrdered;
             }
 
-            return Ruffles.Channeling.ChannelType.Reliable;
+            return ChannelType.Reliable;
         }
     }
 }
