@@ -105,21 +105,15 @@ namespace MLAPI.Transports.WebSocket
 
         public override SocketTasks StartClient()
         {
-            Debug.Log("10");
             if (IsStarted)
             {
                 throw new InvalidOperationException("Socket already started");
             }
-            Debug.Log("11");
 
             WebSocketClient = WebSocketClientFactory.Create($"ws://{ConnectAddress}:{Port}/mlapi");
-            Debug.Log("12");
-
             WebSocketClient.Connect();
-            Debug.Log("13");
 
             IsStarted = true;
-            Debug.Log("14");
 
             return SocketTask.Done.AsTasks();
         }

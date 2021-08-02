@@ -41,24 +41,19 @@ namespace MLAPI.Transports.WebSocket
 
         public void Connect()
         {
-            Debug.Log("12.a");
             if (ReadyState == WebSocketSharp.WebSocketState.Open)
             {
                 throw new InvalidOperationException("Socket is already open");
             }
 
-            Debug.Log("12.b");
             if (ReadyState == WebSocketSharp.WebSocketState.Closing)
             {
                 throw new InvalidOperationException("Socket is closing");
             }
 
-            Debug.Log("12.c");
             try
             {
-                Debug.Log("12.d");
                 Connection.Connect();
-                Debug.Log("12.e");
             }
             catch (Exception e)
             {
