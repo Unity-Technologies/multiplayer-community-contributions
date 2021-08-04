@@ -160,7 +160,7 @@ namespace Photon.Realtime.Editor
             }
 
             bool HasMlapiTransport = Type.GetType("Photon.Realtime.LoadBalancingClient, Photon Realtime MLAPI Transport") != null;
-            this.originAssetVersion = string.Format("{0}{1}",HasMlapiTransport ? "MLAPI" : "RT", new PhotonPeer(ConnectionProtocol.Udp).ClientVersion);
+            this.originAssetVersion = string.Format("{0}{1}",HasMlapiTransport ? "MLAPI" : "RT", PhotonPeer.Version);
 
             // Pre-load Release History
             this.PrepareReleaseHistoryText();
