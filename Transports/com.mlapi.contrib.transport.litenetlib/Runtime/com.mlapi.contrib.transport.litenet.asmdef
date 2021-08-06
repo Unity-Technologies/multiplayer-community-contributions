@@ -2,7 +2,7 @@
     "name": "LiteNetLib MLAPI Transport",
     "rootNamespace": "MLAPI.Transports.LiteNetLib",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "GUID:1491147abca9d7d4bb7105af628b223e"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
