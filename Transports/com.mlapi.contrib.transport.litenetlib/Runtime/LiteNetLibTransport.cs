@@ -119,6 +119,7 @@ namespace MLAPI.Transports.LiteNetLib
             clientId = 0;
             channel = NetworkChannel.ChannelUnused;
             receiveTime = Time.realtimeSinceStartup;
+            payload = new ArraySegment<Byte>();
             return NetworkEvent.Nothing;
         }
 
