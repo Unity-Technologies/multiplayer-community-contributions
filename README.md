@@ -27,7 +27,7 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 |**[Enet](/Transports/com.mlapi.contrib.transport.enet)**| Desktop, Mobile\* | |:heavy_check_mark: | :heavy_check_mark: | 
 |**[LiteNetLib](/Transports/com.mlapi.contrib.transport.litenetlib)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
 |**[SteamP2P](/Transports/com.mlapi.contrib.transport.steamp2p)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
-|**WebSocket**| Desktop, Mobile, WebGL | | :x:| :x: |
+|**[WebSocket](/Transports/com.mlapi.contrib.transport.websocket)**| Desktop, Mobile, WebGL | | :heavy_check_mark:| :question: |
 |**[Photon Realtime](/Transports/com.mlapi.contrib.transport.photon-realtime)**| Desktop, Mobile, WebGL\** || :heavy_check_mark: | |  
 |**[Facepunch](/Transports/com.mlapi.contrib.transport.facepunch)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
 

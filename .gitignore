@@ -264,3 +264,6 @@ docs/LastBuild.log
 
 # Unity Package Manager CI output
 upm-ci~
+
+# .DS_Store files
+.DS_Store

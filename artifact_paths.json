@@ -34,20 +34,19 @@
             ]
         },
         {
-            "id": "mlapi-websockets",
-            "name": "WebSockets",
-            "path": "WebSockets.zip",
-            "description": "WebSockets is a standardized, abstracted packet based protocol built on TCP/IP developed for modern web browsers to use.",
-            "credits": "Albin Corén (transport adapter, native wrapper, WebGL wrapper), Unknown Author (native implementation).",
+            "id": "websocket",
+            "name": "WebSocket",
+            "path": "WebSocket.zip",
+            "description": "WebSocket is a standardized, abstracted packet based protocol built on TCP/IP developed for modern web browsers to use.",
+            "credits": "Nathanael Demacon",
             "licence": "MIT/X11",
-            "platform_compatibility_description": "Works everywhere including WebGL. Client functionality only for WebGL",
+            "platform_compatibility_description": "Works everywhere including WebGL.",
             "net35": true,
             "net45": true,
             "preferNet45": false,
-            "experimental": true,
+            "experimental": false,
             "mlapi_major_version": 11,
             "required_build_targets": [
-                20
             ]
         },
         {
