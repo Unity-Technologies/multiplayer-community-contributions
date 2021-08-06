@@ -1,14 +1,10 @@
 ﻿using ExitGames.Client.Photon;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports.Tasks;
 using Photon.Realtime;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Logging;
+using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.Assertions;
 
 namespace MLAPI.Transports.PhotonRealtime
 {
@@ -89,7 +85,7 @@ namespace MLAPI.Transports.PhotonRealtime
             get => m_RoomName;
             set => m_RoomName = value;
         }
-        
+
         /// <summary>
         /// The Photon loadbalancing client used by this transport for everything networking related.
         /// </summary>
@@ -273,17 +269,17 @@ namespace MLAPI.Transports.PhotonRealtime
         ///<inheritdoc/>
         public override void Init()
         {
-            for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
+            for (byte i = 0; i < NETCODE_CHANNELS.Length; i++)
             {
                 byte channelID = (byte)(i + m_ChannelIdCodesStartRange);
-                NetworkChannel channel = MLAPI_CHANNELS[i].Channel;
+                NetworkChannel channel = NETCODE_CHANNELS[i].Channel;
 
                 m_IdToChannel.Add(channelID, channel);
                 m_ChannelToId.Add(channel, channelID);
                 m_Channels.Add(channelID, new RealtimeChannel()
                 {
                     Id = channelID,
-                    SendMode = MlapiChannelTypeToSendOptions(MLAPI_CHANNELS[i].Delivery)
+                    SendMode = MlapiChannelTypeToSendOptions(NETCODE_CHANNELS[i].Delivery)
                 });
             }
         }
@@ -411,7 +407,7 @@ namespace MLAPI.Transports.PhotonRealtime
                     // Event is a non-batched data event.
                     ArraySegment<byte> payload = new ArraySegment<byte>(slice.Buffer, slice.Offset, slice.Count);
                     NetworkChannel channel = m_IdToChannel[eventData.Code];
-                        
+
                     InvokeTransportEvent(NetworkEvent.Data, senderId, channel, payload);
                 }
             }

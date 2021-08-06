@@ -28,7 +28,6 @@ namespace Photon.Realtime
     using UnityEngine;
 
     using System.IO;
-    using System.Text;
     using UnityEngine.Networking;
 
 

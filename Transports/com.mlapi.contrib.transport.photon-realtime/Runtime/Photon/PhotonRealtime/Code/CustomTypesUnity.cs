@@ -15,10 +15,8 @@
 #if SUPPORTED_UNITY
 namespace Photon.Realtime
 {
-    using Photon.Realtime;
     using ExitGames.Client.Photon;
     using UnityEngine;
-    using Debug = UnityEngine.Debug;
 
 
     /// <summary>

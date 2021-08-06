@@ -20,7 +20,6 @@ namespace Photon.Realtime
 {
     using System;
     using System.Text;
-    using System.Collections;
     using System.Collections.Generic;
 
     using Stopwatch = System.Diagnostics.Stopwatch;
@@ -33,8 +32,8 @@ namespace Photon.Realtime
 
     #if SUPPORTED_UNITY || NETFX_CORE
     using Hashtable = ExitGames.Client.Photon.Hashtable;
-    using SupportClass = ExitGames.Client.Photon.SupportClass;
-    #endif
+
+#endif
 
     /// <summary>
     /// Helper class to debug log basic information about Photon client and vital traffic statistics.

@@ -1,8 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
-using MLAPI.Transports.Tasks;
 using UnityEngine;
 using Photon.Realtime;
+using Unity.Netcode;
 
 namespace MLAPI.Transports.PhotonRealtime
 {
@@ -40,13 +39,13 @@ namespace MLAPI.Transports.PhotonRealtime
             // Client connected to the room successfully, connection process is completed
             m_ConnectTask.IsDone = true;
             m_ConnectTask.Success = true;
-            
+
 
             // any client (except host/server) need to know about their own join event
             if (!this.m_IsHostOrServer)
             {
                 var senderId = GetMlapiClientId(m_Client.LocalPlayer.ActorNumber, false);
-                
+
                 NetworkEvent netEvent = NetworkEvent.Connect;
                 InvokeTransportEvent(netEvent, senderId);
             }
@@ -69,7 +68,7 @@ namespace MLAPI.Transports.PhotonRealtime
             if (!this.m_IsHostOrServer)
             {
                 var senderId = GetMlapiClientId(m_Client.LocalPlayer.ActorNumber, false);
-                
+
                 NetworkEvent netEvent = NetworkEvent.Connect;
                 InvokeTransportEvent(netEvent, senderId);
             }
