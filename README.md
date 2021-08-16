@@ -21,25 +21,28 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 ### Existing Content
 
 #### Transports
-| **Name** | **Platforms** | **Version Specifics** | **Latest MLAPI** | **v12** |
+| **Name** | **Platforms** | **Version Specifics** | **0.1.0** | **v12** |
 |:------------:|:---------:|:-------------:|:-------:|:---:|
 | **[Ruffles](/Transports/com.mlapi.contrib.transport.ruffles)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
 |**[Enet](/Transports/com.mlapi.contrib.transport.enet)**| Desktop, Mobile\* | |:heavy_check_mark: | :heavy_check_mark: | 
 |**[LiteNetLib](/Transports/com.mlapi.contrib.transport.litenetlib)**| Desktop, Mobile | | :heavy_check_mark: | :heavy_check_mark: | 
 |**[SteamP2P](/Transports/com.mlapi.contrib.transport.steamp2p)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
-|**[WebSocket](/Transports/com.mlapi.contrib.transport.websocket)**| Desktop, Mobile, WebGL | | :heavy_check_mark:| :question: |
+|**[WebSocket](/Transports/com.mlapi.contrib.transport.websocket)**| Desktop, Mobile, WebGL*** | | :heavy_check_mark:||
 |**[Photon Realtime](/Transports/com.mlapi.contrib.transport.photon-realtime)**| Desktop, Mobile, WebGL\** || :heavy_check_mark: | |  
 |**[Facepunch](/Transports/com.mlapi.contrib.transport.facepunch)**| Steam || :heavy_check_mark: | :heavy_check_mark: | 
 
 \* Needs manual binary compilation.<br>
 \** Other platforms such as console platforms are also supported but require communication with Exit Games.
+\*** MLAPI 0.1.0 does currently not support building for WebGL. A version of the `develop` branch has to be used.
 
 #### Extensions
-| **Name** | **Version Specifics** | **Latest MLAPI** | **v12** |
+| **Name** | **Version Specifics** | **0.1.0** | **v12** |
 |:------------:|:-------------:|:-------:|:---:|
+|**[LagCompensation](/com.mlapi.contrib.extensions/Runtime/LagCompensation)**| | :heavy_check_mark: | |
 |**[NetworkObjectPool](/com.mlapi.contrib.extensions/Runtime/NetworkObjectPool)**| | :heavy_check_mark: | |
 |**[NetworkManagerHud](/com.mlapi.contrib.extensions/Runtime/NetworkManagerHud)**| | :heavy_check_mark: | |
 |**[NetworkRigidBody](/com.mlapi.contrib.extensions/Runtime/NetworkRigidbody)**| | :heavy_check_mark: | |
+|**[NetworkDiscovery](/com.mlapi.contrib.extensions/Runtime/NetworkDiscovery)**| | :heavy_check_mark: | |
 
 
 ### Releases
