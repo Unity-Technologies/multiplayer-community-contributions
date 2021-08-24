@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to the MLAPI Community Contributions repository.
+Thank you for your interest in contributing to the Multiplayer Community Contributions repository.
 
 Here are our guidlines for contributing:
 
@@ -12,21 +12,21 @@ Here are our guidlines for contributing:
 
 ## <a name="coc"></a> Code of Conduct
 
-Please help us keep MLAPI open and inclusive. Read and follow our [Code of Conduct](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/blob/master/CODE_OF_CONDUCT.md).
+Please help us keep Unity Multiplayer Networking open and inclusive. Read and follow our [Code of Conduct](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/master/CODE_OF_CONDUCT.md).
 
 ## <a name="ways"></a> Ways to Contribute
 
 ### <a name="issue"></a> Issues and Bugs
 
 If you find a bug in the source code, you can help us by submitting an issue to our
-GitHub Repository. You can learn more about how we handle issues in our MLAPI repositories here. TODO link
+GitHub Repository.
 
 ### <a name="feature"></a> New Content and Features
 
 If you would like to add new content to the contributions repository or improve existing content create a Pull Request. 
 
-#### Creating a new Transport
-- Clone the mlapi-community-contributions repository
+#### Creating a new Netcode for GameObjects Transport
+- Clone the multiplayer-community-contributions repository
 - Copy the com.mlapi.contrib.transport.template folder
 - Rename the folder to better reflect your transport's name.
 - Update CHANGELOG.md, package.json, README.md with information about your transport
