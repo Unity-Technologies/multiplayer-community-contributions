@@ -2,12 +2,12 @@ The MLAPI Community Contributions repository contains extensions to [MLAPI](http
 
 ### How to use
 
-[Installing a Community Transport](/Transports/README.md)
+[Installing a Community Transport (Netcode for GameObjects)](/Transports/README.md)
 
-[Installing the Community Extensions Package](/com.mlapi.contrib.extensions/README.md)
+[Installing the Community Extensions Package (Netcode for GameObjects)](/com.mlapi.contrib.extensions/README.md)
 
 ### Community and Feedback
-For general questions, networking advice or discussions about MLAPI and its extensions, please join our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
+For general questions, networking advice or discussions about Unity Multiplayer Networking or Netcode for GameObjects, please join our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
 
 ### Maintenance
 The contributions repository is a community repository and not an official Unity product. What this means is:
@@ -46,7 +46,7 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 
 
 ### Releases
-Content for a specifc major version of MLAPI can be found in the release branches. The following release branches
+Content for a specifc major version of Netcode for GameObjects can be found in the release branches. The following release branches
 exist:
 | **Release**|
 |:------------:|
