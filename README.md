@@ -1,4 +1,4 @@
-The MLAPI Community Contributions repository contains extensions to [MLAPI](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi) provided by the community.
+The Multiplayer Community Contributions repository contains extensions provided by the community for Unity Multiplayer Networking products.
 
 ### How to use
 
