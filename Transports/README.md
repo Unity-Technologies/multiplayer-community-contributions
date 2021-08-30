@@ -1,5 +1,7 @@
 ### Installing Community Transports
 
+Community transports are interchangeable transport layers for the Netcode for GameObjects package.
+
 Transports can be installed with the Unity Package Manager. Please follow the instructions in the manual about [Installing a package from a Git URL](https://docs.unity3d.com/Manual/upm-ui-giturl.html).
 
 Use the following URL in the package manager to add a transport via git URL. Change `com.mlapi.contrib.transport.enet` to any of the packages in the Transport folder to choose which transport to add:<br>
