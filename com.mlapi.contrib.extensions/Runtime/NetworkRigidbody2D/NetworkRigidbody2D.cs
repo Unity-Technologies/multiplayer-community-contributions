@@ -1,5 +1,4 @@
 using MLAPI;
-using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using UnityEngine;
 
@@ -12,20 +11,22 @@ public class NetworkRigidbody2D : NetworkBehaviour
 
     [Header("Velocity")]
     public bool syncVelocity = true;
+
     public float syncVelocitySensitivity = 0.1f;
 
     [Header("Angular Velocity")]
     public bool syncAngularVelocity = true;
+
     public float syncAngularVelocitySensitivity = 0.1f;
 
-    #endregion
+    #endregion Variables
 
     #region Synced Variables
 
-    private NetworkVariableVector2 velocity = new NetworkVariableVector2(new NetworkVariableSettings() { WritePermission = NetworkVariablePermission.Everyone });
-    private NetworkVariableFloat angularVelocity = new NetworkVariableFloat(new NetworkVariableSettings() { WritePermission = NetworkVariablePermission.Everyone });
+    private readonly NetworkVariableVector2 velocity = new NetworkVariableVector2(new NetworkVariableSettings() { WritePermission = NetworkVariablePermission.Everyone });
+    private readonly NetworkVariableFloat angularVelocity = new NetworkVariableFloat(new NetworkVariableSettings() { WritePermission = NetworkVariablePermission.Everyone });
 
-    #endregion
+    #endregion Synced Variables
 
     #region Accessors
 
@@ -37,6 +38,7 @@ public class NetworkRigidbody2D : NetworkBehaviour
             // Only set new velocity value if it changed more then syncVelocitySensitivity
             if (syncVelocity && Vector2.SqrMagnitude(velocity.Value - value) > syncVelocitySensitivity * syncVelocitySensitivity)
             {
+                target.velocity = value;
                 velocity.Value = value;
             }
         }
@@ -50,26 +52,15 @@ public class NetworkRigidbody2D : NetworkBehaviour
             // Onlyk set a new angular velocity value if it chnaged more than syncAngluarVelocitySensitivity
             if (syncAngularVelocity && Mathf.Abs(angularVelocity.Value - value) > syncAngularVelocitySensitivity)
             {
+                target.angularVelocity = value;
                 angularVelocity.Value = value;
             }
         }
     }
 
-    #endregion
+    #endregion Accessors
 
     #region Monobehaviour Methods
-
-    private void Start()
-    {
-        velocity.OnValueChanged += OnVelocityChange;
-        angularVelocity.OnValueChanged += OnAngularVelocityChange;
-    }
-
-    private void OnDestroy()
-    {
-        velocity.OnValueChanged -= OnVelocityChange;
-        angularVelocity.OnValueChanged -= OnAngularVelocityChange;
-    }
 
     private void OnValidate()
     {
@@ -88,12 +79,5 @@ public class NetworkRigidbody2D : NetworkBehaviour
         }
     }
 
-    #endregion
-
-    #region Callbacks
-
-    private void OnVelocityChange(Vector2 _, Vector2 _value) => target.velocity = _value;
-    private void OnAngularVelocityChange(float _, float _value) => target.angularVelocity = _value;
-
-    #endregion
+    #endregion Monobehaviour Methods
 }
