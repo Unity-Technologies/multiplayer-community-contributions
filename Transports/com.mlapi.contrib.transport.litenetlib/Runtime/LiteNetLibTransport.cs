@@ -1,13 +1,10 @@
 using LiteNetLib;
-using MLAPI.Transports;
-using MLAPI.Transports.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using MLAPI;
-using MLAPI.Logging;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -122,6 +119,7 @@ namespace MLAPI.Transports.LiteNetLib
             clientId = 0;
             channel = NetworkChannel.ChannelUnused;
             receiveTime = Time.realtimeSinceStartup;
+            payload = new ArraySegment<Byte>();
             return NetworkEvent.Nothing;
         }
 
@@ -214,7 +212,7 @@ namespace MLAPI.Transports.LiteNetLib
         public override void Init()
         {
             m_LiteChannels.Clear();
-            MapChannels(MLAPI_CHANNELS);
+            MapChannels(NETCODE_CHANNELS);
             MapChannels(channels);
             if (m_LiteChannels.Count > 64)
             {

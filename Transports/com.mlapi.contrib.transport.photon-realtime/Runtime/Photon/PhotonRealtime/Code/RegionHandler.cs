@@ -34,7 +34,6 @@ namespace Photon.Realtime
     using Debug = UnityEngine.Debug;
     #endif
     #if SUPPORTED_UNITY || NETFX_CORE
-    using Hashtable = ExitGames.Client.Photon.Hashtable;
     using SupportClass = ExitGames.Client.Photon.SupportClass;
     #endif
 

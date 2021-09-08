@@ -22,7 +22,6 @@ namespace Photon.Realtime
     using UnityEngine;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
-    using ExitGames.Client.Photon;
 
 
     /// <summary>
