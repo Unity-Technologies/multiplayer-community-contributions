@@ -37,7 +37,6 @@ namespace MLAPI.Transports.LiteNetLib
         public float ReconnectDelay = 0.5f;
         [Tooltip("Maximum connection attempts before client stops and reports a disconnection")]
         public int MaxConnectAttempts = 10;
-        public TransportChannel[] channels = new TransportChannel[0];
         [Tooltip("Size of default buffer for decoding incoming packets, in bytes")]
         public int MessageBufferSize = 1024 * 5;
         [Tooltip("Simulated chance for a packet to be \"lost\", from 0 (no simulation) to 100 percent")]
@@ -47,7 +46,6 @@ namespace MLAPI.Transports.LiteNetLib
         [Tooltip("Simulated maximum additional latency for packets in milliseconds (0 for no simulation")]
         public int SimulateMaxLatency = 0;
 
-        private readonly Dictionary<NetworkChannel, LiteChannel> m_LiteChannels = new Dictionary<NetworkChannel, LiteChannel>();
         readonly Dictionary<ulong, NetPeer> m_Peers = new Dictionary<ulong, NetPeer>();
 
         NetManager m_NetManager;
@@ -78,46 +76,16 @@ namespace MLAPI.Transports.LiteNetLib
 
         public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery qos)
         {
-            if (m_Peers.ContainsKey(clientId))
-            {
-                AppendChannel(ref data, channel);
-                if (m_LiteChannels.TryGetValue(channel, out LiteChannel liteChannel))
-                {
-                    m_Peers[clientId].Send(data.Array, data.Offset, data.Count, liteChannel.Method);
-                }
-            }
+            if (!m_Peers.ContainsKey(clientId)) return;
+            m_Peers[clientId].Send(data.Array, data.Offset, data.Count, ConvertNetworkDelivery(qos));
         }
 
-        private void AppendChannel(ref ArraySegment<byte> data, NetworkChannel channel)
-        {
-            Assert.IsNotNull(data.Array);
-
-            var index = data.Offset + data.Count;
-            var size = index + 1;
-            var array = data.Array;
-
-            if (data.Array.Length < size)
-            {
-                if (size > m_MessageBuffer.Length)
-                {
-                    ResizeMessageBuffer(size);
-                }
-
-                array = m_MessageBuffer;
-            }
-
-            array[index] = (byte)channel;
-
-            data = new ArraySegment<byte>(array, data.Offset, data.Count + 1);
-        }
-
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             // transport is event based ignore this.
             clientId = 0;
-            channel = NetworkChannel.ChannelUnused;
             receiveTime = Time.realtimeSinceStartup;
             payload = new ArraySegment<Byte>();
             return NetworkEvent.Nothing;
@@ -209,15 +177,8 @@ namespace MLAPI.Transports.LiteNetLib
             m_HostType = HostType.None;
         }
 
-        public override void Init()
+        public override void Initialize()
         {
-            m_LiteChannels.Clear();
-            MapChannels(NETCODE_CHANNELS);
-            MapChannels(channels);
-            if (m_LiteChannels.Count > 64)
-            {
-                throw new InvalidOperationException("LiteNetLib supports up to 64 channels, got: " + m_LiteChannels.Count);
-            }
             m_MessageBuffer = new byte[MessageBufferSize];
 
             m_NetManager = new NetManager(this)
@@ -233,21 +194,6 @@ namespace MLAPI.Transports.LiteNetLib
                 SimulationMaxLatency = SimulateMaxLatency
             };
         }
-
-        void MapChannels(TransportChannel[] channels)
-        {
-            byte id = (byte)m_LiteChannels.Count;
-
-            for (int i = 0; i < channels.Length; i++)
-            {
-                m_LiteChannels.Add(channels[i].Channel, new LiteChannel()
-                {
-                    ChannelNumber = id++,
-                    Method = ConvertNetworkDelivery(channels[i].Delivery)
-                });
-            }
-        }
-
 
         DeliveryMethod ConvertNetworkDelivery(NetworkDelivery type)
         {
@@ -290,7 +236,7 @@ namespace MLAPI.Transports.LiteNetLib
             }
 
             var peerId = GetMlapiClientId(peer);
-            InvokeOnTransportEvent(NetworkEvent.Connect, peerId, NetworkChannel.DefaultMessage, default, Time.time);
+            InvokeOnTransportEvent(NetworkEvent.Connect, peerId, default, Time.time);
 
             m_Peers[peerId] = peer;
         }
@@ -305,7 +251,7 @@ namespace MLAPI.Transports.LiteNetLib
             }
 
             var peerId = GetMlapiClientId(peer);
-            InvokeOnTransportEvent(NetworkEvent.Disconnect, GetMlapiClientId(peer), NetworkChannel.DefaultMessage, default, Time.time);
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, GetMlapiClientId(peer), default, Time.time);
 
             m_Peers.Remove(peerId);
         }
@@ -335,9 +281,7 @@ namespace MLAPI.Transports.LiteNetLib
             // The last byte sent is used to indicate the channel so don't include it in the payload.
             var payload = new ArraySegment<byte>(data, 0, size - 1);
 
-            NetworkChannel channel = (NetworkChannel)data[size - 1];
-
-            InvokeOnTransportEvent(NetworkEvent.Data, GetMlapiClientId(peer), channel, payload, Time.time);
+            InvokeOnTransportEvent(NetworkEvent.Data, GetMlapiClientId(peer), payload, Time.time);
 
             reader.Recycle();
         }
