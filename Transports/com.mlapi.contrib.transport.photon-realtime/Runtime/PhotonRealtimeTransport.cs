@@ -141,7 +141,7 @@ namespace MLAPI.Transports.PhotonRealtime
             if (m_Client == null)
             {
                 // This is taken from a Photon Realtime sample to get a random user name if none is provided.
-                var nickName = string.IsNullOrEmpty(m_NickName) ? m_NickName : "usr" + SupportClass.ThreadSafeRandom.Next() % 99;
+                var nickName = string.IsNullOrEmpty(m_NickName) ? "usr" + SupportClass.ThreadSafeRandom.Next() % 99 : m_NickName;
 
                 m_Client = new LoadBalancingClient
                 {
