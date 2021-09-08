@@ -82,29 +82,6 @@ namespace MLAPI.Transports.LiteNetLib
             m_Peers[clientId].Send(data.Array, data.Offset, data.Count, ConvertNetworkDelivery(qos));
         }
 
-        // private void AppendChannel(ref ArraySegment<byte> data, NetworkChannel channel)
-        // {
-        //     Assert.IsNotNull(data.Array);
-        //
-        //     var index = data.Offset + data.Count;
-        //     var size = index + 1;
-        //     var array = data.Array;
-        //
-        //     if (data.Array.Length < size)
-        //     {
-        //         if (size > m_MessageBuffer.Length)
-        //         {
-        //             ResizeMessageBuffer(size);
-        //         }
-        //
-        //         array = m_MessageBuffer;
-        //     }
-        //
-        //     array[index] = (byte)channel;
-        //
-        //     data = new ArraySegment<byte>(array, data.Offset, data.Count + 1);
-        // }
-
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             // transport is event based ignore this.
