@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MLAPI.Transports.PhotonRealtime
 {
@@ -26,10 +27,11 @@ namespace MLAPI.Transports.PhotonRealtime
         [SerializeField]
         private byte m_MaxPlayers = 16;
 
+        [FormerlySerializedAs("m_ChannelIdCodesStartRange")]
         [Header("Advanced Settings")]
         [Tooltip("The first byte of the range of photon event codes which this transport will reserve for unbatched messages. Should be set to a number lower then 200 to not interfere with photon internal events. Approximately 8 events will be reserved.")]
         [SerializeField]
-        private byte m_ChannelIdCodesStartRange = 0;
+        private byte m_NetworkDeliveryEventCodesStartRange = 0;
 
         [Tooltip("Attaches the photon support logger to the transport. Useful for debugging disconnects or other issues.")]
         [SerializeField]
@@ -43,7 +45,7 @@ namespace MLAPI.Transports.PhotonRealtime
         [SerializeField]
         private int m_SendQueueBatchSize = 4096;
 
-        [Tooltip("The Photon event code which will be used to send batched data over MLAPI channels.")]
+        [Tooltip("The Photon event code which will be used to send batched data.")]
         [SerializeField]
         [Range(129, 199)]
         private byte m_BatchedTransportEventCode = 129;
@@ -57,10 +59,6 @@ namespace MLAPI.Transports.PhotonRealtime
         private LoadBalancingClient m_Client;
 
         private bool m_IsHostOrServer;
-
-        private readonly Dictionary<NetworkChannel, byte> m_ChannelToId = new Dictionary<NetworkChannel, byte>();
-        private readonly Dictionary<byte, NetworkChannel> m_IdToChannel = new Dictionary<byte, NetworkChannel>();
-        private readonly Dictionary<ushort, RealtimeChannel> m_Channels = new Dictionary<ushort, RealtimeChannel>();
 
         /// <summary>
         /// SendQueue dictionary is used to batch events instead of sending them immediately.
@@ -183,18 +181,18 @@ namespace MLAPI.Transports.PhotonRealtime
         // -------------- Send/Receive --------------------------------------------------------------------------------
 
         ///<inheritdoc/>
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
         {
-            RealtimeChannel channel = m_Channels[m_ChannelToId[networkChannel]];
-
+            var isReliable = DeliveryModeToReliable(networkDelivery);
+            
             if (m_BatchMode == BatchMode.None)
             {
-                RaisePhotonEvent(clientId, channel.SendMode.Reliability, data, channel.Id);
+                RaisePhotonEvent(clientId, isReliable, data, (byte)(m_NetworkDeliveryEventCodesStartRange + networkDelivery));
                 return;
             }
 
             SendQueue queue;
-            SendTarget sendTarget = new SendTarget(clientId, channel.SendMode.Reliability);
+            SendTarget sendTarget = new SendTarget(clientId, isReliable);
 
             if (m_BatchMode == BatchMode.SendAllReliable)
             {
@@ -207,21 +205,21 @@ namespace MLAPI.Transports.PhotonRealtime
                 m_SendQueue.Add(sendTarget, queue);
             }
 
-            if (!queue.AddEvent(channel.Id, data))
+            if (!queue.AddEvent(data))
             {
                 // If we are in here data exceeded remaining queue size. This should not happen under normal operation.
                 if (data.Count > queue.Size)
                 {
                     // If data is too large to be batched, flush it out immediately. This happens with large initial spawn packets from MLAPI.
-                    Debug.LogWarning($"Sent {data.Count} bytes on channel: {networkChannel}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}).");
-                    RaisePhotonEvent(sendTarget.ClientId, sendTarget.IsReliable, data, channel.Id);
+                    Debug.LogWarning($"Sent {data.Count} bytes on NetworkDelivery: {networkDelivery}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}).");
+                    RaisePhotonEvent(sendTarget.ClientId, sendTarget.IsReliable, data, (byte)(m_NetworkDeliveryEventCodesStartRange + networkDelivery));
                 }
                 else
                 {
                     var sendBuffer = queue.GetData();
                     RaisePhotonEvent(sendTarget.ClientId, sendTarget.IsReliable, sendBuffer, m_BatchedTransportEventCode);
                     queue.Clear();
-                    queue.AddEvent(channel.Id, data);
+                    queue.AddEvent(data);
                 }
             }
         }
@@ -267,21 +265,8 @@ namespace MLAPI.Transports.PhotonRealtime
         // -------------- Transport Handlers --------------------------------------------------------------------------
 
         ///<inheritdoc/>
-        public override void Init()
+        public override void Initialize()
         {
-            for (byte i = 0; i < NETCODE_CHANNELS.Length; i++)
-            {
-                byte channelID = (byte)(i + m_ChannelIdCodesStartRange);
-                NetworkChannel channel = NETCODE_CHANNELS[i].Channel;
-
-                m_IdToChannel.Add(channelID, channel);
-                m_ChannelToId.Add(channel, channelID);
-                m_Channels.Add(channelID, new RealtimeChannel()
-                {
-                    Id = channelID,
-                    SendMode = MlapiChannelTypeToSendOptions(NETCODE_CHANNELS[i].Delivery)
-                });
-            }
         }
 
         ///<inheritdoc/>
@@ -293,7 +278,7 @@ namespace MLAPI.Transports.PhotonRealtime
             }
             else
             {
-                this.DeInit();
+                this.DeInitialize();
             }
         }
 
@@ -314,10 +299,9 @@ namespace MLAPI.Transports.PhotonRealtime
         /// <summary>
         /// Photon Realtime Transport is event based. Polling will always return nothing.
         /// </summary>
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = 0;
-            channel = default;
             receiveTime = Time.realtimeSinceStartup;
             return NetworkEvent.Nothing;
         }
@@ -391,24 +375,20 @@ namespace MLAPI.Transports.PhotonRealtime
                         {
                             while (buffer.Position < buffer.Length)
                             {
-                                byte channelId = reader.ReadByteDirect();
                                 int length = reader.ReadInt32Packed();
                                 byte[] dataArray = reader.ReadByteArray(null, length);
 
-                                InvokeTransportEvent(NetworkEvent.Data, senderId, m_IdToChannel[channelId], new ArraySegment<byte>(dataArray, 0, dataArray.Length));
+                                InvokeTransportEvent(NetworkEvent.Data, senderId, new ArraySegment<byte>(dataArray, 0, dataArray.Length));
                             }
                         }
                     }
-
-                    return;
                 }
                 else
                 {
                     // Event is a non-batched data event.
                     ArraySegment<byte> payload = new ArraySegment<byte>(slice.Buffer, slice.Offset, slice.Count);
-                    NetworkChannel channel = m_IdToChannel[eventData.Code];
 
-                    InvokeTransportEvent(NetworkEvent.Data, senderId, channel, payload);
+                    InvokeTransportEvent(NetworkEvent.Data, senderId, payload);
                 }
             }
         }
@@ -420,9 +400,8 @@ namespace MLAPI.Transports.PhotonRealtime
         /// </summary>
         /// <param name="networkEvent">Network Event Type</param>
         /// <param name="senderId">Peer Sender ID</param>
-        /// <param name="channel">Communication Channel</param>
         /// <param name="payload">Event Payload</param>
-        private void InvokeTransportEvent(NetworkEvent networkEvent, ulong senderId = 0, NetworkChannel channel = default, ArraySegment<byte> payload = default)
+        private void InvokeTransportEvent(NetworkEvent networkEvent, ulong senderId = 0, ArraySegment<byte> payload = default)
         {
             switch (networkEvent)
             {
@@ -436,24 +415,25 @@ namespace MLAPI.Transports.PhotonRealtime
                     }
                     goto default;
                 default:
-                    InvokeOnTransportEvent(networkEvent, senderId, channel, payload, Time.realtimeSinceStartup);
+                    InvokeOnTransportEvent(networkEvent, senderId, payload, Time.realtimeSinceStartup);
                     break;
             }
         }
 
         /// <summary>
-        /// Convert the <see cref="MLAPI.Transports.ChannelType"/> to <see cref="ExitGames.Client.Photon.SendOptions"/>
+        /// Convert the <see cref="Unity.Netcode.NetworkDelivery"/> to a bool indicating whether the
+        /// <see cref="PhotonRealtimeTransport"/> should use the reliable or unreliable sendmode./>
         /// </summary>
-        /// <param name="deliveryMode">Channel Type to convert</param>
-        /// <returns>SendOption type based on the ChannelType</returns>
-        private SendOptions MlapiChannelTypeToSendOptions(NetworkDelivery deliveryMode)
+        /// <param name="deliveryMode">Delivery mode to convert</param>
+        /// <returns>A bool indicating whether this delivery is reliable.</returns>
+        private bool DeliveryModeToReliable(NetworkDelivery deliveryMode)
         {
             switch (deliveryMode)
             {
                 case NetworkDelivery.Unreliable:
-                    return SendOptions.SendUnreliable;
+                    return false;
                 default:
-                    return SendOptions.SendReliable;
+                    return true;
             }
         }
 
@@ -495,11 +475,8 @@ namespace MLAPI.Transports.PhotonRealtime
         /// <summary>
         /// Reset all member properties to a blank state for later reuse.
         /// </summary>
-        private void DeInit()
+        private void DeInitialize()
         {
-            m_IdToChannel.Clear();
-            m_ChannelToId.Clear();
-            m_Channels.Clear();
             m_originalRoomMasterClient = -1;
             m_IsHostOrServer = false;
             m_Client?.RemoveCallbackTarget(this);
@@ -513,18 +490,7 @@ namespace MLAPI.Transports.PhotonRealtime
         {
             if (NetworkManager.Singleton == null) { return; }
 
-            if (NetworkManager.Singleton.IsHost)
-            {
-                NetworkManager.Singleton.StopHost();
-            }
-            else if (NetworkManager.Singleton.IsClient)
-            {
-                NetworkManager.Singleton.StopClient();
-            }
-            else if (NetworkManager.Singleton.IsServer)
-            {
-                NetworkManager.Singleton.StopServer();
-            }
+            NetworkManager.Singleton.Shutdown();
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------
@@ -532,7 +498,7 @@ namespace MLAPI.Transports.PhotonRealtime
         /// <summary>
         /// Memory Stream controller to store several events into one single buffer
         /// </summary>
-        private class SendQueue
+        class SendQueue
         {
             MemoryStream m_Stream;
 
@@ -551,10 +517,9 @@ namespace MLAPI.Transports.PhotonRealtime
             /// <summary>
             /// Ads an event to the send queue.
             /// </summary>
-            /// <param name="channelId">The channel this event should be sent on.</param>
             /// <param name="data">The data to send.</param>
             /// <returns>True if the event was added successfully to the queue. False if there was no space in the queue.</returns>
-            internal bool AddEvent(byte channelId, ArraySegment<byte> data)
+            internal bool AddEvent(ArraySegment<byte> data)
             {
                 if (m_Stream.Position + data.Count + 4 > Size)
                 {
@@ -563,7 +528,6 @@ namespace MLAPI.Transports.PhotonRealtime
 
                 using (PooledNetworkWriter writer = PooledNetworkWriter.Get(m_Stream))
                 {
-                    writer.WriteByte(channelId);
                     writer.WriteInt32Packed(data.Count);
                     Array.Copy(data.Array, data.Offset, m_Stream.GetBuffer(), m_Stream.Position, data.Count);
                     m_Stream.Position += data.Count;
@@ -587,20 +551,12 @@ namespace MLAPI.Transports.PhotonRealtime
                 return new ArraySegment<byte>(m_Stream.GetBuffer(), 0, (int)m_Stream.Position);
             }
         }
-
-        /// <summary>
-        /// Communication Channel information
-        /// </summary>
-        private struct RealtimeChannel
-        {
-            public byte Id;
-            public SendOptions SendMode;
-        }
+        
 
         /// <summary>
         /// Cached information about reliability mode with a certain client
         /// </summary>
-        private struct SendTarget
+        struct SendTarget
         {
             public ulong ClientId;
             public bool IsReliable;
@@ -615,7 +571,7 @@ namespace MLAPI.Transports.PhotonRealtime
         /// <summary>
         /// Batch Mode used by the MLAPI Events when sending to another clients
         /// </summary>
-        private enum BatchMode : byte
+        enum BatchMode : byte
         {
             /// <summary>
             /// The transport performs no batching.
