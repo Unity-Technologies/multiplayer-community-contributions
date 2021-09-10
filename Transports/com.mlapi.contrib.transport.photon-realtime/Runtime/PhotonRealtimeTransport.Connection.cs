@@ -44,7 +44,7 @@ namespace MLAPI.Transports.PhotonRealtime
         public void OnDisconnected(DisconnectCause cause)
         {
             InvokeTransportEvent(NetworkEvent.Disconnect);
-            this.DeInit();
+            this.DeInitialize();
         }
 
         public void OnRegionListReceived(RegionHandler regionHandler)
