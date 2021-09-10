@@ -41,7 +41,8 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 |**[LagCompensation](/com.mlapi.contrib.extensions/Runtime/LagCompensation)**| | :heavy_check_mark: | |
 |**[NetworkObjectPool](/com.mlapi.contrib.extensions/Runtime/NetworkObjectPool)**| | :heavy_check_mark: | |
 |**[NetworkManagerHud](/com.mlapi.contrib.extensions/Runtime/NetworkManagerHud)**| | :heavy_check_mark: | |
-|**[NetworkRigidBody](/com.mlapi.contrib.extensions/Runtime/NetworkRigidbody)**| | :heavy_check_mark: | |
+|**[NetworkRigidbody](/com.mlapi.contrib.extensions/Runtime/NetworkRigidbody)**| | :heavy_check_mark: | |
+|**[NetworkRigidbody2D](/com.mlapi.contrib.extensions/Runtime/NetworkRigidbody2D)**| | :heavy_check_mark: | |
 |**[NetworkDiscovery](/com.mlapi.contrib.extensions/Runtime/NetworkDiscovery)**| | :heavy_check_mark: | |
 
 
