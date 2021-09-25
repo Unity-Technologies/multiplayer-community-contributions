@@ -1,9 +1,0 @@
-{
-  "name": "com.mlapi.contrib.transport.steamp2p",
-  "displayName": "SteamP2P Transport for MLAPI",
-  "version": "1.0.0",
-  "unity": "2019.4",
-  "description": "SteamP2P Transport for MLAPI",
-  "author": "Petter Vernersson (transport adapter), Riley Labrecque (C# wrapper Steamworks.NET), Valve Corporation.",
-  "dependencies": {}
-}
