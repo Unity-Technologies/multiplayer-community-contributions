@@ -7,9 +7,5 @@
   "author": {
     "name": "Heathen Engineering",
     "url": "https://assetstore.unity.com/publishers/5836"
-  },
-  "dependencies": 
-  {
-    "com.rlabrecque.steamworks.net": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net"
   }
 }
