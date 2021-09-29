@@ -3,6 +3,7 @@ using Photon.Realtime;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -184,7 +185,7 @@ namespace MLAPI.Transports.PhotonRealtime
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
         {
             var isReliable = DeliveryModeToReliable(networkDelivery);
-            
+
             if (m_BatchMode == BatchMode.None)
             {
                 RaisePhotonEvent(clientId, isReliable, data, (byte)(m_NetworkDeliveryEventCodesStartRange + networkDelivery));
@@ -363,22 +364,35 @@ namespace MLAPI.Transports.PhotonRealtime
 
                 if (eventData.Code == this.m_BatchedTransportEventCode)
                 {
-                    using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
+                    // todo MessagingSystem is internal :( need hardcode max size ourselves?
+                    const int NON_FRAGMENTED_MESSAGE_MAX_SIZE = 1300;
+                    var writer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
+                    // var writer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
+                    using (writer)
                     {
-                        // moving data from one pooled wrapper to another (for MLAPI to read incoming data)
-                        buffer.Position = 0;
-                        buffer.Write(slice.Buffer, slice.Offset, slice.Count);
-                        buffer.SetLength(slice.Count);
-                        buffer.Position = 0;
 
-                        using (PooledNetworkReader reader = PooledNetworkReader.Get(buffer))
+                        // using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
                         {
-                            while (buffer.Position < buffer.Length)
-                            {
-                                int length = reader.ReadInt32Packed();
-                                byte[] dataArray = reader.ReadByteArray(null, length);
+                            writer.WriteBytes(slice.Buffer, slice.Count, slice.Offset);
+                            var reader = new FastBufferReader(writer, Allocator.Temp);
+                            // moving data from one pooled wrapper to another (for MLAPI to read incoming data)
+                            // writer.Position = 0;
+                            // buffer.Write(slice.Buffer, slice.Offset, slice.Count);
+                            // buffer.SetLength(slice.Count);
+                            // buffer.Position = 0;
 
-                                InvokeTransportEvent(NetworkEvent.Data, senderId, new ArraySegment<byte>(dataArray, 0, dataArray.Length));
+                            using (reader)
+                            // using (PooledNetworkReader reader = PooledNetworkReader.Get(buffer))
+                            {
+                                while (reader.Position < reader.Length)
+                                {
+                                    reader.ReadValue(out int length);
+                                    // int length = reader.ReadInt32Packed();
+                                    byte[] dataArray = new byte[length];
+                                    reader.ReadBytes(ref dataArray, length);
+
+                                    InvokeTransportEvent(NetworkEvent.Data, senderId, new ArraySegment<byte>(dataArray, 0, dataArray.Length));
+                                }
                             }
                         }
                     }
@@ -526,9 +540,11 @@ namespace MLAPI.Transports.PhotonRealtime
                     return false;
                 }
 
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(m_Stream))
+                var writer = new FastBufferWriter(data.Count, Allocator.Persistent);
+                // using (PooledNetworkWriter writer = PooledNetworkWriter.Get(m_Stream))
                 {
-                    writer.WriteInt32Packed(data.Count);
+                    writer.WriteValue(data.Count);
+                    // writer.WriteInt32Packed(data.Count);
                     Array.Copy(data.Array, data.Offset, m_Stream.GetBuffer(), m_Stream.Position, data.Count);
                     m_Stream.Position += data.Count;
                 }
@@ -551,7 +567,7 @@ namespace MLAPI.Transports.PhotonRealtime
                 return new ArraySegment<byte>(m_Stream.GetBuffer(), 0, (int)m_Stream.Position);
             }
         }
-        
+
 
         /// <summary>
         /// Cached information about reliability mode with a certain client
