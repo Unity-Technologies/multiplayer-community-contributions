@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using MLAPI.Spawning;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -10,11 +10,14 @@ namespace MLAPI.Extensions
     public class NetworkObjectPool : MonoBehaviour
     {
         [SerializeField]
+        NetworkManager m_NetworkManager;
+
+        [SerializeField]
         List<PoolConfigObject> PooledPrefabsList;
 
-        Dictionary<ulong, GameObject> prefabs = new Dictionary<ulong, GameObject>();
+        HashSet<GameObject> prefabs = new HashSet<GameObject>();
 
-        Dictionary<ulong, Queue<NetworkObject>> pooledObjects = new Dictionary<ulong, Queue<NetworkObject>>();
+        Dictionary<GameObject, Queue<NetworkObject>> pooledObjects = new Dictionary<GameObject, Queue<NetworkObject>>();
 
         public void Awake()
         {
@@ -34,52 +37,38 @@ namespace MLAPI.Extensions
         }
 
         /// <summary>
-        /// Gets a instance of a network object based on the prefab hash.
+        /// Gets an instance of the given prefab from the pool. The prefab must be registered to the pool.
         /// </summary>
-        /// <param name="prefabHash">The prefab hash to identify the object.</param>
+        /// <param name="prefab"></param>
         /// <returns></returns>
-        public GameObject GetNetworkObject(ulong prefabHash)
+        public NetworkObject GetNetworkObject(GameObject prefab)
         {
-            return GetNetworkObjectInternal(prefabHash, Vector3.zero, Quaternion.identity).gameObject;
-        }
-
-        /// <summary>
-        /// Gets a instance of a network object based on the prefab hash.
-        /// </summary>
-        /// <param name="prefabHash">The prefab hash to identify the object.</param>
-        /// <param name="position">The position to spawn the object at.</param>
-        /// <param name="rotation">The rotation to spawn the object with.</param>
-        /// <returns></returns>
-        public GameObject GetNetworkObject(ulong prefabHash, Vector3 position, Quaternion rotation)
-        {
-            return GetNetworkObjectInternal(prefabHash, position, rotation).gameObject;
+            return GetNetworkObjectInternal(prefab, Vector3.zero, Quaternion.identity);
         }
 
         /// <summary>
         /// Gets an instance of the given prefab from the pool. The prefab must be registered to the pool.
         /// </summary>
         /// <param name="prefab"></param>
+        /// <param name="position">The position to spawn the object at.</param>
+        /// <param name="rotation">The rotation to spawn the object with.</param>
         /// <returns></returns>
-        public GameObject GetNetworkObject(GameObject prefab)
+        public NetworkObject GetNetworkObject(GameObject prefab, Vector3 position, Quaternion rotation)
         {
-            var networkObject = prefab.GetComponent<NetworkObject>();
-
-            Assert.IsNotNull(networkObject, $"{nameof(prefab)} must have {nameof(networkObject)} component.");
-
-            return GetNetworkObject(networkObject.PrefabHash);
+            return GetNetworkObjectInternal(prefab, position, rotation);
         }
-        
+
         /// <summary>
         /// Return an object to the pool (and reset them).
         /// </summary>
-        public void ReturnNetworkObject(NetworkObject networkObject)
+        public void ReturnNetworkObject(NetworkObject networkObject, GameObject prefab)
         {
             var go = networkObject.gameObject;
 
             // In this simple example pool we just disable objects while they are in the pool. But we could call a function on the object here for more flexibility.
             go.SetActive(false);
             go.transform.SetParent(transform);
-            pooledObjects[networkObject.PrefabHash].Enqueue(networkObject);
+            pooledObjects[prefab].Enqueue(networkObject);
         }
 
         /// <summary>
@@ -92,7 +81,7 @@ namespace MLAPI.Extensions
             var networkObject = prefab.GetComponent<NetworkObject>();
 
             Assert.IsNotNull(networkObject, $"{nameof(prefab)} must have {nameof(networkObject)} component.");
-            Assert.IsFalse(prefabs.ContainsKey(networkObject.PrefabHash), $"Prefab {prefab.name} (PrefabHashGenerator: {networkObject.PrefabHashGenerator}) is already registered in the pool.");
+            Assert.IsFalse(prefabs.Contains(prefab), $"Prefab {prefab.name} is already registered in the pool.");
 
             RegisterPrefabInternal(prefab, prewarmCount);
         }
@@ -102,30 +91,25 @@ namespace MLAPI.Extensions
         /// </summary>
         private void RegisterPrefabInternal(GameObject prefab, int prewarmCount)
         {
-            var networkObject = prefab.GetComponent<NetworkObject>();
-            var prefabHash = networkObject.PrefabHash;
-
-            prefabs[prefabHash] = prefab;
+            prefabs.Add(prefab);
 
             var prefabQueue = new Queue<NetworkObject>();
-            pooledObjects[prefabHash] = prefabQueue;
+            pooledObjects[prefab] = prefabQueue;
 
             for (int i = 0; i < prewarmCount; i++)
             {
-                var go = CreateInstance(prefabHash);
-                ReturnNetworkObject(go.GetComponent<NetworkObject>());
+                var go = CreateInstance(prefab);
+                ReturnNetworkObject(go.GetComponent<NetworkObject>(), prefab);
             }
 
             // Register MLAPI Spawn handlers
-
-            NetworkSpawnManager.RegisterDestroyHandler(prefabHash, ReturnNetworkObject);
-            NetworkSpawnManager.RegisterSpawnHandler(prefabHash, (position, rotation) => GetNetworkObjectInternal(prefabHash, position, rotation));
+            m_NetworkManager.PrefabHandler.AddHandler(prefab, new DummyPrefabInstanceHandler(prefab, this));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private GameObject CreateInstance(ulong prefabHash)
+        private GameObject CreateInstance(GameObject prefab)
         {
-            return Instantiate(prefabs[prefabHash]);
+            return Instantiate(prefab);
         }
 
         /// <summary>
@@ -135,9 +119,9 @@ namespace MLAPI.Extensions
         /// <param name="position"></param>
         /// <param name="rotation"></param>
         /// <returns></returns>
-        private NetworkObject GetNetworkObjectInternal(ulong prefabHash, Vector3 position, Quaternion rotation)
+        private NetworkObject GetNetworkObjectInternal(GameObject prefab, Vector3 position, Quaternion rotation)
         {
-            var queue = pooledObjects[prefabHash];
+            var queue = pooledObjects[prefab];
 
             NetworkObject networkObject;
             if (queue.Count > 0)
@@ -146,7 +130,7 @@ namespace MLAPI.Extensions
             }
             else
             {
-                networkObject = CreateInstance(prefabHash).GetComponent<NetworkObject>();
+                networkObject = CreateInstance(prefab).GetComponent<NetworkObject>();
             }
 
             // Here we must reverse the logic in ReturnNetworkObject.
@@ -177,5 +161,27 @@ namespace MLAPI.Extensions
     {
         public GameObject Prefab;
         public int PrewarmCount;
+    }
+
+    class DummyPrefabInstanceHandler : INetworkPrefabInstanceHandler
+    {
+        GameObject m_Prefab;
+        NetworkObjectPool m_Pool;
+
+        public DummyPrefabInstanceHandler(GameObject prefab, NetworkObjectPool pool)
+        {
+            m_Prefab = prefab;
+            m_Pool = pool;
+        }
+
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        {
+            return m_Pool.GetNetworkObject(m_Prefab, position, rotation);
+        }
+
+        public void Destroy(NetworkObject networkObject)
+        {
+            m_Pool.ReturnNetworkObject(networkObject, m_Prefab);
+        }
     }
 }
