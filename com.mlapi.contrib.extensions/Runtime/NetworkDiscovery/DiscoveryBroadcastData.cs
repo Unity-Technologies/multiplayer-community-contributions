@@ -1,9 +1,9 @@
-﻿using MLAPI.Serialization;
+﻿using Unity.Netcode;
 using UnityEngine;
 
 public struct DiscoveryBroadcastData : INetworkSerializable
 {
-    public void NetworkSerialize(NetworkSerializer serializer)
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
     }
 }

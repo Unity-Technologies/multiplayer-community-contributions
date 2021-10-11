@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Net;
-using MLAPI;
-using MLAPI.Transports.UNET;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
-using Random = UnityEngine.Random;
 
 [RequireComponent(typeof(NetworkManager))]
 public class ExampleNetworkDiscovery : NetworkDiscovery<DiscoveryBroadcastData, DiscoveryResponseData>
@@ -48,7 +46,7 @@ public class ExampleNetworkDiscovery : NetworkDiscovery<DiscoveryBroadcastData, 
         response = new DiscoveryResponseData()
         {
             ServerName = ServerName,
-            Port = (ushort) ((UNetTransport) m_NetworkManager.NetworkConfig.NetworkTransport).ConnectPort,
+           // Port = (ushort) ((UnityTransport) m_NetworkManager.NetworkConfig.NetworkTransport).ConnectPort, TODO Fix
         };
         return true;
     }

@@ -1,4 +1,4 @@
-﻿using MLAPI.Serialization;
+﻿using Unity.Netcode;
 using UnityEngine;
 
 public struct DiscoveryResponseData: INetworkSerializable
@@ -6,10 +6,9 @@ public struct DiscoveryResponseData: INetworkSerializable
     public ushort Port;
 
     public string ServerName;
-
-    public void NetworkSerialize(NetworkSerializer serializer)
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
-        serializer.Serialize(ref Port);
-        serializer.Serialize(ref ServerName);
+        serializer.SerializeValue(ref Port);
+        serializer.SerializeValue(ref ServerName);
     }
 }

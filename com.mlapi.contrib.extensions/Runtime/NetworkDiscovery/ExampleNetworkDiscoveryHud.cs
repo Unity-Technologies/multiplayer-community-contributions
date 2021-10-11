@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
-using MLAPI;
-using MLAPI.Transports.UNET;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -87,9 +87,8 @@ public class ExampleNetworkDiscoveryHud : MonoBehaviour
             {
                 if (GUILayout.Button($"{discoveredServer.Value.ServerName}[{discoveredServer.Key.ToString()}]"))
                 {
-                    UNetTransport transport = (UNetTransport)m_NetworkManager.NetworkConfig.NetworkTransport;
-                    transport.ConnectAddress = discoveredServer.Key.ToString();
-                    transport.ConnectPort = discoveredServer.Value.Port;
+                    UnityTransport transport = (UnityTransport)m_NetworkManager.NetworkConfig.NetworkTransport;
+                    transport.SetConnectionData(discoveredServer.Key.ToString(), discoveredServer.Value.Port);
                     m_NetworkManager.StartClient();
                 }
             }
