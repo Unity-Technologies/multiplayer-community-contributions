@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using MLAPI.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -77,7 +77,7 @@ namespace MLAPI.Extensions.LagCompensation
             savedPosition = transform.position;
             savedRotation = transform.rotation;
 
-            float currentTime = NetworkManager.Singleton.NetworkTime;
+            float currentTime = NetworkManager.Singleton.NetworkTickSystem.LocalTime.TimeAsFloat;
             float targetTime = currentTime - secondsAgo;
 
             float previousTime = 0f;
@@ -116,12 +116,13 @@ namespace MLAPI.Extensions.LagCompensation
             if (m_Framekeys.Count == m_MaxPoints)
                 m_FrameData.Remove(m_Framekeys.Dequeue());
 
-            m_FrameData.Add(NetworkManager.Singleton.NetworkTime, new TrackedPoint()
+            var time = (float)NetworkManager.Singleton.NetworkTickSystem.LocalTime.FixedTime;
+            m_FrameData.Add(time, new TrackedPoint()
             {
                 position = transform.position,
                 rotation = transform.rotation
             });
-            m_Framekeys.Enqueue(NetworkManager.Singleton.NetworkTime);
+            m_Framekeys.Enqueue(time);
         }
     }
 }

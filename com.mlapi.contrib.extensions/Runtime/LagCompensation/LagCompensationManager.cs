@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Exceptions;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MLAPI.Extensions.LagCompensation
@@ -8,12 +8,12 @@ namespace MLAPI.Extensions.LagCompensation
     /// <summary>
     /// The main class for controlling lag compensation
     /// </summary>
-    public class LagCompensationManager : MonoBehaviour, INetworkUpdateSystem
+    public class LagCompensationManager : MonoBehaviour
     {
         public static LagCompensationManager Singleton { get; private set; }
-        
-        float m_lastNetworkTime = Single.NaN;
-        
+
+        NetworkManager m_NetworkManager;
+
         [SerializeField]
         float m_SecondsHistory;
 
@@ -25,7 +25,7 @@ namespace MLAPI.Extensions.LagCompensation
         /// Simulation objects
         /// </summary>
         public readonly List<TrackedObject> SimulationObjects = new List<TrackedObject>();
-        
+
         private void Awake()
         {
             if (Singleton != null && Singleton != this)
@@ -39,16 +39,27 @@ namespace MLAPI.Extensions.LagCompensation
             DontDestroyOnLoad(gameObject);
         }
 
-        private void Start()
+        private void Update()
         {
-            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            if (m_NetworkManager == null)
+            {
+                var networkManger = NetworkManager.Singleton;
+                if (networkManger != null && networkManger.IsServer || networkManger.IsClient) // check if networkmanager is running
+                {
+                    m_NetworkManager = networkManger;
+                    m_NetworkManager.NetworkTickSystem.Tick += AddFrames;
+                }
+            }
+            else
+            {
+                if (m_NetworkManager.IsServer == false && m_NetworkManager.IsClient == false) // no longer running
+                {
+                    m_NetworkManager.NetworkTickSystem.Tick -= AddFrames;
+                    m_NetworkManager = null;
+                }
+            }
         }
-
-        private void OnDestroy()
-        {
-            this.UnregisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
-        }
-
+        
         /// <summary>
         /// Turns time back a given amount of seconds, invokes an action and turns it back
         /// </summary>
@@ -76,7 +87,7 @@ namespace MLAPI.Extensions.LagCompensation
             {
                 simulatedObjects[i].ReverseTransform(secondsAgo);
             }
-            
+
             if (!Physics.autoSyncTransforms && m_SyncTransforms)
             {
                 Physics.SyncTransforms();
@@ -88,7 +99,7 @@ namespace MLAPI.Extensions.LagCompensation
             {
                 simulatedObjects[i].ResetStateTransform();
             }
-            
+
             if (!Physics.autoSyncTransforms && m_SyncTransforms)
             {
                 Physics.SyncTransforms();
@@ -121,29 +132,7 @@ namespace MLAPI.Extensions.LagCompensation
 
         internal int MaxQueuePoints()
         {
-            return (int)(m_SecondsHistory / (1f / NetworkManager.Singleton.NetworkConfig.EventTickrate));
-        }
-
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
-        {
-            switch (updateStage)
-            {
-                case NetworkUpdateStage.EarlyUpdate:
-                    NetworkEarlyUpdate();
-                    break;
-            }
-        }
-
-        private void NetworkEarlyUpdate()
-        {
-            //This is a check to make sure that we are actually in a new network tick.
-            //Initially this was done inside NetworkManager but since LagCompensation is a separate component now we need this safety check.
-            //Ideally we would be able to subscribe to a network tick event of the NetworkManager but that does not exist.
-            if (m_lastNetworkTime != NetworkManager.Singleton.NetworkTime)
-            {
-                m_lastNetworkTime = NetworkManager.Singleton.NetworkTime;
-                AddFrames();
-            }
+            return (int)(m_SecondsHistory / (1f / NetworkManager.Singleton.NetworkConfig.TickRate));
         }
     }
 }
