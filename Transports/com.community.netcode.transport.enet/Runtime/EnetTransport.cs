@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using ENet;
-using MLAPI.Transports;
-using MLAPI.Transports.Tasks;
+using Unity.Netcode;
 using Unity.Profiling;
 using UnityEngine;
 using Event = ENet.Event;
 using EventType = ENet.EventType;
 
-namespace MLAPI.Transports.Enet
+namespace Netcode.Transports.Enet
 {
     [DefaultExecutionOrder(1000)]
     public class EnetTransport : NetworkTransport
@@ -31,28 +30,13 @@ namespace MLAPI.Transports.Enet
         static ProfilerMarker s_Flush =
             new ProfilerMarker("Enet.Flush");
 #endif
-
-        [Serializable]
-        public struct EnetChannel
-        {
-            [HideInInspector]
-            public byte Id;
-            public EnetDelivery Delivery;
-        }
-
-        public enum EnetDelivery
-        {
-            UnreliableSequenced,
-            ReliableSequenced,
-            Unreliable
-        }
+        
 
         public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
 
         public ushort Port = 7777;
         public string Address = "127.0.0.1";
         public int MaxClients = 100;
-        public List<EnetChannel> Channels = new List<EnetChannel>();
         public int MessageBufferSize = 1024 * 5;
 
         [Header("ENET Settings")]
@@ -65,13 +49,8 @@ namespace MLAPI.Transports.Enet
         // Runtime / state
         private byte[] messageBuffer;
         private WeakReference temporaryBufferReference;
-
-
+        
         private readonly Dictionary<uint, Peer> connectedEnetPeers = new Dictionary<uint, Peer>();
-
-        private readonly Dictionary<NetworkChannel, byte> channelNameToId = new Dictionary<NetworkChannel, byte>();
-        private readonly Dictionary<byte, NetworkChannel> channelIdToName = new Dictionary<byte, NetworkChannel>();
-        private readonly Dictionary<byte, EnetChannel> internalChannels = new Dictionary<byte, EnetChannel>();
 
         private Host host;
 
@@ -83,15 +62,15 @@ namespace MLAPI.Transports.Enet
 
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
-            Packet packet = default(Packet);
+            Packet packet = default;
 
-            packet.Create(data.Array, data.Offset, data.Count, PacketFlagFromDelivery(internalChannels[channelNameToId[channel]].Delivery));
+            packet.Create(data.Array, data.Offset, data.Count, NetworkDeliveryToPacketFlag(delivery));
 
             GetEnetConnectionDetails(clientId, out uint peerId);
 
-            connectedEnetPeers[peerId].Send(channelNameToId[channel], ref packet);
+            connectedEnetPeers[peerId].Send(0, ref packet);
         }
 
         public void Update()
@@ -106,7 +85,7 @@ namespace MLAPI.Transports.Enet
 #endif
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_PollEvent.Begin();
@@ -125,7 +104,6 @@ namespace MLAPI.Transports.Enet
                         if (hasServiced || host.Service(0, out @event) <= 0)
                         {
                             clientId = 0;
-                            channel = 0;
                             payload = new ArraySegment<byte>();
                             receiveTime = Time.realtimeSinceStartup;
 
@@ -151,7 +129,6 @@ namespace MLAPI.Transports.Enet
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Connect.Begin();
 #endif
-                        channel = 0;
                         payload = new ArraySegment<byte>();
                         receiveTime = Time.realtimeSinceStartup;
 
@@ -176,7 +153,6 @@ namespace MLAPI.Transports.Enet
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Disconnect.Begin();
 #endif
-                        channel = 0;
                         payload = new ArraySegment<byte>();
                         receiveTime = Time.realtimeSinceStartup;
 
@@ -198,7 +174,6 @@ namespace MLAPI.Transports.Enet
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Receive.Begin();
 #endif
-                        channel = channelIdToName[@event.ChannelID];
                         receiveTime = Time.realtimeSinceStartup;
                         int size = @event.Packet.Length;
 
@@ -236,7 +211,6 @@ namespace MLAPI.Transports.Enet
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Timeout.Begin();
 #endif
-                        channel = 0;
                         payload = new ArraySegment<byte>();
                         receiveTime = Time.realtimeSinceStartup;
 
@@ -252,7 +226,6 @@ namespace MLAPI.Transports.Enet
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_NoEvent.Begin();
 #endif
-                        channel = 0;
                         payload = new ArraySegment<byte>();
                         receiveTime = Time.realtimeSinceStartup;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -276,13 +249,13 @@ namespace MLAPI.Transports.Enet
 
             host = new Host();
 
-            host.Create(1, MLAPI_CHANNELS.Length + Channels.Count);
+            host.Create(1, 16);
 
             Address address = new Address();
             address.Port = Port;
             address.SetHost(Address);
 
-            Peer serverPeer = host.Connect(address, MLAPI_CHANNELS.Length + Channels.Count);
+            Peer serverPeer = host.Connect(address, 16);
 
             serverPeer.PingInterval(PingInterval);
             serverPeer.Timeout(TimeoutLimit, TimeoutMinimum, TimeoutMaximum);
@@ -301,7 +274,7 @@ namespace MLAPI.Transports.Enet
             Address address = new Address();
             address.Port = Port;
 
-            host.Create(address, MaxClients, MLAPI_CHANNELS.Length + Channels.Count);
+            host.Create(address, MaxClients, 16);
 
             return SocketTask.Done.AsTasks();
         }
@@ -346,91 +319,26 @@ namespace MLAPI.Transports.Enet
             Library.Deinitialize();
         }
 
-        public override void Init()
+        public override void Initialize()
         {
             Library.Initialize();
 
-            internalChannels.Clear();
-            channelIdToName.Clear();
-            channelNameToId.Clear();
-
             connectedEnetPeers.Clear();
-
-            // MLAPI Channels
-            for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
-            {
-                channelIdToName.Add(i, MLAPI_CHANNELS[i].Channel);
-                channelNameToId.Add(MLAPI_CHANNELS[i].Channel, i);
-                internalChannels.Add(i, new EnetChannel()
-                {
-                    Id = i,
-                    Delivery = MLAPINetworkDeliveryToPacketFlag(MLAPI_CHANNELS[i].Delivery)
-                });
-            }
-
-            // Internal Channels
-            for (int i = 0; i < Channels.Count; i++)
-            {
-                byte id = (byte)(i + MLAPI_CHANNELS.Length);
-
-                channelIdToName.Add(id, (NetworkChannel)Channels[i].Id);
-                channelNameToId.Add((NetworkChannel)Channels[i].Id, id);
-                internalChannels.Add(id, new EnetChannel()
-                {
-                    Id = id,
-                    Delivery = Channels[i].Delivery
-                });
-            }
-
+            
             messageBuffer = new byte[MessageBufferSize];
         }
 
-        private PacketFlags PacketFlagFromDelivery(EnetDelivery delivery)
+        public PacketFlags NetworkDeliveryToPacketFlag(NetworkDelivery delivery)
         {
-            switch (delivery)
+            return delivery switch
             {
-                case EnetDelivery.UnreliableSequenced:
-                    return PacketFlags.None;
-                case EnetDelivery.ReliableSequenced:
-                    return PacketFlags.Reliable;
-                case EnetDelivery.Unreliable:
-                    return PacketFlags.Unsequenced;
-                default:
-                    return PacketFlags.None;
-            }
-        }
-
-        public EnetDelivery MLAPINetworkDeliveryToPacketFlag(NetworkDelivery type)
-        {
-            switch (type)
-            {
-                case NetworkDelivery.Unreliable:
-                    {
-                        return EnetDelivery.Unreliable;
-                    }
-                case NetworkDelivery.Reliable:
-                    {
-                        // ENET Does not support ReliableUnsequenced.
-                        // https://github.com/MidLevel/MLAPI.Transports/pull/5#issuecomment-498311723
-                        return EnetDelivery.ReliableSequenced;
-                    }
-                case NetworkDelivery.ReliableSequenced:
-                    {
-                        return EnetDelivery.ReliableSequenced;
-                    }
-                case NetworkDelivery.ReliableFragmentedSequenced:
-                    {
-                        return EnetDelivery.ReliableSequenced;
-                    }
-                case NetworkDelivery.UnreliableSequenced:
-                    {
-                        return EnetDelivery.UnreliableSequenced;
-                    }
-                default:
-                    {
-                        throw new ArgumentOutOfRangeException(nameof(type), type, null);
-                    }
-            }
+                NetworkDelivery.Unreliable => PacketFlags.Unsequenced,
+                NetworkDelivery.Reliable => PacketFlags.Reliable,  // ENET csharp Does not support ReliableUnsequenced. https://github.com/MidLevel/MLAPI.Transports/pull/5#issuecomment-498311723
+                NetworkDelivery.ReliableSequenced => PacketFlags.Reliable,
+                NetworkDelivery.ReliableFragmentedSequenced => PacketFlags.Reliable,
+                NetworkDelivery.UnreliableSequenced => PacketFlags.None, // unreliable sequenced according to docs here https://github.com/nxrighthere/ENet-CSharp
+                _ => throw new ArgumentOutOfRangeException(nameof(delivery), delivery, null)
+            };
         }
 
         public ulong GetMLAPIClientId(uint peerId, bool isServer)

@@ -1,8 +1,8 @@
 {
-    "name": "ENET MLAPI Transport",
-    "rootNamespace": "MLAPI.Transports.Enet",
+    "name": "ENET Transport for Netcode for GameObjects",
+    "rootNamespace": "Netcode.Transports.Enet",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
