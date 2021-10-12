@@ -1,8 +1,8 @@
 {
-    "name": "Facepunch MLAPI Transport",
-    "rootNamespace": "MLAPI.Transports.Facepunch",
+    "name": "Facepunch Transport for Netcode for GameObjects",
+    "rootNamespace": "Netcode.Transports.Facepunch",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [
         "Editor",
