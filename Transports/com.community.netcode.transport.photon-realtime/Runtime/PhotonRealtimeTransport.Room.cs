@@ -1,7 +1,7 @@
 using Photon.Realtime;
 using Unity.Netcode;
 
-namespace MLAPI.Transports.PhotonRealtime
+namespace Netcode.Transports.PhotonRealtime
 {
     public partial class PhotonRealtimeTransport : IInRoomCallbacks
     {

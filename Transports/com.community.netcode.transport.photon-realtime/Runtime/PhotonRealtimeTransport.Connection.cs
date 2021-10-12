@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using Photon.Realtime;
 using System;
 using Unity.Netcode;
+using UnityEngine;
 
-namespace MLAPI.Transports.PhotonRealtime
+namespace Netcode.Transports.PhotonRealtime
 {
     public partial class PhotonRealtimeTransport : IConnectionCallbacks
     {
@@ -27,9 +28,8 @@ namespace MLAPI.Transports.PhotonRealtime
 
             if (!success)
             {
-                m_ConnectTask.IsDone = true;
-                m_ConnectTask.Success = false;
-                m_ConnectTask.TransportException = new InvalidOperationException("Unable to create or join room.");
+                Debug.LogWarning("Unable to create or join room.");
+                m_ConnectionProgress.SetResult(false);
             }
         }
 

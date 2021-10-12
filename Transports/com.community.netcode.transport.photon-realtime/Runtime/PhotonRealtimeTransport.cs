@@ -2,12 +2,14 @@
 using Photon.Realtime;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace MLAPI.Transports.PhotonRealtime
+namespace Netcode.Transports.PhotonRealtime
 {
     [DefaultExecutionOrder(-1000)]
     public partial class PhotonRealtimeTransport : NetworkTransport, IOnEventCallback
@@ -55,7 +57,8 @@ namespace MLAPI.Transports.PhotonRealtime
         [Range(129, 199)]
         private byte m_KickEventCode = 130;
 
-        private SocketTask m_ConnectTask;
+        TaskCompletionSource<bool> m_ConnectionProgress;
+        
         private LoadBalancingClient m_Client;
 
         private bool m_IsHostOrServer;
@@ -159,23 +162,31 @@ namespace MLAPI.Transports.PhotonRealtime
         }
 
         /// <summary>
-        /// Creates and connects a peer synchronously to the region master server and returns a <see cref="SocketTask"/> containing the result.
+        /// Creates and connects a peer synchronously to the region master server and returns a bool containing the result.
         /// </summary>
         /// <returns></returns>
-        private SocketTask ConnectPeer()
+        private bool ConnectPeer()
         {
-            m_ConnectTask = SocketTask.Working;
             InitializeClient();
 
-            var connected = m_Client.ConnectUsingSettings(PhotonAppSettings.Instance.AppSettings);
+            return m_Client.ConnectUsingSettings(PhotonAppSettings.Instance.AppSettings);
+        }
 
-            if (!connected)
+        /// <summary>
+        /// Waits synchronously until the transport has connected to a room.
+        /// </summary>
+        /// <returns></returns>
+        private bool WaitForConnectionToRoomComplete()
+        {
+            
+            m_ConnectionProgress = new TaskCompletionSource<bool>();
+            while (m_ConnectionProgress.Task.Status == TaskStatus.Running)
             {
-                m_ConnectTask = SocketTask.Fault;
-                m_ConnectTask.Message = $"Can't connect to region: {this.m_Client.CloudRegion}";
+                do { } while (m_Client.LoadBalancingPeer.DispatchIncomingCommands());
+                Thread.Sleep(10);
             }
 
-            return m_ConnectTask;
+            return m_ConnectionProgress.Task.Result;
         }
 
         // -------------- Send/Receive --------------------------------------------------------------------------------
@@ -283,17 +294,35 @@ namespace MLAPI.Transports.PhotonRealtime
         }
 
         ///<inheritdoc/>
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
-            return ConnectPeer().AsTasks();
+            bool connect = ConnectPeer();
+            if (connect == false)
+            {
+                return false;
+            }
+
+            var connectToRoom = WaitForConnectionToRoomComplete();
+            return connectToRoom;
         }
 
         ///<inheritdoc/>
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
-            var task = ConnectPeer();
+            var result = ConnectPeer();
+            if (result == false)
+            {
+                return false;
+            }
+            
+            var connectToRoom = WaitForConnectionToRoomComplete();
+            if (connectToRoom == false)
+            {
+                return false;
+            }
+            
             m_IsHostOrServer = true;
-            return task.AsTasks();
+            return true;
         }
 
         /// <summary>
@@ -363,24 +392,15 @@ namespace MLAPI.Transports.PhotonRealtime
 
                 if (eventData.Code == this.m_BatchedTransportEventCode)
                 {
-                    using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
+                    var segment = new ArraySegment<byte>(slice.Buffer, slice.Offset, slice.Count);
+                    using var reader = new FastBufferReader(segment, Allocator.Temp);
+                    while (reader.Position < reader.Length)
                     {
-                        // moving data from one pooled wrapper to another (for MLAPI to read incoming data)
-                        buffer.Position = 0;
-                        buffer.Write(slice.Buffer, slice.Offset, slice.Count);
-                        buffer.SetLength(slice.Count);
-                        buffer.Position = 0;
-
-                        using (PooledNetworkReader reader = PooledNetworkReader.Get(buffer))
-                        {
-                            while (buffer.Position < buffer.Length)
-                            {
-                                int length = reader.ReadInt32Packed();
-                                byte[] dataArray = reader.ReadByteArray(null, length);
-
-                                InvokeTransportEvent(NetworkEvent.Data, senderId, new ArraySegment<byte>(dataArray, 0, dataArray.Length));
-                            }
-                        }
+                        reader.ReadValue(out int length);
+                        byte[] dataArray = new byte[length];
+                        reader.ReadBytes(ref dataArray, length);
+                        
+                        InvokeTransportEvent(NetworkEvent.Data, senderId, new ArraySegment<byte>(dataArray, 0, dataArray.Length));
                     }
                 }
                 else
@@ -498,9 +518,9 @@ namespace MLAPI.Transports.PhotonRealtime
         /// <summary>
         /// Memory Stream controller to store several events into one single buffer
         /// </summary>
-        class SendQueue
+        class SendQueue : IDisposable
         {
-            MemoryStream m_Stream;
+            FastBufferWriter m_Writer;
 
             /// <summary>
             /// The size of the send queue.
@@ -510,8 +530,7 @@ namespace MLAPI.Transports.PhotonRealtime
             public SendQueue(int size)
             {
                 Size = size;
-                byte[] buffer = new byte[size];
-                m_Stream = new MemoryStream(buffer, 0, buffer.Length, true, true);
+                m_Writer = new FastBufferWriter(size, Allocator.Persistent);
             }
 
             /// <summary>
@@ -521,34 +540,36 @@ namespace MLAPI.Transports.PhotonRealtime
             /// <returns>True if the event was added successfully to the queue. False if there was no space in the queue.</returns>
             internal bool AddEvent(ArraySegment<byte> data)
             {
-                if (m_Stream.Position + data.Count + 4 > Size)
+                if (m_Writer.Position + data.Count + 4 > Size)
                 {
                     return false;
                 }
 
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(m_Stream))
-                {
-                    writer.WriteInt32Packed(data.Count);
-                    Array.Copy(data.Array, data.Offset, m_Stream.GetBuffer(), m_Stream.Position, data.Count);
-                    m_Stream.Position += data.Count;
-                }
+                m_Writer.WriteValue(data.Count);
+                m_Writer.WriteBytes(data.Array, data.Count, data.Offset);
 
                 return true;
             }
 
             internal void Clear()
             {
-                m_Stream.Position = 0;
+                m_Writer.Truncate(0);
             }
 
             internal bool IsEmpty()
             {
-                return m_Stream.Position == 0;
+                return m_Writer.Position == 0;
             }
 
             internal ArraySegment<byte> GetData()
             {
-                return new ArraySegment<byte>(m_Stream.GetBuffer(), 0, (int)m_Stream.Position);
+                var array = m_Writer.ToArray();
+                return new ArraySegment<byte>(array);
+            }
+
+            public void Dispose()
+            {
+                m_Writer.Dispose();
             }
         }
         
