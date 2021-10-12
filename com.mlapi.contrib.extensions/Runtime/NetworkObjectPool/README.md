@@ -1,6 +1,6 @@
 ## NetworkObjectPool
 
-NetworkObjectPool is a generic object pool script which works as an example out of the box solution for how to pool objects with MLAPI.
+NetworkObjectPool is a generic object pool script which works as an example out of the box solution for how to pool objects with Netcode for GameObjects.
 
 To use this just add it to your scene with the NetworkingManager and register all objects you want to get auto pooled.
 

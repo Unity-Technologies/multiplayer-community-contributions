@@ -4,7 +4,7 @@
 // using Unity.Netcode.Transports.UNET;
 // using UnityEngine;
 //
-// namespace MLAPI.Extensions
+// namespace Netcode.Extensions
 // {
 //     [RequireComponent(typeof(NetworkManager))]
 //     [DisallowMultipleComponent]

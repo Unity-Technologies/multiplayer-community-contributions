@@ -1,4 +1,4 @@
-using MLAPI.Extensions.LagCompensation;
+using Netcode.Extensions.LagCompensation;
 using Unity.Netcode;
 
 namespace UnityEditor

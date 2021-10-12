@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace MLAPI.Extensions.LagCompensation
+namespace Netcode.Extensions.LagCompensation
 {
     //Based on: https://twotenpvp.github.io/lag-compensation-in-unity.html
     //Modified to be used with latency rather than fixed frames and subframes. Thus it will be less accrurate but more modular.
@@ -11,7 +11,7 @@ namespace MLAPI.Extensions.LagCompensation
     /// <summary>
     /// A component used for lag compensation. Each object with this component will get tracked
     /// </summary>
-    [AddComponentMenu("MLAPI/TrackedObject", -98)]
+    [AddComponentMenu("Netcode/TrackedObject", -98)]
     public class TrackedObject : MonoBehaviour
     {
         Dictionary<float, TrackedPoint> m_FrameData = new Dictionary<float, TrackedPoint>();

@@ -5,7 +5,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace MLAPI.Extensions
+namespace Netcode.Extensions
 {
     public class NetworkObjectPool : MonoBehaviour
     {
@@ -102,7 +102,7 @@ namespace MLAPI.Extensions
                 ReturnNetworkObject(go.GetComponent<NetworkObject>(), prefab);
             }
 
-            // Register MLAPI Spawn handlers
+            // Register netcode Spawn handlers
             m_NetworkManager.PrefabHandler.AddHandler(prefab, new DummyPrefabInstanceHandler(prefab, this));
         }
 

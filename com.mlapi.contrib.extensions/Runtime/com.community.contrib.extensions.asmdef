@@ -1,18 +1,16 @@
 {
-    "name": "MLAPI Community Extensions Editor",
-    "rootNamespace": "",
+    "name": "Netcode for GameObjects Community Extensions",
+    "rootNamespace": "Netcode.Extensions",
     "references": [
-        "MLAPI Community Extensions",
-        "Unity.Netcode.Runtime"
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Adapter.UTP"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

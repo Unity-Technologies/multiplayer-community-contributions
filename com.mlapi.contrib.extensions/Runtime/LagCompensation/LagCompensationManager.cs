@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace MLAPI.Extensions.LagCompensation
+namespace Netcode.Extensions.LagCompensation
 {
     /// <summary>
     /// The main class for controlling lag compensation

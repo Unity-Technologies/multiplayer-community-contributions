@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace MLAPI.Extensions.LagCompensation
+namespace Netcode.Extensions.LagCompensation
 {
     internal struct TrackedPoint
     {
