@@ -6,9 +6,8 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Assertions;
 
-namespace MLAPI.Transports.LiteNetLib
+namespace Netcode.Transports.LiteNetLib
 {
     public class LiteNetLibTransport : NetworkTransport, INetEventListener
     {
@@ -18,13 +17,7 @@ namespace MLAPI.Transports.LiteNetLib
             Server,
             Client
         }
-
-        struct LiteChannel
-        {
-            public byte ChannelNumber;
-            public DeliveryMethod Method;
-        }
-
+        
         [Tooltip("The port to listen on (if server) or connect to (if client)")]
         public ushort Port = 7777;
         [Tooltip("The address to connect to as client; ignored if server")]
