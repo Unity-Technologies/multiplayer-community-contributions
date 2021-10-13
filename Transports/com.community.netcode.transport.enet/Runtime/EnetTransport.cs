@@ -56,8 +56,6 @@ namespace Netcode.Transports.Enet
 
         private uint serverPeerId;
 
-        private SocketTask connectTask;
-
         private bool hasServiced;
 
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
@@ -136,13 +134,6 @@ namespace Netcode.Transports.Enet
 
                         @event.Peer.PingInterval(PingInterval);
                         @event.Peer.Timeout(TimeoutLimit, TimeoutMinimum, TimeoutMaximum);
-
-                        if (connectTask != null)
-                        {
-                            connectTask.Success = true;
-                            connectTask.IsDone = true;
-                            connectTask = null;
-                        }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Connect.End();
 #endif
@@ -157,13 +148,6 @@ namespace Netcode.Transports.Enet
                         receiveTime = Time.realtimeSinceStartup;
 
                         connectedEnetPeers.Remove(@event.Peer.ID);
-
-                        if (connectTask != null)
-                        {
-                            connectTask.Success = false;
-                            connectTask.IsDone = true;
-                            connectTask = null;
-                        }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Disconnect.End();
 #endif
@@ -243,10 +227,8 @@ namespace Netcode.Transports.Enet
             }
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
-            SocketTask task = SocketTask.Working;
-
             host = new Host();
 
             host.Create(1, 16);
@@ -262,12 +244,10 @@ namespace Netcode.Transports.Enet
 
             serverPeerId = serverPeer.ID;
 
-            connectTask = task;
-
-            return task.AsTasks();
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             host = new Host();
 
@@ -276,7 +256,7 @@ namespace Netcode.Transports.Enet
 
             host.Create(address, MaxClients, 16);
 
-            return SocketTask.Done.AsTasks();
+            return true;
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
