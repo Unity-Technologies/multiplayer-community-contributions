@@ -22,7 +22,6 @@ namespace Netcode.Transports.PhotonRealtime
 
         public void OnCreateRoomFailed(short returnCode, string message)
         {
-            m_ConnectionProgress.SetResult(false);
             Debug.LogWarning($"Create Room Failed: {message}");
             InvokeTransportEvent(NetworkEvent.Disconnect);
         }
@@ -36,8 +35,6 @@ namespace Netcode.Transports.PhotonRealtime
             Debug.LogFormat("Caching Original Master Client: {0}", CurrentMasterId);
             m_originalRoomMasterClient = CurrentMasterId;
 
-            m_ConnectionProgress.SetResult(true);
-            
             // any client (except host/server) need to know about their own join event
             if (!m_IsHostOrServer)
             {
@@ -55,7 +52,6 @@ namespace Netcode.Transports.PhotonRealtime
         public void OnJoinRoomFailed(short returnCode, string message)
         {
             Debug.LogWarning($"Join Room Failed: {message}");
-            m_ConnectionProgress.SetResult(false);
             InvokeTransportEvent(NetworkEvent.Disconnect);
         }
 

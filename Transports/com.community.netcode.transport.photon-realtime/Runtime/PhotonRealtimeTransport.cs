@@ -57,8 +57,6 @@ namespace Netcode.Transports.PhotonRealtime
         [Range(129, 199)]
         private byte m_KickEventCode = 130;
 
-        TaskCompletionSource<bool> m_ConnectionProgress;
-        
         private LoadBalancingClient m_Client;
 
         private bool m_IsHostOrServer;
@@ -172,23 +170,6 @@ namespace Netcode.Transports.PhotonRealtime
             return m_Client.ConnectUsingSettings(PhotonAppSettings.Instance.AppSettings);
         }
 
-        /// <summary>
-        /// Waits synchronously until the transport has connected to a room.
-        /// </summary>
-        /// <returns></returns>
-        private bool WaitForConnectionToRoomComplete()
-        {
-            
-            m_ConnectionProgress = new TaskCompletionSource<bool>();
-            while (m_ConnectionProgress.Task.Status == TaskStatus.Running)
-            {
-                do { } while (m_Client.LoadBalancingPeer.DispatchIncomingCommands());
-                Thread.Sleep(10);
-            }
-
-            return m_ConnectionProgress.Task.Result;
-        }
-
         // -------------- Send/Receive --------------------------------------------------------------------------------
 
         ///<inheritdoc/>
@@ -296,14 +277,8 @@ namespace Netcode.Transports.PhotonRealtime
         ///<inheritdoc/>
         public override bool StartClient()
         {
-            bool connect = ConnectPeer();
-            if (connect == false)
-            {
-                return false;
-            }
-
-            var connectToRoom = WaitForConnectionToRoomComplete();
-            return connectToRoom;
+            bool connected = ConnectPeer();
+            return connected;
         }
 
         ///<inheritdoc/>
@@ -314,13 +289,7 @@ namespace Netcode.Transports.PhotonRealtime
             {
                 return false;
             }
-            
-            var connectToRoom = WaitForConnectionToRoomComplete();
-            if (connectToRoom == false)
-            {
-                return false;
-            }
-            
+
             m_IsHostOrServer = true;
             return true;
         }

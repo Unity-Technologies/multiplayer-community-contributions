@@ -29,7 +29,7 @@ namespace Netcode.Transports.PhotonRealtime
             if (!success)
             {
                 Debug.LogWarning("Unable to create or join room.");
-                m_ConnectionProgress.SetResult(false);
+                InvokeTransportEvent(NetworkEvent.Disconnect);
             }
         }
 
