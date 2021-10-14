@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using WebSocketSharp;
 
-namespace MLAPI.Transports.WebSocket
+namespace Netcode.Transports.WebSocket
 {
     public interface IWebSocketClient
     {

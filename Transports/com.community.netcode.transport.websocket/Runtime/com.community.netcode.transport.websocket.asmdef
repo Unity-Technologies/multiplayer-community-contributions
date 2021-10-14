@@ -2,6 +2,7 @@
     "name": "WebSocket Transport for Netcode for GameObjects",
     "rootNamespace": "",
     "references": [
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

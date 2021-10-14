@@ -6,7 +6,7 @@ using AOT;
 using WebSocketSharp;
 #endif
 
-namespace MLAPI.Transports.WebSocket
+namespace Netcode.Transports.WebSocket
 {
     public class WebSocketClientFactory
     {

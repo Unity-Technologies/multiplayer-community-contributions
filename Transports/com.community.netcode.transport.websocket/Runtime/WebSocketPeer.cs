@@ -2,7 +2,7 @@ using System;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 
-namespace MLAPI.Transports.WebSocket
+namespace Netcode.Transports.WebSocket
 {
     public struct WebSocketPeer
     {
