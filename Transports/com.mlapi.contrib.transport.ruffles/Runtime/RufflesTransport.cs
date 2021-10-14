@@ -1,38 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using MLAPI.Transports.Tasks;
 using Ruffles.Configuration;
 using Ruffles.Core;
 using Ruffles.Time;
 using Ruffles.Channeling;
 using Ruffles.Simulation;
-using Ruffles.Utils;
+using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Assertions;
+using LogLevel = Ruffles.Utils.LogLevel;
+using NetworkEvent = Unity.Netcode.NetworkEvent;
 using RufflesConnection = Ruffles.Connections.Connection;
 using RufflesNetworkEvent = Ruffles.Core.NetworkEvent;
 using RufflesLogging = Ruffles.Utils.Logging;
 
-namespace MLAPI.Transports.Ruffles
+namespace Netcode.Transports.Ruffles
 {
     public class RufflesTransport : NetworkTransport
     {
-        [Serializable]
-        public class RufflesChannel
-        {
-            public byte ChannelId;
-            public ChannelType Type;
-        }
-
         public override bool IsSupported => Application.platform != RuntimePlatform.WebGLPlayer;
 
         // Inspector / settings
         [Header("Transport")]
         public string ConnectAddress = "127.0.0.1";
         public ushort Port = 7777;
-        public List<RufflesChannel> Channels = new List<RufflesChannel>();
         public int TransportBufferSize = 1024 * 8;
         public LogLevel LogLevel = LogLevel.Info;
 
@@ -110,28 +101,26 @@ namespace MLAPI.Transports.Ruffles
         // Lookup / translation
         private readonly Dictionary<ulong, RufflesConnection> connections = new Dictionary<ulong, RufflesConnection>();
 
-        private readonly Dictionary<NetworkChannel, byte> channelNameToId = new Dictionary<NetworkChannel, byte>();
-        private readonly Dictionary<byte, NetworkChannel> channelIdToName = new Dictionary<byte, NetworkChannel>();
+        private readonly Dictionary<NetworkDelivery, byte> channelNameToId = new Dictionary<NetworkDelivery, byte>();
 
         // Ruffles
         private RuffleSocket socket;
 
         // Connector task
-        private SocketTask connectTask;
         private RufflesConnection serverConnection;
 
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
             GetRufflesConnectionDetails(clientId, out ulong connectionId);
 
-            byte channelId = channelNameToId[channel];
+            byte channelId = channelNameToId[delivery];
 
             connections[connectionId].Send(data, channelId, false, 0);
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             RufflesNetworkEvent @event = socket.Poll();
 
@@ -162,8 +151,6 @@ namespace MLAPI.Transports.Ruffles
                 payload = new ArraySegment<byte>();
             }
 
-            channel = channelIdToName[@event.ChannelId];
-
             if (@event.Connection != null)
             {
                 clientId = GetMLAPIClientId(@event.Connection.Id, false);
@@ -181,12 +168,9 @@ namespace MLAPI.Transports.Ruffles
                     return NetworkEvent.Data;
                 case NetworkEventType.Connect:
                 {
-                    if (isConnector && @event.Connection == serverConnection && connectTask != null)
+                    if (isConnector && @event.Connection == serverConnection)
                     {
                         // Connection successful
-                        connectTask.Success = true;
-                        connectTask.IsDone = true;
-                        connectTask = null;
                     }
 
                     // Add the connection
@@ -198,12 +182,9 @@ namespace MLAPI.Transports.Ruffles
                 case NetworkEventType.Timeout:
                 case NetworkEventType.Disconnect:
                 {
-                    if (isConnector && @event.Connection == serverConnection && connectTask != null)
+                    if (isConnector && @event.Connection == serverConnection)
                     {
                         // Connection failed
-                        connectTask.Success = false;
-                        connectTask.IsDone = true;
-                        connectTask = null;
                     }
 
                     connections.Remove(@event.Connection.Id);
@@ -217,7 +198,7 @@ namespace MLAPI.Transports.Ruffles
             }
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
             SocketConfig config = GetConfig(false);
 
@@ -227,24 +208,20 @@ namespace MLAPI.Transports.Ruffles
 
             if (!socket.Start())
             {
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
             serverConnection = socket.Connect(new IPEndPoint(IPAddress.Parse(ConnectAddress), Port));
 
             if (serverConnection == null)
             {
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
-            else
-            {
-                connectTask = SocketTask.Working;
 
-                return connectTask.AsTasks();
-            }
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             SocketConfig config = GetConfig(true);
 
@@ -253,14 +230,7 @@ namespace MLAPI.Transports.Ruffles
             serverConnection = null;
             isConnector = false;
 
-            if (socket.Start())
-            {
-                return SocketTask.Done.AsTasks();
-            }
-            else
-            {
-                return SocketTask.Fault.AsTasks();
-            }
+            return socket.Start();
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
@@ -287,7 +257,6 @@ namespace MLAPI.Transports.Ruffles
 
         public override void Shutdown()
         {
-            channelIdToName.Clear();
             channelNameToId.Clear();
             connections.Clear();
 
@@ -305,12 +274,9 @@ namespace MLAPI.Transports.Ruffles
 
             // Release server connection to GC
             serverConnection = null;
-
-            // Null the connect task
-            connectTask = null;
         }
 
-        public override void Init()
+        public override void Initialize()
         {
             messageBuffer = new byte[TransportBufferSize];
 
@@ -412,25 +378,14 @@ namespace MLAPI.Transports.Ruffles
                 EnableAckNotifications = EnableAckNotifications
             };
 
-            int channelCount = MLAPI_CHANNELS.Length + Channels.Count;
-            config.ChannelTypes = new ChannelType[channelCount];
+            var deliveryValues = Enum.GetValues(typeof(NetworkDelivery));
+            config.ChannelTypes = new ChannelType[deliveryValues.Length];
 
-            for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
+            for (byte i = 0; i < deliveryValues.Length; i++)
             {
-                config.ChannelTypes[i] = ConvertChannelType(MLAPI_CHANNELS[i].Delivery);
-                channelIdToName.Add(i, MLAPI_CHANNELS[i].Channel);
-                channelNameToId.Add(MLAPI_CHANNELS[i].Channel, i);
-            }
-
-            for (byte i = (byte)MLAPI_CHANNELS.Length; i < Channels.Count + MLAPI_CHANNELS.Length; i++)
-            {
-                var channel = Channels[config.ChannelTypes.Length - 1 - i];
-                Assert.IsFalse(MLAPI_CHANNELS.Any(t => t.Channel == (NetworkChannel)channel.ChannelId), 
-                    $"Channel with id: {channel.ChannelId} is already used by MLAPI. Use a different id.");
-                
-                config.ChannelTypes[i] = channel.Type;
-                channelIdToName.Add(i, (NetworkChannel)channel.ChannelId);
-                channelNameToId.Add((NetworkChannel)channel.ChannelId, i);
+                var delivery = (NetworkDelivery)deliveryValues.GetValue(i);
+                config.ChannelTypes[i] = ConvertChannelType(delivery);
+                channelNameToId.Add(delivery, i);
             }
 
             return config;
