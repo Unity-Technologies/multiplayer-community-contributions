@@ -160,24 +160,24 @@ namespace Netcode.Transports.Facepunch
             return NetworkEvent.Nothing;
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Starting as client.");
 
             connectionManager = SteamNetworkingSockets.ConnectRelay<ConnectionManager>(targetSteamId);
             connectionManager.Interface = this;
-            return SocketTask.Working.AsTasks();
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Starting as server.");
 
             socketManager = SteamNetworkingSockets.CreateRelaySocket<SocketManager>();
             socketManager.Interface = this;
-            return SocketTask.Done.AsTasks();
+            return true;
         }
 
         #endregion
