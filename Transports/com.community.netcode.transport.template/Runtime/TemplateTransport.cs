@@ -1,26 +1,26 @@
 ﻿using System;
-using MLAPI.Transports.Tasks;
+using Unity.Netcode;
 
-namespace MLAPI.Transports.Template
+namespace Netcode.Transports.Template
 {
     public class TemplateTransport : NetworkTransport
     {
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
             throw new NotImplementedException();
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             throw new NotImplementedException();
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
             throw new NotImplementedException();
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             throw new NotImplementedException();
         }
@@ -45,7 +45,7 @@ namespace MLAPI.Transports.Template
             throw new NotImplementedException();
         }
 
-        public override void Init()
+        public override void Initialize()
         {
             throw new NotImplementedException();
         }

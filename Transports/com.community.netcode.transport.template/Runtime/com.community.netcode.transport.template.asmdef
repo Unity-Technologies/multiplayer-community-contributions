@@ -1,8 +1,8 @@
 {
-    "name": "[name] MLAPI Transport",
-    "rootNamespace": "MLAPI.Transport.[name]",
+    "name": "[name] Transport for Netcode for GameObjects",
+    "rootNamespace": "Netcode.Transport.[name]",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "com.unity.netcode.runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
