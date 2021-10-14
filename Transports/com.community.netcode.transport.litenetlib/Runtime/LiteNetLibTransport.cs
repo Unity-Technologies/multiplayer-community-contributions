@@ -47,9 +47,7 @@ namespace Netcode.Transports.LiteNetLib
 
         public override ulong ServerClientId => 0;
         HostType m_HostType;
-
-        SocketTask m_ConnectTask;
-
+        
         void OnValidate()
         {
             PingInterval = Math.Max(0, PingInterval);
@@ -84,10 +82,8 @@ namespace Netcode.Transports.LiteNetLib
             return NetworkEvent.Nothing;
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
-            SocketTask task = SocketTask.Working;
-
             if (m_HostType != HostType.None)
             {
                 throw new InvalidOperationException("Already started as " + m_HostType);
@@ -95,8 +91,12 @@ namespace Netcode.Transports.LiteNetLib
 
             m_HostType = HostType.Client;
 
-            m_NetManager.Start();
-
+            var success = m_NetManager.Start();
+            if (success == false)
+            {
+                return false;
+            }
+            
             NetPeer peer = m_NetManager.Connect(Address, Port, string.Empty);
 
             if (peer.Id != 0)
@@ -106,10 +106,10 @@ namespace Netcode.Transports.LiteNetLib
 
             m_Peers[(ulong)peer.Id] = peer;
 
-            return task.AsTasks();
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             if (m_HostType != HostType.None)
             {
@@ -120,16 +120,7 @@ namespace Netcode.Transports.LiteNetLib
 
             bool success = m_NetManager.Start(Port);
 
-            return new SocketTask()
-            {
-                IsDone = true,
-                Message = null,
-                SocketError = SocketError.SocketError,
-                State = null,
-                Success = success,
-                TransportCode = -1,
-                TransportException = null
-            }.AsTasks();
+            return success;
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
@@ -221,13 +212,6 @@ namespace Netcode.Transports.LiteNetLib
 
         void INetEventListener.OnPeerConnected(NetPeer peer)
         {
-            if (m_ConnectTask != null)
-            {
-                m_ConnectTask.Success = true;
-                m_ConnectTask.IsDone = true;
-                m_ConnectTask = null;
-            }
-
             var peerId = GetMlapiClientId(peer);
             InvokeOnTransportEvent(NetworkEvent.Connect, peerId, default, Time.time);
 
@@ -236,13 +220,6 @@ namespace Netcode.Transports.LiteNetLib
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            if (m_ConnectTask != null)
-            {
-                m_ConnectTask.Success = false;
-                m_ConnectTask.IsDone = true;
-                m_ConnectTask = null;
-            }
-
             var peerId = GetMlapiClientId(peer);
             InvokeOnTransportEvent(NetworkEvent.Disconnect, GetMlapiClientId(peer), default, Time.time);
 
@@ -252,12 +229,6 @@ namespace Netcode.Transports.LiteNetLib
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
             // Ignore
-            if (m_ConnectTask != null)
-            {
-                m_ConnectTask.SocketError = socketError;
-                m_ConnectTask.IsDone = true;
-                m_ConnectTask = null;
-            }
         }
 
         void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
