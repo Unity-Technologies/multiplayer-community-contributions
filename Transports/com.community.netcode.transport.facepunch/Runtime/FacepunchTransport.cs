@@ -157,6 +157,7 @@ namespace Netcode.Transports.Facepunch
 
             clientId = 0;
             receiveTime = Time.realtimeSinceStartup;
+            payload = default;
             return NetworkEvent.Nothing;
         }
 
