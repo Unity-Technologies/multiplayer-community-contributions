@@ -1,7 +1,7 @@
 using System;
-using MLAPI.Transports;
+using Unity.Netcode;
 
-namespace MLAPI.Transports.WebSocket
+namespace Netcode.Transports.WebSocket
 {
     public class WebSocketEvent
     {

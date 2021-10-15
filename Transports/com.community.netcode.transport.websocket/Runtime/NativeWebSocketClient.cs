@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using WebSocketSharp;
 
-namespace MLAPI.Transports.WebSocket
+namespace Netcode.Transports.WebSocket
 {
     public class NativeWebSocketClient : IWebSocketClient
     {

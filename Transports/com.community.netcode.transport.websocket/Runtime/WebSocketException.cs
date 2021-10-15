@@ -1,6 +1,6 @@
 using System;
 
-namespace MLAPI.Transports.WebSocket
+namespace Netcode.Transports.WebSocket
 {
     public class WebSocketException : Exception
     {

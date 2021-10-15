@@ -6,7 +6,7 @@ using WebSocketSharp;
 using WebSocketSharp.Server;
 
 
-namespace MLAPI.Transports.WebSocket
+namespace Netcode.Transports.WebSocket
 {
     public class WebSocketServerConnectionBehavior : WebSocketBehavior
     {

@@ -1,12 +1,9 @@
 using System;
-using System.Collections.Generic;
-using MLAPI.Transports;
-using MLAPI.Transports.Tasks;
+using Unity.Netcode;
 using UnityEngine;
-using WebSocketSharp;
 using WebSocketSharp.Server;
 
-namespace MLAPI.Transports.WebSocket
+namespace Netcode.Transports.WebSocket
 {
     public class WebSocketTransport : NetworkTransport
     {
@@ -44,7 +41,7 @@ namespace MLAPI.Transports.WebSocket
             return 0;
         }
 
-        public override void Init()
+        public override void Initialize()
         {
 
         }
@@ -59,12 +56,11 @@ namespace MLAPI.Transports.WebSocket
             return WebSocketServerConnectionBehavior.Poll();
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             var e = GetNextWebSocketEvent();
 
             clientId = e.ClientId;
-            networkChannel = NetworkChannel.ChannelUnused;
             receiveTime = Time.realtimeSinceStartup;
 
             if (e.Payload != null)
@@ -79,7 +75,7 @@ namespace MLAPI.Transports.WebSocket
             return e.GetNetworkEvent();
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
             if (clientId == ServerClientId)
             {
@@ -103,7 +99,7 @@ namespace MLAPI.Transports.WebSocket
             }
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
             if (IsStarted)
             {
@@ -115,10 +111,10 @@ namespace MLAPI.Transports.WebSocket
 
             IsStarted = true;
 
-            return SocketTask.Done.AsTasks();
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             if (IsStarted)
             {
@@ -131,7 +127,7 @@ namespace MLAPI.Transports.WebSocket
 
             IsStarted = true;
 
-            return SocketTask.Done.AsTasks();
+            return true;
         }
     }
 }

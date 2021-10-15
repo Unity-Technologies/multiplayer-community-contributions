@@ -1,8 +1,8 @@
 {
-    "name": "WebSocket MLAPI Transport",
+    "name": "WebSocket Transport for Netcode for GameObjects",
     "rootNamespace": "",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
