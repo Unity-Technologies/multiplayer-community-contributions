@@ -301,6 +301,7 @@ namespace Netcode.Transports.PhotonRealtime
         {
             clientId = 0;
             receiveTime = Time.realtimeSinceStartup;
+            payload = default;
             return NetworkEvent.Nothing;
         }
 
