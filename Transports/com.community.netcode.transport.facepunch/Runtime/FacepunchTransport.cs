@@ -1,26 +1,21 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using MLAPI.Logging;
-using MLAPI.Transports.Tasks;
 using Steamworks;
 using Steamworks.Data;
+using Unity.Netcode;
 using UnityEngine;
 
-namespace MLAPI.Transports.Facepunch
+namespace Netcode.Transports.Facepunch
 {
-    using SocketConnection = Steamworks.Data.Connection;
+    using SocketConnection = Connection;
 
     public class FacepunchTransport : NetworkTransport, IConnectionManager, ISocketManager
     {
         private ConnectionManager connectionManager;
         private SocketManager socketManager;
         private Dictionary<ulong, Client> connectedClients;
-        private Dictionary<NetworkChannel, SendType> channelSendTypes;
-
-        [SerializeField] private List<TransportChannel> channels = new List<TransportChannel>();
 
         [Space]
         [Tooltip("The Steam App ID of your game. Technically you're not allowed to use 480, but Valve doesn't do anything about it so it's fine for testing purposes.")]
@@ -104,25 +99,22 @@ namespace MLAPI.Transports.Facepunch
             return 0;
         }
 
-        public override void Init()
+        public override void Initialize()
         {
             connectedClients = new Dictionary<ulong, Client>();
-            channelSendTypes = new Dictionary<NetworkChannel, SendType>();
+        }
 
-            foreach (TransportChannel channel in MLAPI_CHANNELS.Concat(channels))
+        private SendType NetworkDeliveryToSendType(NetworkDelivery delivery)
+        {
+            return delivery switch
             {
-                SendType sendType = channel.Delivery switch
-                {
-                    NetworkDelivery.Reliable => SendType.Reliable,
-                    NetworkDelivery.ReliableFragmentedSequenced => SendType.Reliable,
-                    NetworkDelivery.ReliableSequenced => SendType.Reliable,
-                    NetworkDelivery.Unreliable => SendType.Unreliable,
-                    NetworkDelivery.UnreliableSequenced => SendType.Unreliable,
-                    _ => SendType.Reliable
-                };
-
-                channelSendTypes.Add(channel.Channel, sendType);
-            }
+                NetworkDelivery.Reliable => SendType.Reliable,
+                NetworkDelivery.ReliableFragmentedSequenced => SendType.Reliable,
+                NetworkDelivery.ReliableSequenced => SendType.Reliable,
+                NetworkDelivery.Unreliable => SendType.Unreliable,
+                NetworkDelivery.UnreliableSequenced => SendType.Unreliable,
+                _ => SendType.Reliable
+            };
         }
 
         public override void Shutdown()
@@ -142,54 +134,51 @@ namespace MLAPI.Transports.Facepunch
             }
         }
 
-        public override unsafe void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+        public override unsafe void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
-            if (!channelSendTypes.TryGetValue(networkChannel, out SendType sendType))
-                if (!channelSendTypes.TryGetValue(NetworkChannel.DefaultMessage, out sendType))
-                    sendType = SendType.Reliable;
+            var sendType = NetworkDeliveryToSendType(delivery);
 
-            byte* buffer = stackalloc byte[data.Count + 1];
+            byte* buffer = stackalloc byte[data.Count];
             fixed (byte* pointer = data.Array)
                 Buffer.MemoryCopy(pointer + data.Offset, buffer, data.Count, data.Count);
-            buffer[data.Count] = (byte)networkChannel;
 
             if (clientId == ServerClientId)
-                connectionManager.Connection.SendMessage((IntPtr)buffer, data.Count + 1, sendType);
+                connectionManager.Connection.SendMessage((IntPtr)buffer, data.Count , sendType);
             else if (connectedClients.TryGetValue(clientId, out Client user))
-                user.connection.SendMessage((IntPtr)buffer, data.Count + 1, sendType);
+                user.connection.SendMessage((IntPtr)buffer, data.Count, sendType);
             else if (LogLevel <= LogLevel.Normal)
                 Debug.LogWarning($"[{nameof(FacepunchTransport)}] - Failed to send packet to remote client with ID {clientId}, client not connected.");
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             connectionManager?.Receive();
             socketManager?.Receive();
 
             clientId = 0;
-            networkChannel = default;
             receiveTime = Time.realtimeSinceStartup;
+            payload = default;
             return NetworkEvent.Nothing;
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Starting as client.");
 
             connectionManager = SteamNetworkingSockets.ConnectRelay<ConnectionManager>(targetSteamId);
             connectionManager.Interface = this;
-            return SocketTask.Working.AsTasks();
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Starting as server.");
 
             socketManager = SteamNetworkingSockets.CreateRelaySocket<SocketManager>();
             socketManager.Interface = this;
-            return SocketTask.Done.AsTasks();
+            return true;
         }
 
         #endregion
@@ -204,7 +193,7 @@ namespace MLAPI.Transports.Facepunch
 
         void IConnectionManager.OnConnected(ConnectionInfo info)
         {
-            InvokeOnTransportEvent(NetworkEvent.Connect, ServerClientId, NetworkChannel.ChannelUnused, default, Time.realtimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Connect, ServerClientId, default, Time.realtimeSinceStartup);
 
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Connected with Steam user {info.Identity.SteamId}.");
@@ -212,7 +201,7 @@ namespace MLAPI.Transports.Facepunch
 
         void IConnectionManager.OnDisconnected(ConnectionInfo info)
         {
-            InvokeOnTransportEvent(NetworkEvent.Disconnect, ServerClientId, NetworkChannel.ChannelUnused, default, Time.realtimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, ServerClientId, default, Time.realtimeSinceStartup);
 
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}.");
@@ -222,7 +211,7 @@ namespace MLAPI.Transports.Facepunch
         {
             byte[] payload = new byte[size];
             Marshal.Copy(data, payload, 0, size);
-            InvokeOnTransportEvent(NetworkEvent.Data, ServerClientId, (NetworkChannel)payload[size - 1], new ArraySegment<byte>(payload, 0, size - 1), Time.realtimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Data, ServerClientId, new ArraySegment<byte>(payload, 0, size - 1), Time.realtimeSinceStartup);
         }
 
         #endregion
@@ -247,7 +236,7 @@ namespace MLAPI.Transports.Facepunch
                     steamId = info.Identity.SteamId
                 });
 
-                InvokeOnTransportEvent(NetworkEvent.Connect, connection.Id, NetworkChannel.ChannelUnused, default, Time.realtimeSinceStartup);
+                InvokeOnTransportEvent(NetworkEvent.Connect, connection.Id, default, Time.realtimeSinceStartup);
 
                 if (LogLevel <= LogLevel.Developer)
                     Debug.Log($"[{nameof(FacepunchTransport)}] - Connected with Steam user {info.Identity.SteamId}.");
@@ -260,7 +249,7 @@ namespace MLAPI.Transports.Facepunch
         {
             connectedClients.Remove(connection.Id);
 
-            InvokeOnTransportEvent(NetworkEvent.Disconnect, connection.Id, NetworkChannel.ChannelUnused, default, Time.realtimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, connection.Id, default, Time.realtimeSinceStartup);
 
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}");
@@ -270,7 +259,7 @@ namespace MLAPI.Transports.Facepunch
         {
             byte[] payload = new byte[size];
             Marshal.Copy(data, payload, 0, size);
-            InvokeOnTransportEvent(NetworkEvent.Data, connection.Id, (NetworkChannel)payload[size - 1], new ArraySegment<byte>(payload, 0, size - 1), Time.realtimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Data, connection.Id, new ArraySegment<byte>(payload, 0, size), Time.realtimeSinceStartup);
         }
 
         #endregion

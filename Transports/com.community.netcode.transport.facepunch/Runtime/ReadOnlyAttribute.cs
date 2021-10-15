@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MLAPI.Transports.Facepunch
+namespace Netcode.Transports.Facepunch
 {
     public class ReadOnlyAttribute : PropertyAttribute { }
 
