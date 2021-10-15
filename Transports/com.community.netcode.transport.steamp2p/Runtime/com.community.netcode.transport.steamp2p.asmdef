@@ -1,8 +1,8 @@
 {
-    "name": "SteamP2P MLAPI Transport",
-    "rootNamespace": "MLAPI.Transports.SteamP2P",
+    "name": "SteamP2P Transport for Netcode for GameObjects",
+    "rootNamespace": "Netcode.Transports.SteamP2P",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
