@@ -46,7 +46,7 @@ public class ExampleNetworkDiscovery : NetworkDiscovery<DiscoveryBroadcastData, 
         response = new DiscoveryResponseData()
         {
             ServerName = ServerName,
-           // Port = (ushort) ((UnityTransport) m_NetworkManager.NetworkConfig.NetworkTransport).ConnectPort, TODO Fix
+            Port = (ushort) ((UnityTransport) m_NetworkManager.NetworkConfig.NetworkTransport).ConnectionData.Port,
         };
         return true;
     }
