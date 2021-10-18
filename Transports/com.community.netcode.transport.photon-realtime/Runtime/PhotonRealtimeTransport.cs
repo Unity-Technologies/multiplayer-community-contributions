@@ -2,12 +2,14 @@
 using Photon.Realtime;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace MLAPI.Transports.PhotonRealtime
+namespace Netcode.Transports.PhotonRealtime
 {
     [DefaultExecutionOrder(-1000)]
     public partial class PhotonRealtimeTransport : NetworkTransport, IOnEventCallback
@@ -55,7 +57,6 @@ namespace MLAPI.Transports.PhotonRealtime
         [Range(129, 199)]
         private byte m_KickEventCode = 130;
 
-        private SocketTask m_ConnectTask;
         private LoadBalancingClient m_Client;
 
         private bool m_IsHostOrServer;
@@ -159,23 +160,14 @@ namespace MLAPI.Transports.PhotonRealtime
         }
 
         /// <summary>
-        /// Creates and connects a peer synchronously to the region master server and returns a <see cref="SocketTask"/> containing the result.
+        /// Creates and connects a peer synchronously to the region master server and returns a bool containing the result.
         /// </summary>
         /// <returns></returns>
-        private SocketTask ConnectPeer()
+        private bool ConnectPeer()
         {
-            m_ConnectTask = SocketTask.Working;
             InitializeClient();
 
-            var connected = m_Client.ConnectUsingSettings(PhotonAppSettings.Instance.AppSettings);
-
-            if (!connected)
-            {
-                m_ConnectTask = SocketTask.Fault;
-                m_ConnectTask.Message = $"Can't connect to region: {this.m_Client.CloudRegion}";
-            }
-
-            return m_ConnectTask;
+            return m_Client.ConnectUsingSettings(PhotonAppSettings.Instance.AppSettings);
         }
 
         // -------------- Send/Receive --------------------------------------------------------------------------------
@@ -184,7 +176,7 @@ namespace MLAPI.Transports.PhotonRealtime
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
         {
             var isReliable = DeliveryModeToReliable(networkDelivery);
-            
+
             if (m_BatchMode == BatchMode.None)
             {
                 RaisePhotonEvent(clientId, isReliable, data, (byte)(m_NetworkDeliveryEventCodesStartRange + networkDelivery));
@@ -265,9 +257,7 @@ namespace MLAPI.Transports.PhotonRealtime
         // -------------- Transport Handlers --------------------------------------------------------------------------
 
         ///<inheritdoc/>
-        public override void Initialize()
-        {
-        }
+        public override void Initialize() { }
 
         ///<inheritdoc/>
         public override void Shutdown()
@@ -283,17 +273,23 @@ namespace MLAPI.Transports.PhotonRealtime
         }
 
         ///<inheritdoc/>
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
-            return ConnectPeer().AsTasks();
+            bool connected = ConnectPeer();
+            return connected;
         }
 
         ///<inheritdoc/>
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
-            var task = ConnectPeer();
+            var result = ConnectPeer();
+            if (result == false)
+            {
+                return false;
+            }
+
             m_IsHostOrServer = true;
-            return task.AsTasks();
+            return true;
         }
 
         /// <summary>
@@ -303,6 +299,7 @@ namespace MLAPI.Transports.PhotonRealtime
         {
             clientId = 0;
             receiveTime = Time.realtimeSinceStartup;
+            payload = default;
             return NetworkEvent.Nothing;
         }
 
@@ -316,7 +313,7 @@ namespace MLAPI.Transports.PhotonRealtime
         ///<inheritdoc/>
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            if (this.m_Client!= null && m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
+            if (this.m_Client != null && m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
             {
                 ArraySegment<byte> payload = s_EmptyArraySegment;
                 RaisePhotonEvent(clientId, true, payload, this.m_KickEventCode);
@@ -341,7 +338,6 @@ namespace MLAPI.Transports.PhotonRealtime
 
             var senderId = GetMlapiClientId(eventData.Sender, false);
 
-
             // handle kick
             if (eventData.Code == this.m_KickEventCode)
             {
@@ -349,6 +345,7 @@ namespace MLAPI.Transports.PhotonRealtime
                 {
                     InvokeTransportEvent(NetworkEvent.Disconnect, senderId);
                 }
+
                 return;
             }
 
@@ -363,24 +360,15 @@ namespace MLAPI.Transports.PhotonRealtime
 
                 if (eventData.Code == this.m_BatchedTransportEventCode)
                 {
-                    using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
+                    var segment = new ArraySegment<byte>(slice.Buffer, slice.Offset, slice.Count);
+                    using var reader = new FastBufferReader(segment, Allocator.Temp);
+                    while (reader.Position < segment.Count) // TODO Not using reader.Lenght here becaues it's broken: https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/1310
                     {
-                        // moving data from one pooled wrapper to another (for MLAPI to read incoming data)
-                        buffer.Position = 0;
-                        buffer.Write(slice.Buffer, slice.Offset, slice.Count);
-                        buffer.SetLength(slice.Count);
-                        buffer.Position = 0;
+                        reader.ReadValueSafe(out int length);
+                        byte[] dataArray = new byte[length];
+                        reader.ReadBytesSafe(ref dataArray, length);
 
-                        using (PooledNetworkReader reader = PooledNetworkReader.Get(buffer))
-                        {
-                            while (buffer.Position < buffer.Length)
-                            {
-                                int length = reader.ReadInt32Packed();
-                                byte[] dataArray = reader.ReadByteArray(null, length);
-
-                                InvokeTransportEvent(NetworkEvent.Data, senderId, new ArraySegment<byte>(dataArray, 0, dataArray.Length));
-                            }
-                        }
+                        InvokeTransportEvent(NetworkEvent.Data, senderId, new ArraySegment<byte>(dataArray, 0, dataArray.Length));
                     }
                 }
                 else
@@ -413,6 +401,7 @@ namespace MLAPI.Transports.PhotonRealtime
                     {
                         ForceStopPeer();
                     }
+
                     goto default;
                 default:
                     InvokeOnTransportEvent(networkEvent, senderId, payload, Time.realtimeSinceStartup);
@@ -498,9 +487,9 @@ namespace MLAPI.Transports.PhotonRealtime
         /// <summary>
         /// Memory Stream controller to store several events into one single buffer
         /// </summary>
-        class SendQueue
+        class SendQueue : IDisposable
         {
-            MemoryStream m_Stream;
+            FastBufferWriter m_Writer;
 
             /// <summary>
             /// The size of the send queue.
@@ -510,8 +499,7 @@ namespace MLAPI.Transports.PhotonRealtime
             public SendQueue(int size)
             {
                 Size = size;
-                byte[] buffer = new byte[size];
-                m_Stream = new MemoryStream(buffer, 0, buffer.Length, true, true);
+                m_Writer = new FastBufferWriter(size, Allocator.Persistent);
             }
 
             /// <summary>
@@ -521,37 +509,38 @@ namespace MLAPI.Transports.PhotonRealtime
             /// <returns>True if the event was added successfully to the queue. False if there was no space in the queue.</returns>
             internal bool AddEvent(ArraySegment<byte> data)
             {
-                if (m_Stream.Position + data.Count + 4 > Size)
+                if (m_Writer.TryBeginWrite(data.Count + 4) == false)
                 {
                     return false;
                 }
 
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(m_Stream))
-                {
-                    writer.WriteInt32Packed(data.Count);
-                    Array.Copy(data.Array, data.Offset, m_Stream.GetBuffer(), m_Stream.Position, data.Count);
-                    m_Stream.Position += data.Count;
-                }
+                m_Writer.WriteValue(data.Count);
+                m_Writer.WriteBytes(data.Array, data.Count, data.Offset);
 
                 return true;
             }
 
             internal void Clear()
             {
-                m_Stream.Position = 0;
+                m_Writer.Truncate(0);
             }
 
             internal bool IsEmpty()
             {
-                return m_Stream.Position == 0;
+                return m_Writer.Position == 0;
             }
 
             internal ArraySegment<byte> GetData()
             {
-                return new ArraySegment<byte>(m_Stream.GetBuffer(), 0, (int)m_Stream.Position);
+                var array = m_Writer.ToArray();
+                return new ArraySegment<byte>(array);
+            }
+
+            public void Dispose()
+            {
+                m_Writer.Dispose();
             }
         }
-        
 
         /// <summary>
         /// Cached information about reliability mode with a certain client

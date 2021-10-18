@@ -1,6 +1,6 @@
 {
-    "name": "Photon Realtime MLAPI Transport",
-    "rootNamespace": "MLAPI.Transports.PhotonRealtime",
+    "name": "Photon Realtime Transport for Netcode for GameObjects",
+    "rootNamespace": "Netcode.Transports.PhotonRealtime",
     "references": [
         "Unity.Netcode.Runtime"
     ],

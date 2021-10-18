@@ -3,7 +3,7 @@ using UnityEngine;
 using Photon.Realtime;
 using Unity.Netcode;
 
-namespace MLAPI.Transports.PhotonRealtime
+namespace Netcode.Transports.PhotonRealtime
 {
     public partial class PhotonRealtimeTransport : IMatchmakingCallbacks
     {
@@ -22,8 +22,7 @@ namespace MLAPI.Transports.PhotonRealtime
 
         public void OnCreateRoomFailed(short returnCode, string message)
         {
-            m_ConnectTask = SocketTask.Fault;
-            m_ConnectTask.Message = $"Create Room Failed: {message}";
+            Debug.LogWarning($"Create Room Failed: {message}");
             InvokeTransportEvent(NetworkEvent.Disconnect);
         }
 
@@ -36,13 +35,8 @@ namespace MLAPI.Transports.PhotonRealtime
             Debug.LogFormat("Caching Original Master Client: {0}", CurrentMasterId);
             m_originalRoomMasterClient = CurrentMasterId;
 
-            // Client connected to the room successfully, connection process is completed
-            m_ConnectTask.IsDone = true;
-            m_ConnectTask.Success = true;
-
-
             // any client (except host/server) need to know about their own join event
-            if (!this.m_IsHostOrServer)
+            if (!m_IsHostOrServer)
             {
                 var senderId = GetMlapiClientId(m_Client.LocalPlayer.ActorNumber, false);
 
@@ -57,8 +51,7 @@ namespace MLAPI.Transports.PhotonRealtime
 
         public void OnJoinRoomFailed(short returnCode, string message)
         {
-            m_ConnectTask = SocketTask.Fault;
-            m_ConnectTask.Message = $"Join Room Faileid: {message}";
+            Debug.LogWarning($"Join Room Failed: {message}");
             InvokeTransportEvent(NetworkEvent.Disconnect);
         }
 

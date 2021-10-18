@@ -1,4 +1,4 @@
-# Photon Realtime Transport for MLAPI
+# Photon Realtime Transport for Netcode for GameObjects
 
 ## Setup Photon
 
@@ -14,7 +14,7 @@ Once added, please follow the following steps
 2. Click next until you get to the Photon Cloud Setup Part
 
 3. To complete the setup, you need a "Photon Realtime" AppId. If you know yours, enter it and click the Setup button.
-    Alternatively, enter your email address and click Setup. If possible, a new Photon account gets created (more information in the [License](/Transports/com.mlapi.contrib.transport.photon-realtime/Runtime/Photon/LICENSE)) and the AppId is fetched. This completes the setup.
+    Alternatively, enter your email address and click Setup. If possible, a new Photon account gets created (more information in the [License](/Transports/com.community.netcode.transport.photon-realtime/Runtime/Photon/LICENSE)) and the AppId is fetched. This completes the setup.
     If you already got a Photon account, the Wizard can't fetch the AppId, so click the "Visit Dashboard" button and login to the Dashboard to access your AppIds. 
    
 4. If you just created an account  for the first time you need to also create a New Application from Photon's Dashboard
@@ -70,7 +70,7 @@ Follow these steps in order to prepare your Unity to be packaged and distributed
 - Add the `PhotonRealtimeTransport` component to your GameObject containing your NetworkManager.
 - Set the `Network Transport` field on the NetworkManager to the `PhotonRealtimeTransport`
 - Enter a room name into the `Room Name` field of the `PhotonRealtimeTransport`.
-- Use the MLAPI `StartHost` and `StartClient` functions as usually to host a game and have clients connect to it.
+- Use the `StartHost` and `StartClient` functions as usually to host a game and have clients connect to it.
   
 
 ### Rooms/Matchmaking

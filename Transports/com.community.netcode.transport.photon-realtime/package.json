@@ -1,0 +1,9 @@
+{
+  "name": "com.community.netcode.transport.photon-realtime",
+  "displayName": "Photon Realtime Transport for Netcode for GameObjects",
+  "version": "2.0.0",
+  "unity": "2019.4",
+  "description": "Photon Realtime Transport for Netcode for GameObjects",
+  "dependencies": {
+  }
+}
