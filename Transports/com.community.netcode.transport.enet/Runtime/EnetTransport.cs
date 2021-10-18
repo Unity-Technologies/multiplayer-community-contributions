@@ -237,7 +237,7 @@ namespace Netcode.Transports.Enet
             address.Port = Port;
             address.SetHost(Address);
 
-            Peer serverPeer = host.Connect(address, 16);
+            Peer serverPeer = host.Connect(address, 1); // Currently Netcode for GameObjects does not use transport level channels.
 
             serverPeer.PingInterval(PingInterval);
             serverPeer.Timeout(TimeoutLimit, TimeoutMinimum, TimeoutMaximum);
@@ -254,7 +254,7 @@ namespace Netcode.Transports.Enet
             Address address = new Address();
             address.Port = Port;
 
-            host.Create(address, MaxClients, 16);
+            host.Create(address, MaxClients, 1); // Currently Netcode for GameObjects does not use transport level channels.
 
             return true;
         }
