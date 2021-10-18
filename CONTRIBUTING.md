@@ -12,7 +12,7 @@ Here are our guidlines for contributing:
 
 ## <a name="coc"></a> Code of Conduct
 
-Please help us keep Unity Multiplayer Networking open and inclusive. Read and follow our [Code of Conduct](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/master/CODE_OF_CONDUCT.md).
+Please help us keep Unity Multiplayer Networking open and inclusive. Read and follow our [Code of Conduct](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/main/CODE_OF_CONDUCT.md).
 
 ## <a name="ways"></a> Ways to Contribute
 
@@ -27,13 +27,13 @@ If you would like to add new content to the contributions repository or improve 
 
 #### Creating a new Netcode for GameObjects Transport
 - Clone the multiplayer-community-contributions repository
-- Copy the com.mlapi.contrib.transport.template folder
+- Copy the com.community.netcode.transport.template folder
 - Rename the folder to better reflect your transport's name.
 - Update CHANGELOG.md, package.json, README.md with information about your transport
 - Rename TemplateTransport.cs and implement your transport. Rename the .asmdef file to the name of your transport as well.
 - If your transport needs any additional user actions to run please specific them in README.md
 
-#### Adding an extension to the com.mlapi.contrib.extensions package
+#### Adding an extension to the com.community.netcode.extensions package
 - Create a new folder in the extension's package runtime folder.
 - Add your code to the folder.
 - Put a short README.md into the folder explaining what your extension does and how to use it.
