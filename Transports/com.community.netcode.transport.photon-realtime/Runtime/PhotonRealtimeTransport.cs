@@ -176,7 +176,7 @@ namespace Netcode.Transports.PhotonRealtime
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
         {
             var isReliable = DeliveryModeToReliable(networkDelivery);
-            
+
             if (m_BatchMode == BatchMode.None)
             {
                 RaisePhotonEvent(clientId, isReliable, data, (byte)(m_NetworkDeliveryEventCodesStartRange + networkDelivery));
@@ -257,9 +257,7 @@ namespace Netcode.Transports.PhotonRealtime
         // -------------- Transport Handlers --------------------------------------------------------------------------
 
         ///<inheritdoc/>
-        public override void Initialize()
-        {
-        }
+        public override void Initialize() { }
 
         ///<inheritdoc/>
         public override void Shutdown()
@@ -315,7 +313,7 @@ namespace Netcode.Transports.PhotonRealtime
         ///<inheritdoc/>
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            if (this.m_Client!= null && m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
+            if (this.m_Client != null && m_Client.InRoom && this.m_Client.LocalPlayer.IsMasterClient)
             {
                 ArraySegment<byte> payload = s_EmptyArraySegment;
                 RaisePhotonEvent(clientId, true, payload, this.m_KickEventCode);
@@ -340,7 +338,6 @@ namespace Netcode.Transports.PhotonRealtime
 
             var senderId = GetMlapiClientId(eventData.Sender, false);
 
-
             // handle kick
             if (eventData.Code == this.m_KickEventCode)
             {
@@ -348,6 +345,7 @@ namespace Netcode.Transports.PhotonRealtime
                 {
                     InvokeTransportEvent(NetworkEvent.Disconnect, senderId);
                 }
+
                 return;
             }
 
@@ -364,12 +362,12 @@ namespace Netcode.Transports.PhotonRealtime
                 {
                     var segment = new ArraySegment<byte>(slice.Buffer, slice.Offset, slice.Count);
                     using var reader = new FastBufferReader(segment, Allocator.Temp);
-                    while (reader.Position < reader.Length)
+                    while (reader.Position < segment.Count) // TODO Not using reader.Lenght here becaues it's broken: https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/1310
                     {
-                        reader.ReadValue(out int length);
+                        reader.ReadValueSafe(out int length);
                         byte[] dataArray = new byte[length];
-                        reader.ReadBytes(ref dataArray, length);
-                        
+                        reader.ReadBytesSafe(ref dataArray, length);
+
                         InvokeTransportEvent(NetworkEvent.Data, senderId, new ArraySegment<byte>(dataArray, 0, dataArray.Length));
                     }
                 }
@@ -403,6 +401,7 @@ namespace Netcode.Transports.PhotonRealtime
                     {
                         ForceStopPeer();
                     }
+
                     goto default;
                 default:
                     InvokeOnTransportEvent(networkEvent, senderId, payload, Time.realtimeSinceStartup);
@@ -510,7 +509,7 @@ namespace Netcode.Transports.PhotonRealtime
             /// <returns>True if the event was added successfully to the queue. False if there was no space in the queue.</returns>
             internal bool AddEvent(ArraySegment<byte> data)
             {
-                if (m_Writer.Position + data.Count + 4 > Size)
+                if (m_Writer.TryBeginWrite(data.Count + 4) == false)
                 {
                     return false;
                 }
@@ -542,7 +541,6 @@ namespace Netcode.Transports.PhotonRealtime
                 m_Writer.Dispose();
             }
         }
-        
 
         /// <summary>
         /// Cached information about reliability mode with a certain client
