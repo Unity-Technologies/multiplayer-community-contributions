@@ -6,9 +6,8 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Assertions;
 
-namespace MLAPI.Transports.LiteNetLib
+namespace Netcode.Transports.LiteNetLib
 {
     public class LiteNetLibTransport : NetworkTransport, INetEventListener
     {
@@ -18,13 +17,7 @@ namespace MLAPI.Transports.LiteNetLib
             Server,
             Client
         }
-
-        struct LiteChannel
-        {
-            public byte ChannelNumber;
-            public DeliveryMethod Method;
-        }
-
+        
         [Tooltip("The port to listen on (if server) or connect to (if client)")]
         public ushort Port = 7777;
         [Tooltip("The address to connect to as client; ignored if server")]
@@ -54,9 +47,7 @@ namespace MLAPI.Transports.LiteNetLib
 
         public override ulong ServerClientId => 0;
         HostType m_HostType;
-
-        SocketTask m_ConnectTask;
-
+        
         void OnValidate()
         {
             PingInterval = Math.Max(0, PingInterval);
@@ -91,10 +82,8 @@ namespace MLAPI.Transports.LiteNetLib
             return NetworkEvent.Nothing;
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
-            SocketTask task = SocketTask.Working;
-
             if (m_HostType != HostType.None)
             {
                 throw new InvalidOperationException("Already started as " + m_HostType);
@@ -102,8 +91,12 @@ namespace MLAPI.Transports.LiteNetLib
 
             m_HostType = HostType.Client;
 
-            m_NetManager.Start();
-
+            var success = m_NetManager.Start();
+            if (success == false)
+            {
+                return false;
+            }
+            
             NetPeer peer = m_NetManager.Connect(Address, Port, string.Empty);
 
             if (peer.Id != 0)
@@ -113,10 +106,10 @@ namespace MLAPI.Transports.LiteNetLib
 
             m_Peers[(ulong)peer.Id] = peer;
 
-            return task.AsTasks();
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             if (m_HostType != HostType.None)
             {
@@ -127,16 +120,7 @@ namespace MLAPI.Transports.LiteNetLib
 
             bool success = m_NetManager.Start(Port);
 
-            return new SocketTask()
-            {
-                IsDone = true,
-                Message = null,
-                SocketError = SocketError.SocketError,
-                State = null,
-                Success = success,
-                TransportCode = -1,
-                TransportException = null
-            }.AsTasks();
+            return success;
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
@@ -228,13 +212,6 @@ namespace MLAPI.Transports.LiteNetLib
 
         void INetEventListener.OnPeerConnected(NetPeer peer)
         {
-            if (m_ConnectTask != null)
-            {
-                m_ConnectTask.Success = true;
-                m_ConnectTask.IsDone = true;
-                m_ConnectTask = null;
-            }
-
             var peerId = GetMlapiClientId(peer);
             InvokeOnTransportEvent(NetworkEvent.Connect, peerId, default, Time.time);
 
@@ -243,13 +220,6 @@ namespace MLAPI.Transports.LiteNetLib
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            if (m_ConnectTask != null)
-            {
-                m_ConnectTask.Success = false;
-                m_ConnectTask.IsDone = true;
-                m_ConnectTask = null;
-            }
-
             var peerId = GetMlapiClientId(peer);
             InvokeOnTransportEvent(NetworkEvent.Disconnect, GetMlapiClientId(peer), default, Time.time);
 
@@ -259,12 +229,6 @@ namespace MLAPI.Transports.LiteNetLib
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
             // Ignore
-            if (m_ConnectTask != null)
-            {
-                m_ConnectTask.SocketError = socketError;
-                m_ConnectTask.IsDone = true;
-                m_ConnectTask = null;
-            }
         }
 
         void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
