@@ -1,0 +1,16 @@
+{
+    "name": "[name] Transport for Netcode for GameObjects",
+    "rootNamespace": "Netcode.Transport.[name]",
+    "references": [
+        "com.unity.netcode.runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
