@@ -1,0 +1,10 @@
+{
+  "name": "com.community.netcode.transport.litenetlib",
+  "displayName": "LiteNetLib Transport for Netcode for GameObjects",
+  "version": "2.0.0",
+  "unity": "2019.4",
+  "description": "LiteNetLib Transport for Netcode for GameObjects",
+  "author": "Piotr Kaminski (transport adapter), Ruslan Pyrch (library implementation).",
+  "dependencies": {
+  }
+}

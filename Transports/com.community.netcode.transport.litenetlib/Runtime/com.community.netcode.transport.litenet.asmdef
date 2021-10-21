@@ -1,0 +1,16 @@
+{
+    "name": "LiteNetLib Transport for Netcode for GameObjects",
+    "rootNamespace": "Netcode.Transports.LiteNetLib",
+    "references": [
+        "GUID:1491147abca9d7d4bb7105af628b223e"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

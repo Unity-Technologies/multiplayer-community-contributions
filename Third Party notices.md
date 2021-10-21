@@ -1,7 +1,7 @@
 This package contains third-party software components governed by the license(s) indicated below:
 ---------
 
-## Package: Transports/com.mlapi.contrib.transport.enet
+## Package: Transports/com.community.netcode.transport.enet
 
 ---------
 
@@ -33,7 +33,7 @@ SOFTWARE.
 
 ---------
 
-## Package: Transports/com.mlapi.contrib.transport.litenetlib
+## Package: Transports/com.community.netcode.transport.litenetlib
 
 ---------
 
@@ -65,7 +65,7 @@ SOFTWARE.
 
 ---------
 
-## Package: Transports/com.mlapi.contrib.transport.ruffles
+## Package: Transports/com.community.netcode.transport.ruffles
 
 ---------
 
@@ -97,7 +97,7 @@ SOFTWARE.
 
 ---------
 
-## Package: Transports/com.mlapi.contrib.transport.steamp2p
+## Package: Transports/com.community.netcode.transport.steamp2p
 
 ---------
 
@@ -129,7 +129,7 @@ THE SOFTWARE.
 
 ---------
 
-## Package: Transports/com.mlapi.contrib.transport.photon-realtime
+## Package: Transports/com.community.netcode.transport.photon-realtime
 
 ---------
 
@@ -166,7 +166,7 @@ USE OF THE MATERIALS IN THIS FILE.
 
 ---------
 
-## Package: Transports/com.mlapi.contrib.transport.websocket
+## Package: Transports/com.community.netcode.transport.websocket
 
 ---------
 
