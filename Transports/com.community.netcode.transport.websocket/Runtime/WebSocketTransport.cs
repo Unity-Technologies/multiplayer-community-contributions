@@ -14,6 +14,7 @@ namespace Netcode.Transports.WebSocket
         [Header("Transport")]
         public string ConnectAddress = "127.0.0.1";
         public ushort Port = 7777;
+        public bool SecureConnection = false;
 
         public override ulong ServerClientId => 0;
 
@@ -106,7 +107,8 @@ namespace Netcode.Transports.WebSocket
                 throw new InvalidOperationException("Socket already started");
             }
 
-            WebSocketClient = WebSocketClientFactory.Create($"ws://{ConnectAddress}:{Port}/mlapi");
+            var protocol = SecureConnection ? "wss" : "ws";
+            WebSocketClient = WebSocketClientFactory.Create($"{protocol}://{ConnectAddress}:{Port}/mlapi");
             WebSocketClient.Connect();
 
             IsStarted = true;
