@@ -109,7 +109,7 @@ namespace Netcode.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private GameObject CreateInstance(GameObject prefab)
         {
-            return Instantiate(prefab);
+            return Instantiate(prefab, transform);
         }
 
         /// <summary>
