@@ -167,8 +167,6 @@ namespace MLAPI.Transport.ChaCha20
             }
             else if (@event == NetworkEvent.Data)
             {
-                // TODO: IGNORE SIGN BIT
-
                 // Keep track of a read head
                 int position = internalPayload.Offset;
                 int start = position;
