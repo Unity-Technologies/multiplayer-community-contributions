@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using MLAPI.Cryptography.KeyExchanges;
-using MLAPI.Logging;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
 using MLAPI.Transport.ChaCha20.ChaCha20;
-using MLAPI.Transports.Tasks;
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace MLAPI.Transport.ChaCha20
 {
@@ -67,7 +66,8 @@ namespace MLAPI.Transport.ChaCha20
         }
 
         // Max message size
-        private byte[] m_CryptoBuffer = new byte[1024 * 8];
+        private readonly byte[] m_CryptoBuffer = new byte[1024 * 8];
+        private readonly byte[] m_WriteBuffer = new byte[1024 * 8];
 
         private enum MessageType : byte
         {
@@ -77,350 +77,348 @@ namespace MLAPI.Transport.ChaCha20
             Internal // MLAPI Message
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
         {
-            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
-            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
-            {
-                // Write message type
-                writer.WriteBits((byte)MessageType.Internal, 2);
+            // Write message type
+            m_WriteBuffer[0] = (byte) MessageType.Internal;
 
-                // Align bits
-                writer.WritePadBits();
+            // Get the ChaCha20 cipher
+            ChaCha20Cipher cipher = clientId == ServerClientId ? m_ServerCipher : m_ClientCiphers[clientId];
 
-                // Get the ChaCha20 cipher
-                ChaCha20Cipher cipher = clientId == ServerClientId ? m_ServerCipher : m_ClientCiphers[clientId];
+            // Encrypt with ChaCha
+            cipher.ProcessBytes(data.Array, data.Offset, m_WriteBuffer, 1, data.Count);
 
-                // Store position (length messes with it)
-                long position = buffer.Position;
-
-                // Expand buffer with data count
-                buffer.SetLength(buffer.Length + data.Count);
-
-                // Restore position
-                buffer.Position = position;
-
-                // Encrypt with ChaCha
-                cipher.ProcessBytes(data.Array, data.Offset, buffer.GetBuffer(), (int)buffer.Position, data.Count);
-
-
-                // Send the encrypted format
-                Transport.Send(clientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
-            }
+            // Send the encrypted format
+            Transport.Send(clientId, new ArraySegment<byte>(m_WriteBuffer, 0, 1 + data.Count), networkDelivery);
         }
 
-        private readonly NetworkBuffer m_DataBuffer = new NetworkBuffer();
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
-            NetworkEvent @event = Transport.PollEvent(out ulong internalClientId, out NetworkChannel internalNetworkChannel, out ArraySegment<byte> internalPayload, out float internalReceiveTime);
+            NetworkEvent @event = Transport.PollEvent(out ulong internalClientId, out ArraySegment<byte> internalPayload, out float internalReceiveTime);
 
             if (@event == NetworkEvent.Connect && m_IsServer && !m_ClientStates.ContainsKey(internalClientId))
             {
-                // Send server a handshake
-                using (PooledNetworkBuffer hailBuffer = PooledNetworkBuffer.Get())
-                using (PooledNetworkWriter hailWriter = PooledNetworkWriter.Get(hailBuffer))
+                // Write message type
+                m_WriteBuffer[0] = (byte)((byte)MessageType.Hail | (SignKeyExchange ? (byte)1 : (byte)0) << 7);
+
+                int length = 0;
+
+                if (SignKeyExchange)
                 {
-                    // Write message type
-                    hailWriter.WriteBits((byte)MessageType.Hail, 2);
+                    // Create handshake parameters
+                    ECDiffieHellmanRSA keyExchange = new ECDiffieHellmanRSA(m_ServerCertificate);
+                    m_ClientSignedKeyExchanges.Add(internalClientId, keyExchange);
 
-                    // Write if key exchange should be signed
-                    hailWriter.WriteBit(SignKeyExchange);
+                    // Write public part length
+                    m_WriteBuffer[1] = (byte) m_ServerCertificateBytes.Length;
+                    m_WriteBuffer[2] = (byte) (m_ServerCertificateBytes.Length >> 8);
 
-                    // Pad bits
-                    hailWriter.WritePadBits();
+                    // Write public part of RSA key
+                    Buffer.BlockCopy(m_ServerCertificateBytes, 0, m_WriteBuffer, 3, m_ServerCertificateBytes.Length);
 
-                    if (SignKeyExchange)
-                    {
-                        // Create handshake parameters
-                        ECDiffieHellmanRSA keyExchange = new ECDiffieHellmanRSA(m_ServerCertificate);
-                        m_ClientSignedKeyExchanges.Add(internalClientId, keyExchange);
+                    // Get the secure public part (semi heavy)
+                    byte[] securePublic = keyExchange.GetSecurePublicPart();
 
-                        // Write public part of RSA key
-                        hailWriter.WriteByteArray(m_ServerCertificateBytes);
+                    // Write public part length
+                    m_WriteBuffer[3 + m_ServerCertificateBytes.Length] = (byte) securePublic.Length;
+                    m_WriteBuffer[4 + m_ServerCertificateBytes.Length] = (byte) (securePublic.Length >> 8);
 
-                        // Write key exchange public part
-                        hailWriter.WriteByteArray(keyExchange.GetSecurePublicPart());
-                    }
-                    else
-                    {
-                        // Create handshake parameters
-                        ECDiffieHellman keyExchange = new ECDiffieHellman();
-                        m_ClientKeyExchanges.Add(internalClientId, keyExchange);
+                    // Write key exchange public part
+                    Buffer.BlockCopy(securePublic, 0, m_WriteBuffer, 5 + m_ServerCertificateBytes.Length, securePublic.Length);
 
-                        // Write key exchange public part
-                        hailWriter.WriteByteArray(keyExchange.GetPublicKey());
-                    }
-
-                    // Send hail
-                    Transport.Send(internalClientId, new ArraySegment<byte>(hailBuffer.GetBuffer(), 0, (int)hailBuffer.Length), NetworkChannel.Internal);
+                    // Set length
+                    length = 5 + m_ServerCertificateBytes.Length + securePublic.Length;
                 }
+                else
+                {
+                    // Create handshake parameters
+                    ECDiffieHellman keyExchange = new ECDiffieHellman();
+                    m_ClientKeyExchanges.Add(internalClientId, keyExchange);
+
+                    // Get the secure public part (semi heavy)
+                    byte[] publicKey = keyExchange.GetPublicKey();
+
+                    // Write public part length
+                    m_WriteBuffer[1] = (byte) publicKey.Length;
+                    m_WriteBuffer[2] = (byte) (publicKey.Length >> 8);
+
+                    // Write key exchange public part
+                    Buffer.BlockCopy(publicKey, 0, m_WriteBuffer, 3, publicKey.Length);
+
+                    // Set length
+                    length = 3 + publicKey.Length;
+                }
+
+                // Ensure length is set
+                Assert.IsTrue(length != 0);
+
+                // Send hail
+                Transport.Send(internalClientId, new ArraySegment<byte>(m_WriteBuffer, 0, length), NetworkDelivery.ReliableSequenced);
 
                 // Add them to client state
                 m_ClientStates.Add(internalClientId, ClientState.WaitingForHailResponse);
 
                 clientId = internalClientId;
-                networkChannel = NetworkChannel.Internal;
                 payload = new ArraySegment<byte>();
                 receiveTime = internalReceiveTime;
                 return NetworkEvent.Nothing;
             }
             else if (@event == NetworkEvent.Data)
             {
-                // Set the data to the buffer
-                m_DataBuffer.SetTarget(internalPayload.Array);
-                m_DataBuffer.SetLength(internalPayload.Count + internalPayload.Offset);
-                m_DataBuffer.Position = internalPayload.Offset;
+                // TODO: IGNORE SIGN BIT
 
-                using (PooledNetworkReader dataReader = PooledNetworkReader.Get(m_DataBuffer))
+                // Keep track of a read head
+                int position = internalPayload.Offset;
+                int start = position;
+
+                MessageType messageType = (MessageType) (internalPayload.Array[position++] & 0x7F);
+
+                if (messageType == MessageType.Hail && !m_IsServer)
                 {
-                    MessageType messageType = (MessageType)dataReader.ReadByteBits(2);
+                    // Server sent us a hail
 
-                    if (messageType == MessageType.Hail && !m_IsServer)
+                    // Read if the data was signed
+                    bool sign = ((internalPayload.Array[start] & 0x80) >> 7) == 1;
+
+                    if (sign != SignKeyExchange)
                     {
-                        // Server sent us a hail
-
-                        // Read if the data was signed
-                        bool sign = dataReader.ReadBit();
-
-                        if (sign != SignKeyExchange)
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                            {
-                                NetworkLog.LogError("Mismatch between " + nameof(SignKeyExchange));
-                            }
-
-                            clientId = internalClientId;
-                            networkChannel = NetworkChannel.Internal;
-                            payload = new ArraySegment<byte>();
-                            receiveTime = internalReceiveTime;
-                            return NetworkEvent.Nothing;
-                        }
-
-                        // Align bits
-                        dataReader.SkipPadBits();
-
-                        if (SignKeyExchange)
-                        {
-                            // Read certificate
-                            m_ServerCertificate = new X509Certificate2(dataReader.ReadByteArray());
-
-                            // TODO: IMPORTANT!!! VERIFY CERTIFICATE!!!!!!!
-
-                            // Create key exchange
-                            m_ServerSignedKeyExchange = new ECDiffieHellmanRSA(m_ServerCertificate);
-
-                            // Read servers public part
-                            byte[] serverPublicPart = dataReader.ReadByteArray();
-
-                            // Get shared
-                            byte[] key = m_ServerSignedKeyExchange.GetVerifiedSharedPart(serverPublicPart);
-
-                            // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
-                            using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
-                            {
-                                // Add raw key for external use
-                                ServerKey = key;
-
-                                // ChaCha wants 48 bytes
-                                byte[] chaChaData = pbdkf.GetBytes(48);
-
-                                // Get key part
-                                byte[] chaChaKey = new byte[32];
-                                Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
-
-                                // Get nonce part
-                                byte[] chaChaNonce = new byte[12];
-                                Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
-
-                                // Create cipher
-                                m_ServerCipher = new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12));
-                            }
-                        }
-                        else
-                        {
-                            // Create key exchange
-                            m_ServerKeyExchange = new ECDiffieHellman();
-
-                            // Read servers public part
-                            byte[] serverPublicPart = dataReader.ReadByteArray();
-
-                            // Get shared
-                            byte[] key = m_ServerKeyExchange.GetSharedSecretRaw(serverPublicPart);
-
-                            // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
-                            using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
-                            {
-                                // Add raw key for external use
-                                ServerKey = key;
-
-                                // ChaCha wants 48 bytes
-                                byte[] chaChaData = pbdkf.GetBytes(48);
-
-                                // Get key part
-                                byte[] chaChaKey = new byte[32];
-                                Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
-
-                                // Get nonce part
-                                byte[] chaChaNonce = new byte[12];
-                                Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
-
-                                // Create cipher
-                                m_ServerCipher = new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12));
-                            }
-                        }
-
-                        // Respond with hail response
-                        using (PooledNetworkBuffer hailResponseBuffer = PooledNetworkBuffer.Get())
-                        using (PooledNetworkWriter hailResponseWriter = PooledNetworkWriter.Get(hailResponseBuffer))
-                        {
-                            // Write message type
-                            hailResponseWriter.WriteBits((byte)MessageType.HailResponse, 2);
-
-                            // Align bits
-                            hailResponseWriter.WritePadBits();
-
-                            if (SignKeyExchange)
-                            {
-                                // Write public part
-                                hailResponseWriter.WriteByteArray(m_ServerSignedKeyExchange.GetSecurePublicPart());
-                            }
-                            else
-                            {
-                                // Write public part
-                                hailResponseWriter.WriteByteArray(m_ServerKeyExchange.GetPublicKey());
-                            }
-
-                            // Send hail response
-                            Transport.Send(internalClientId, new ArraySegment<byte>(hailResponseBuffer.GetBuffer(), 0, (int)hailResponseBuffer.Length), NetworkChannel.Internal);
+                            NetworkLog.LogErrorServer("Mismatch between " + nameof(SignKeyExchange));
                         }
 
                         clientId = internalClientId;
-                        networkChannel = NetworkChannel.Internal;
                         payload = new ArraySegment<byte>();
                         receiveTime = internalReceiveTime;
                         return NetworkEvent.Nothing;
                     }
-                    else if (messageType == MessageType.HailResponse && m_IsServer && m_ClientStates.ContainsKey(internalClientId) && m_ClientStates[internalClientId] == ClientState.WaitingForHailResponse)
+
+                    if (SignKeyExchange)
                     {
-                        // Client sent us a hail response
+                        // Read certificate length
+                        ushort certLength = (ushort)(internalPayload.Array[position++] | (ushort)(internalPayload.Array[position++] << 8));
 
-                        // Align bits
-                        dataReader.SkipPadBits();
+                        // Alloc cert
+                        // Cert needs exact buffer size so we cannot reuse
+                        byte[] cert = new byte[certLength];
 
-                        // Read clients public part
-                        byte[] clientPublicPart = dataReader.ReadByteArray();
+                        // Copy cert into cert buffer
+                        Buffer.BlockCopy(internalPayload.Array, position += certLength, cert, 0, certLength);
 
-                        if (SignKeyExchange)
+                        // Create cert
+                        m_ServerCertificate = new X509Certificate2(cert);
+
+                        // TODO: IMPORTANT!!! VERIFY CERTIFICATE!!!!!!!
+
+                        // Create key exchange
+                        m_ServerSignedKeyExchange = new ECDiffieHellmanRSA(m_ServerCertificate);
+
+                        // Read public part length
+                        ushort publicPartLength = (ushort)(internalPayload.Array[position++] | (ushort)(internalPayload.Array[position++] << 8));
+
+                        // Read servers public part length
+                        byte[] serverPublicPart = new byte[publicPartLength];
+
+                        // Copy public part
+                        Buffer.BlockCopy(internalPayload.Array, position += publicPartLength, serverPublicPart, 0, publicPartLength);
+
+                        // Get shared
+                        byte[] key = m_ServerSignedKeyExchange.GetVerifiedSharedPart(serverPublicPart);
+
+                        // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
+                        using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
                         {
-                            // Get key
-                            byte[] key = m_ClientSignedKeyExchanges[internalClientId].GetVerifiedSharedPart(clientPublicPart);
+                            // Add raw key for external use
+                            ServerKey = key;
 
-                            // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
-                            using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
-                            {
-                                // Add raw key for external use
-                                ClientKeys.Add(internalClientId, key);
+                            // ChaCha wants 48 bytes
+                            byte[] chaChaData = pbdkf.GetBytes(48);
 
-                                // ChaCha wants 48 bytes
-                                byte[] chaChaData = pbdkf.GetBytes(48);
+                            // Get key part
+                            byte[] chaChaKey = new byte[32];
+                            Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
 
-                                // Get key part
-                                byte[] chaChaKey = new byte[32];
-                                Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
+                            // Get nonce part
+                            byte[] chaChaNonce = new byte[12];
+                            Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
 
-                                // Get nonce part
-                                byte[] chaChaNonce = new byte[12];
-                                Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
-
-                                // Create cipher
-                                m_ClientCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12)));
-                            }
-
-                            // Cleanup
-                            m_ClientSignedKeyExchanges.Remove(internalClientId);
+                            // Create cipher
+                            m_ServerCipher = new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12));
                         }
-                        else
-                        {
-                            // Get key
-                            byte[] key = m_ClientKeyExchanges[internalClientId].GetSharedSecretRaw(clientPublicPart);
-
-                            // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
-                            using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
-                            {
-                                // Add raw key for external use
-                                ClientKeys.Add(internalClientId, key);
-
-                                // ChaCha wants 48 bytes
-                                byte[] chaChaData = pbdkf.GetBytes(48);
-
-                                // Get key part
-                                byte[] chaChaKey = new byte[32];
-                                Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
-
-                                // Get nonce part
-                                byte[] chaChaNonce = new byte[12];
-                                Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
-
-                                // Create cipher
-                                m_ClientCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12)));
-                            }
-
-                            //Cleanup
-                            m_ClientKeyExchanges.Remove(internalClientId);
-                        }
-
-                        // Respond with ready response
-                        using (PooledNetworkBuffer readyResponseBuffer = PooledNetworkBuffer.Get())
-                        using (PooledNetworkWriter readyResponseWriter = PooledNetworkWriter.Get(readyResponseBuffer))
-                        {
-                            // Write message type
-                            readyResponseWriter.WriteBits((byte)MessageType.Ready, 2);
-
-                            // Align bits
-                            readyResponseWriter.WritePadBits();
-
-                            // Send ready message
-                            Transport.Send(internalClientId, new ArraySegment<byte>(readyResponseBuffer.GetBuffer(), 0, (int)readyResponseBuffer.Length), NetworkChannel.Internal);
-                        }
-
-                        // Elevate to connected
-                        m_ClientStates[internalClientId] = ClientState.Connected;
-
-                        clientId = internalClientId;
-                        networkChannel = internalNetworkChannel;
-                        payload = new ArraySegment<byte>();
-                        receiveTime = internalReceiveTime;
-                        return NetworkEvent.Connect;
                     }
-                    else if (messageType == MessageType.Ready && !m_IsServer)
+                    else
                     {
-                        // Server is ready for us!
-                        // Let the MLAPI know we are connected
-                        clientId = internalClientId;
-                        networkChannel = internalNetworkChannel;
-                        payload = new ArraySegment<byte>();
-                        receiveTime = internalReceiveTime;
-                        return NetworkEvent.Connect;
+                        // Create key exchange
+                        m_ServerKeyExchange = new ECDiffieHellman();
+
+                        // Read public part length
+                        ushort publicPartLength = (ushort)(internalPayload.Array[position++] | (ushort)(internalPayload.Array[position++] << 8));
+
+                        // Read servers public part length
+                        byte[] serverPublicPart = new byte[publicPartLength];
+
+                        // Copy buffer
+                        Buffer.BlockCopy(internalPayload.Array, position, serverPublicPart, 0, publicPartLength);
+
+                        // Get shared
+                        byte[] key = m_ServerKeyExchange.GetSharedSecretRaw(serverPublicPart);
+
+                        // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
+                        using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
+                        {
+                            // Add raw key for external use
+                            ServerKey = key;
+
+                            // ChaCha wants 48 bytes
+                            byte[] chaChaData = pbdkf.GetBytes(48);
+
+                            // Get key part
+                            byte[] chaChaKey = new byte[32];
+                            Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
+
+                            // Get nonce part
+                            byte[] chaChaNonce = new byte[12];
+                            Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
+
+                            // Create cipher
+                            m_ServerCipher = new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12));
+                        }
                     }
-                    else if (messageType == MessageType.Internal && (!m_IsServer || (m_ClientStates.ContainsKey(internalClientId) && m_ClientStates[internalClientId] == ClientState.Connected)))
+
+                    /* Respond with hail response */
+
+                    // Write message type
+                    m_WriteBuffer[0] = (byte) MessageType.HailResponse;
+
+                    // Get public part to write
+                    byte[] publicPart = SignKeyExchange ? m_ServerSignedKeyExchange.GetSecurePublicPart() : m_ServerKeyExchange.GetPublicKey();
+
+                    // Write public part length
+                    m_WriteBuffer[1] = (byte) publicPart.Length;
+                    m_WriteBuffer[2] = (byte) (publicPart.Length >> 8);
+
+                    // Write public part
+                    Buffer.BlockCopy(publicPart, 0, m_WriteBuffer, 3, publicPart.Length);
+
+                    // Send hail response
+                    Transport.Send(internalClientId, new ArraySegment<byte>(m_WriteBuffer, 0, 3 + publicPart.Length), NetworkDelivery.ReliableSequenced);
+
+                    clientId = internalClientId;
+                    payload = new ArraySegment<byte>();
+                    receiveTime = internalReceiveTime;
+                    return NetworkEvent.Nothing;
+                }
+                else if (messageType == MessageType.HailResponse && m_IsServer && m_ClientStates.ContainsKey(internalClientId) && m_ClientStates[internalClientId] == ClientState.WaitingForHailResponse)
+                {
+                    // Client sent us a hail response
+
+                    // Read clients public part
+                    ushort clientPublicPartLength = (ushort)(internalPayload.Array[position++] | (ushort)(internalPayload.Array[position++] << 8));
+
+                    // Alloc public part
+                    byte[] clientPublicPart = new byte[clientPublicPartLength];
+
+                    // Copy public part
+                    Buffer.BlockCopy(internalPayload.Array, position, clientPublicPart, 0, clientPublicPartLength);
+
+                    if (SignKeyExchange)
                     {
-                        // Decrypt and pass message to the MLAPI
+                        // Get key
+                        byte[] key = m_ClientSignedKeyExchanges[internalClientId].GetVerifiedSharedPart(clientPublicPart);
 
-                        // Align bits
-                        dataReader.SkipPadBits();
+                        // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
+                        using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
+                        {
+                            // Add raw key for external use
+                            ClientKeys.Add(internalClientId, key);
 
-                        // Get the correct cipher
-                        ChaCha20Cipher cipher = m_IsServer ? m_ClientCiphers[internalClientId] : m_ServerCipher;
+                            // ChaCha wants 48 bytes
+                            byte[] chaChaData = pbdkf.GetBytes(48);
 
-                        // Decrypt bytes
-                        cipher.ProcessBytes(m_DataBuffer.GetBuffer(), (int)m_DataBuffer.Position, m_CryptoBuffer, 0, (int)(m_DataBuffer.Length - m_DataBuffer.Position));
+                            // Get key part
+                            byte[] chaChaKey = new byte[32];
+                            Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
 
-                        clientId = internalClientId;
-                        networkChannel = internalNetworkChannel;
-                        payload = new ArraySegment<byte>(m_CryptoBuffer, 0, (int)(m_DataBuffer.Length - m_DataBuffer.Position));
-                        receiveTime = internalReceiveTime;
-                        return NetworkEvent.Data;
+                            // Get nonce part
+                            byte[] chaChaNonce = new byte[12];
+                            Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
+
+                            // Create cipher
+                            m_ClientCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12)));
+                        }
+
+                        // Cleanup
+                        m_ClientSignedKeyExchanges.Remove(internalClientId);
                     }
+                    else
+                    {
+                        // Get key
+                        byte[] key = m_ClientKeyExchanges[internalClientId].GetSharedSecretRaw(clientPublicPart);
+
+                        // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
+                        using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
+                        {
+                            // Add raw key for external use
+                            ClientKeys.Add(internalClientId, key);
+
+                            // ChaCha wants 48 bytes
+                            byte[] chaChaData = pbdkf.GetBytes(48);
+
+                            // Get key part
+                            byte[] chaChaKey = new byte[32];
+                            Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
+
+                            // Get nonce part
+                            byte[] chaChaNonce = new byte[12];
+                            Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
+
+                            // Create cipher
+                            m_ClientCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12)));
+                        }
+
+                        //Cleanup
+                        m_ClientKeyExchanges.Remove(internalClientId);
+                    }
+
+                    /* Respond with ready response */
+
+                    // Write message type
+                    m_WriteBuffer[0] = (byte) MessageType.Ready;
+
+                    // Send ready message
+                    Transport.Send(internalClientId, new ArraySegment<byte>(m_WriteBuffer, 0, 1), NetworkDelivery.ReliableSequenced);
+
+                    // Elevate to connected
+                    m_ClientStates[internalClientId] = ClientState.Connected;
+
+                    clientId = internalClientId;
+                    payload = new ArraySegment<byte>();
+                    receiveTime = internalReceiveTime;
+                    return NetworkEvent.Connect;
+                }
+                else if (messageType == MessageType.Ready && !m_IsServer)
+                {
+                    // Server is ready for us!
+                    // Let the MLAPI know we are connected
+                    clientId = internalClientId;
+                    payload = new ArraySegment<byte>();
+                    receiveTime = internalReceiveTime;
+                    return NetworkEvent.Connect;
+                }
+                else if (messageType == MessageType.Internal && (!m_IsServer || (m_ClientStates.ContainsKey(internalClientId) && m_ClientStates[internalClientId] == ClientState.Connected)))
+                {
+                    // Decrypt and pass message to the MLAPI
+
+                    // Get the correct cipher
+                    ChaCha20Cipher cipher = m_IsServer ? m_ClientCiphers[internalClientId] : m_ServerCipher;
+
+                    // Decrypt bytes
+                    cipher.ProcessBytes(internalPayload.Array, position, m_CryptoBuffer, 0, internalPayload.Count - position);
+
+                    clientId = internalClientId;
+                    payload = new ArraySegment<byte>(m_CryptoBuffer, 0, internalPayload.Count - position);
+                    receiveTime = internalReceiveTime;
+                    return NetworkEvent.Data;
                 }
             }
             else if (@event == NetworkEvent.Disconnect)
@@ -468,26 +466,24 @@ namespace MLAPI.Transport.ChaCha20
                 }
 
                 clientId = internalClientId;
-                networkChannel = internalNetworkChannel;
                 payload = new ArraySegment<byte>();
                 receiveTime = internalReceiveTime;
                 return NetworkEvent.Disconnect;
             }
 
             clientId = internalClientId;
-            networkChannel = internalNetworkChannel;
             payload = new ArraySegment<byte>();
             receiveTime = 0;
             return NetworkEvent.Nothing;
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
             m_IsServer = false;
             return Transport.StartClient();
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             m_IsServer = true;
             ParsePFX();
@@ -514,9 +510,9 @@ namespace MLAPI.Transport.ChaCha20
             Transport.Shutdown();
         }
 
-        public override void Init()
+        public override void Initialize()
         {
-            Transport.Init();
+            Transport.Initialize();
         }
 
         private void ParsePFX()
@@ -537,7 +533,7 @@ namespace MLAPI.Transport.ChaCha20
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning("The imported PFX file did not have a private key");
+                                NetworkLog.LogWarningServer("The imported PFX file did not have a private key");
                             }
                         }
                     }
@@ -546,7 +542,7 @@ namespace MLAPI.Transport.ChaCha20
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError("Parsing PFX failed: " + e);
+                        NetworkLog.LogErrorServer("Parsing PFX failed: " + e);
                     }
                 }
             }
@@ -554,7 +550,7 @@ namespace MLAPI.Transport.ChaCha20
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogError("Importing of certificate failed: " + e);
+                    NetworkLog.LogErrorServer("Importing of certificate failed: " + e);
                 }
             }
         }

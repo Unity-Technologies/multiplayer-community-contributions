@@ -6,6 +6,5 @@
   "description": "ChaCha20 Transport for MLAPI",
   "author": "Albin Corén",
   "dependencies": {
-    "com.unity.multiplayer.mlapi": "0.0.1-preview.1"
   }
 }
