@@ -92,8 +92,6 @@ namespace MLAPI.Transport.ChaCha20
             // Write least significant bits of counter
             m_WriteBuffer[1] = (byte) cipher.Counter;
 
-            Debug.LogError("SEND: " + cipher.Counter);
-
             // Encrypt with ChaCha
             cipher.ProcessBytes(data.Array, data.Offset, m_WriteBuffer, 2, data.Count);
 
