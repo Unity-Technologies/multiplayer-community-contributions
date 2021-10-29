@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using MLAPI.Cryptography.KeyExchanges;
+using MLAPI.Cryptography.Utils;
 using MLAPI.Transport.ChaCha20.ChaCha20;
 using Unity.Netcode;
 using UnityEngine;
@@ -22,6 +23,9 @@ namespace MLAPI.Transport.ChaCha20
 
         [TextArea]
         public string ServerBase64PFX;
+
+        [Tooltip("This adds significant CPU overhead and a 32 byte overhead on each message")]
+        public bool SignEveryMessage = false;
 
         public Func<X509Certificate2, bool> ValidateCertificate;
 
@@ -53,14 +57,22 @@ namespace MLAPI.Transport.ChaCha20
         private readonly Dictionary<ulong, ECDiffieHellmanRSA> m_ClientSignedKeyExchanges = new Dictionary<ulong, ECDiffieHellmanRSA>();
         private readonly Dictionary<ulong, ECDiffieHellman> m_ClientKeyExchanges = new Dictionary<ulong, ECDiffieHellman>();
 
+        // Public keys for external use
         public byte[] ServerKey { get; private set; }
         public readonly Dictionary<ulong, byte[]> ClientKeys = new Dictionary<ulong, byte[]>();
 
+        // Ciphers
         private readonly Dictionary<ulong, ChaCha20Cipher> m_ClientSendCiphers = new Dictionary<ulong, ChaCha20Cipher>();
         private readonly Dictionary<ulong, ChaCha20Cipher> m_ClientReceiveCiphers = new Dictionary<ulong, ChaCha20Cipher>();
+
         private ChaCha20Cipher m_ServerSendCipher;
         private ChaCha20Cipher m_ServerReceiveCipher;
 
+        // HMACs
+        private readonly Dictionary<ulong, HMACSHA256> m_ClientAuthenticators = new Dictionary<ulong, HMACSHA256>();
+        private HMACSHA256 m_ServerAuthenticator;
+
+        // States
         private readonly Dictionary<ulong, ClientState> m_ClientStates = new Dictionary<ulong, ClientState>();
 
         private enum ClientState : byte
@@ -72,6 +84,8 @@ namespace MLAPI.Transport.ChaCha20
         // Max message size
         private readonly byte[] m_CryptoBuffer = new byte[1024 * 8];
         private readonly byte[] m_WriteBuffer = new byte[1024 * 8];
+
+        private readonly byte[] m_AuthenticationBuffer = new byte[32];
 
         private enum MessageType : byte
         {
@@ -95,8 +109,20 @@ namespace MLAPI.Transport.ChaCha20
             // Encrypt with ChaCha
             cipher.ProcessBytes(data.Array, data.Offset, m_WriteBuffer, 2, data.Count);
 
+            if (SignEveryMessage)
+            {
+                // Get authenticator
+                HMACSHA256 authenticator = clientId == ServerClientId ? m_ServerAuthenticator : m_ClientAuthenticators[clientId];
+
+                // Calculate signature
+                byte[] signature = authenticator.ComputeHash(m_WriteBuffer, 0, 2 + data.Count);
+
+                // Copy signature
+                Buffer.BlockCopy(signature, 0, m_WriteBuffer, 2 + data.Count, signature.Length);
+            }
+
             // Send the encrypted format
-            Transport.Send(clientId, new ArraySegment<byte>(m_WriteBuffer, 0, 2 + data.Count), networkDelivery);
+            Transport.Send(clientId, new ArraySegment<byte>(m_WriteBuffer, 0, 2 + data.Count + (SignEveryMessage ? 32 : 0)), networkDelivery);
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
@@ -106,7 +132,7 @@ namespace MLAPI.Transport.ChaCha20
             if (@event == NetworkEvent.Connect && m_IsServer && !m_ClientStates.ContainsKey(internalClientId))
             {
                 // Write message type
-                m_WriteBuffer[0] = (byte)((byte)MessageType.Hail | (SignKeyExchange ? (byte)1 : (byte)0) << 7);
+                m_WriteBuffer[0] = (byte)((byte)MessageType.Hail | ((SignKeyExchange ? (byte)1 : (byte)0) << 7) | ((SignEveryMessage ? (byte) 1 : (byte) 0) << 6));
 
                 int length;
 
@@ -176,7 +202,7 @@ namespace MLAPI.Transport.ChaCha20
                 int position = internalPayload.Offset;
                 int start = position;
 
-                MessageType messageType = (MessageType) (internalPayload.Array[position++] & 0x7F);
+                MessageType messageType = (MessageType) (internalPayload.Array[position++] & 0x0F);
 
                 if (messageType == MessageType.Hail && !m_IsServer)
                 {
@@ -184,12 +210,24 @@ namespace MLAPI.Transport.ChaCha20
 
                     // Read if the data was signed
                     bool sign = ((internalPayload.Array[start] & 0x80) >> 7) == 1;
+                    bool signEveryMessage = ((internalPayload.Array[start] & 0x40) >> 6) == 1;
 
-                    if (sign != SignKeyExchange)
+                    if (sign != SignKeyExchange || signEveryMessage != SignEveryMessage)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                        if (sign != SignKeyExchange)
                         {
-                            NetworkLog.LogErrorServer("Mismatch between " + nameof(SignKeyExchange));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            {
+                                NetworkLog.LogErrorServer("Mismatch between " + nameof(SignKeyExchange));
+                            }
+                        }
+
+                        if (signEveryMessage != SignEveryMessage)
+                        {
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            {
+                                NetworkLog.LogErrorServer("Mismatch between " + nameof(SignEveryMessage));
+                            }
                         }
 
                         clientId = internalClientId;
@@ -272,7 +310,7 @@ namespace MLAPI.Transport.ChaCha20
                         ServerKey = key;
 
                         // ChaCha wants 44 bytes per instance
-                        byte[] chaChaData = pbdkf.GetBytes(32 + (12 * 2));
+                        byte[] chaChaData = pbdkf.GetBytes(32 + (12 * 2) + (SignEveryMessage ? 64 : 0));
 
                         // Get key part
                         byte[] chaChaKey = new byte[32];
@@ -288,6 +326,16 @@ namespace MLAPI.Transport.ChaCha20
                         // Create cipher
                         m_ServerSendCipher = new ChaCha20Cipher(chaChaKey, sendNonce, 0);
                         m_ServerReceiveCipher = new ChaCha20Cipher(chaChaKey, receiveNonce, 0);
+
+                        if (SignEveryMessage)
+                        {
+                            // Get HMAC key
+                            byte[] hmacKey = new byte[64];
+                            Buffer.BlockCopy(chaChaData, 32 + (12 * 2), hmacKey, 0, 64);
+
+                            // Create HMAC
+                            m_ServerAuthenticator = new HMACSHA256(hmacKey);
+                        }
                     }
 
                     /* Respond with hail response */
@@ -346,7 +394,7 @@ namespace MLAPI.Transport.ChaCha20
                         ClientKeys.Add(internalClientId, key);
 
                         // ChaCha wants 44 bytes per instance
-                        byte[] chaChaData = pbdkf.GetBytes(32 + (12 * 2));
+                        byte[] chaChaData = pbdkf.GetBytes(32 + (12 * 2) + (SignEveryMessage ? 64 : 0));
 
                         // Get key part
                         byte[] chaChaKey = new byte[32];
@@ -362,6 +410,16 @@ namespace MLAPI.Transport.ChaCha20
                         // Create cipher
                         m_ClientSendCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaSendNonce, 0));
                         m_ClientReceiveCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaReceiveNonce, 0));
+
+                        if (SignEveryMessage)
+                        {
+                            // Get HMAC key
+                            byte[] hmacKey = new byte[64];
+                            Buffer.BlockCopy(chaChaData, 32 + (12 * 2), hmacKey, 0, 64);
+
+                            // Create HMAC
+                            m_ClientAuthenticators.Add(internalClientId, new HMACSHA256(hmacKey));
+                        }
                     }
 
                     // Cleanup
@@ -395,6 +453,33 @@ namespace MLAPI.Transport.ChaCha20
                 else if (messageType == MessageType.Internal && (!m_IsServer || (m_ClientStates.ContainsKey(internalClientId) && m_ClientStates[internalClientId] == ClientState.Connected)))
                 {
                     // Decrypt and pass message to the MLAPI
+
+                    if (SignEveryMessage)
+                    {
+                        // Copy auth code from last 32 bytes
+                        Buffer.BlockCopy(internalPayload.Array, (internalPayload.Count + internalPayload.Offset) - 32, m_AuthenticationBuffer, 0, 32);
+
+                        // Get authenticator
+                        HMACSHA256 authenticator = m_IsServer ? m_ClientAuthenticators[internalClientId] : m_ServerAuthenticator;
+
+                        // Calculate signature
+                        byte[] signature = authenticator.ComputeHash(internalPayload.Array, internalPayload.Offset, internalPayload.Count - 32);
+
+                        // Compare
+                        if (!ComparisonUtils.ConstTimeArrayEqual(signature, m_AuthenticationBuffer))
+                        {
+                            // HMAC IS INVALID
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            {
+                                NetworkLog.LogErrorServer("HMAC did not match for message. It has been dropped");
+                            }
+
+                            clientId = internalClientId;
+                            payload = new ArraySegment<byte>();
+                            receiveTime = internalReceiveTime;
+                            return NetworkEvent.Nothing;
+                        }
+                    }
 
                     // Get the least significant bits of the counter
                     byte leastSignificantBitsCounter = internalPayload.Array[position++];
@@ -448,10 +533,10 @@ namespace MLAPI.Transport.ChaCha20
                     }
 
                     // Decrypt bytes
-                    cipher.ProcessBytes(internalPayload.Array, position, m_CryptoBuffer, 0, internalPayload.Count - position);
+                    cipher.ProcessBytes(internalPayload.Array, position, m_CryptoBuffer, 0, (internalPayload.Count - position) - (SignEveryMessage ? 32 : 0));
 
                     clientId = internalClientId;
-                    payload = new ArraySegment<byte>(m_CryptoBuffer, 0, internalPayload.Count - position);
+                    payload = new ArraySegment<byte>(m_CryptoBuffer, 0, (internalPayload.Count - position) - (SignEveryMessage ? 32 : 0));
                     receiveTime = internalReceiveTime;
                     return NetworkEvent.Data;
                 }
@@ -497,6 +582,12 @@ namespace MLAPI.Transport.ChaCha20
                     if (m_ClientStates.ContainsKey(internalClientId))
                     {
                         m_ClientStates.Remove(internalClientId);
+                    }
+
+                    if (m_ClientAuthenticators.ContainsKey(internalClientId))
+                    {
+                        m_ClientAuthenticators[internalClientId].Dispose();
+                        m_ClientAuthenticators.Remove(internalClientId);
                     }
                 }
                 else
