@@ -34,6 +34,10 @@ namespace MLAPI.Transport.ChaCha20.ChaCha20
         /// </summary>
         private bool m_IsDisposed;
 
+        private readonly byte[] m_Key;
+        private readonly byte[] m_Nonce;
+        private uint m_Counter;
+
         /// <summary>
         /// Set up a new ChaCha20 state. The lengths of the given parameters are
         /// checked before encryption happens.
@@ -58,6 +62,9 @@ namespace MLAPI.Transport.ChaCha20.ChaCha20
             m_State = new uint[16];
             m_IsDisposed = false;
 
+            m_Key = key;
+            m_Nonce = nonce;
+            
             KeySetup(key);
             IvSetup(nonce, counter);
         }
@@ -67,6 +74,17 @@ namespace MLAPI.Transport.ChaCha20.ChaCha20
         /// </summary>
         public uint[] State => m_State;
 
+        public uint Counter
+        {
+            get => m_Counter;
+            set => IvSetup(m_Nonce, value);
+        }
+
+        public void SetCounter(uint counter)
+        {
+            IvSetup(m_Nonce, counter);
+        }
+        
         /// <summary>
         /// Set up the ChaCha state with the given key. A 32-byte key is required
         /// and enforced.
@@ -147,6 +165,8 @@ namespace MLAPI.Transport.ChaCha20.ChaCha20
             m_State[13] = Util.U8To32Little(nonce, 0);
             m_State[14] = Util.U8To32Little(nonce, 4);
             m_State[15] = Util.U8To32Little(nonce, 8);
+            
+            m_Counter = counter;
         }
 
         /// <summary>
@@ -206,6 +226,8 @@ namespace MLAPI.Transport.ChaCha20.ChaCha20
                     m_State[13] = Util.AddOne(m_State[13]);
                 }
 
+                m_Counter++;
+
                 if (count <= 64)
                 {
                     for (int i = count; i-- > 0;)
@@ -263,49 +285,6 @@ namespace MLAPI.Transport.ChaCha20.ChaCha20
             x[d] = Util.Rotate(Util.XOr(x[d], x[a]), 8);
             x[c] = Util.Add(x[c], x[d]);
             x[b] = Util.Rotate(Util.XOr(x[b], x[c]), 7);
-        }
-
-        /// <summary>
-        /// Currently not used.
-        /// </summary>
-        /// <param name="output"></param>
-        /// <param name="input"></param>
-        public static void ChaCha20BlockFunction(byte[] output, uint[] input)
-        {
-            if (input == null || output == null)
-            {
-                throw new ArgumentNullException();
-            }
-
-            if (input.Length != 16 || output.Length != 64)
-            {
-                throw new ArgumentException();
-            }
-
-            uint[] x = new uint[16]; // Working buffer
-
-            for (int i = 16; i-- > 0;)
-            {
-                x[i] = input[i];
-            }
-
-            for (int i = 20; i > 0; i -= 2)
-            {
-                QuarterRound(x, 0, 4, 8, 12);
-                QuarterRound(x, 1, 5, 9, 13);
-                QuarterRound(x, 2, 6, 10, 14);
-                QuarterRound(x, 3, 7, 11, 15);
-
-                QuarterRound(x, 0, 5, 10, 15);
-                QuarterRound(x, 1, 6, 11, 12);
-                QuarterRound(x, 2, 7, 8, 13);
-                QuarterRound(x, 3, 4, 9, 14);
-            }
-
-            for (int i = 16; i-- > 0;)
-            {
-                Util.ToBytes(output, Util.Add(x[i], input[i]), 4 * i);
-            }
         }
 
         #region Destructor and Disposer

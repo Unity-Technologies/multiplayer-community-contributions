@@ -12,7 +12,7 @@ using UnityEngine.Assertions;
 
 namespace MLAPI.Transport.ChaCha20
 {
-    public class CryptographyTransportAdpater : NetworkTransport
+    public class CryptographyTransportAdapter : NetworkTransport
     {
         public override ulong ServerClientId => Transport.ServerClientId;
 
@@ -56,8 +56,10 @@ namespace MLAPI.Transport.ChaCha20
         public byte[] ServerKey { get; private set; }
         public readonly Dictionary<ulong, byte[]> ClientKeys = new Dictionary<ulong, byte[]>();
 
-        private readonly Dictionary<ulong, ChaCha20Cipher> m_ClientCiphers = new Dictionary<ulong, ChaCha20Cipher>();
-        private ChaCha20Cipher m_ServerCipher;
+        private readonly Dictionary<ulong, ChaCha20Cipher> m_ClientSendCiphers = new Dictionary<ulong, ChaCha20Cipher>();
+        private readonly Dictionary<ulong, ChaCha20Cipher> m_ClientReceiveCiphers = new Dictionary<ulong, ChaCha20Cipher>();
+        private ChaCha20Cipher m_ServerSendCipher;
+        private ChaCha20Cipher m_ServerReceiveCipher;
 
         private readonly Dictionary<ulong, ClientState> m_ClientStates = new Dictionary<ulong, ClientState>();
 
@@ -85,13 +87,18 @@ namespace MLAPI.Transport.ChaCha20
             m_WriteBuffer[0] = (byte) MessageType.Internal;
 
             // Get the ChaCha20 cipher
-            ChaCha20Cipher cipher = clientId == ServerClientId ? m_ServerCipher : m_ClientCiphers[clientId];
+            ChaCha20Cipher cipher = clientId == ServerClientId ? m_ServerSendCipher : m_ClientSendCiphers[clientId];
+
+            // Write least significant bits of counter
+            m_WriteBuffer[1] = (byte) cipher.Counter;
+
+            Debug.LogError("SEND: " + cipher.Counter);
 
             // Encrypt with ChaCha
-            cipher.ProcessBytes(data.Array, data.Offset, m_WriteBuffer, 1, data.Count);
+            cipher.ProcessBytes(data.Array, data.Offset, m_WriteBuffer, 2, data.Count);
 
             // Send the encrypted format
-            Transport.Send(clientId, new ArraySegment<byte>(m_WriteBuffer, 0, 1 + data.Count), networkDelivery);
+            Transport.Send(clientId, new ArraySegment<byte>(m_WriteBuffer, 0, 2 + data.Count), networkDelivery);
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
@@ -103,7 +110,7 @@ namespace MLAPI.Transport.ChaCha20
                 // Write message type
                 m_WriteBuffer[0] = (byte)((byte)MessageType.Hail | (SignKeyExchange ? (byte)1 : (byte)0) << 7);
 
-                int length = 0;
+                int length;
 
                 if (SignKeyExchange)
                 {
@@ -193,6 +200,8 @@ namespace MLAPI.Transport.ChaCha20
                         return NetworkEvent.Nothing;
                     }
 
+                    byte[] key;
+
                     if (SignKeyExchange)
                     {
                         // Read certificate length
@@ -207,9 +216,10 @@ namespace MLAPI.Transport.ChaCha20
 
                         // Create cert
                         m_ServerCertificate = new X509Certificate2(cert);
-                        
+
                         if (ValidateCertificate == null)
                         {
+                            Transport.DisconnectLocalClient();
                             throw new Exception("ValidateCertificate handler not set");
                         }
 
@@ -237,28 +247,7 @@ namespace MLAPI.Transport.ChaCha20
                         Buffer.BlockCopy(internalPayload.Array, position += publicPartLength, serverPublicPart, 0, publicPartLength);
 
                         // Get shared
-                        byte[] key = m_ServerSignedKeyExchange.GetVerifiedSharedPart(serverPublicPart);
-
-                        // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
-                        using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
-                        {
-                            // Add raw key for external use
-                            ServerKey = key;
-
-                            // ChaCha wants 48 bytes
-                            byte[] chaChaData = pbdkf.GetBytes(48);
-
-                            // Get key part
-                            byte[] chaChaKey = new byte[32];
-                            Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
-
-                            // Get nonce part
-                            byte[] chaChaNonce = new byte[12];
-                            Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
-
-                            // Create cipher
-                            m_ServerCipher = new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12));
-                        }
+                        key = m_ServerSignedKeyExchange.GetVerifiedSharedPart(serverPublicPart);
                     }
                     else
                     {
@@ -275,28 +264,32 @@ namespace MLAPI.Transport.ChaCha20
                         Buffer.BlockCopy(internalPayload.Array, position, serverPublicPart, 0, publicPartLength);
 
                         // Get shared
-                        byte[] key = m_ServerKeyExchange.GetSharedSecretRaw(serverPublicPart);
+                        key = m_ServerKeyExchange.GetSharedSecretRaw(serverPublicPart);
+                    }
 
-                        // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
-                        using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
-                        {
-                            // Add raw key for external use
-                            ServerKey = key;
+                    // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
+                    using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
+                    {
+                        // Add raw key for external use
+                        ServerKey = key;
 
-                            // ChaCha wants 48 bytes
-                            byte[] chaChaData = pbdkf.GetBytes(48);
+                        // ChaCha wants 44 bytes per instance
+                        byte[] chaChaData = pbdkf.GetBytes(32 + (12 * 2));
 
-                            // Get key part
-                            byte[] chaChaKey = new byte[32];
-                            Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
+                        // Get key part
+                        byte[] chaChaKey = new byte[32];
+                        Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
 
-                            // Get nonce part
-                            byte[] chaChaNonce = new byte[12];
-                            Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
+                        // Get nonce parts
+                        byte[] sendNonce = new byte[12];
+                        Buffer.BlockCopy(chaChaData, 32, sendNonce, 0, 12);
 
-                            // Create cipher
-                            m_ServerCipher = new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12));
-                        }
+                        byte[] receiveNonce = new byte[12];
+                        Buffer.BlockCopy(chaChaData, 32 + 12, receiveNonce, 0, 12);
+
+                        // Create cipher
+                        m_ServerSendCipher = new ChaCha20Cipher(chaChaKey, sendNonce, 0);
+                        m_ServerReceiveCipher = new ChaCha20Cipher(chaChaKey, receiveNonce, 0);
                     }
 
                     /* Respond with hail response */
@@ -335,64 +328,46 @@ namespace MLAPI.Transport.ChaCha20
                     // Copy public part
                     Buffer.BlockCopy(internalPayload.Array, position, clientPublicPart, 0, clientPublicPartLength);
 
+                    byte[] key;
+
                     if (SignKeyExchange)
                     {
                         // Get key
-                        byte[] key = m_ClientSignedKeyExchanges[internalClientId].GetVerifiedSharedPart(clientPublicPart);
-
-                        // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
-                        using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
-                        {
-                            // Add raw key for external use
-                            ClientKeys.Add(internalClientId, key);
-
-                            // ChaCha wants 48 bytes
-                            byte[] chaChaData = pbdkf.GetBytes(48);
-
-                            // Get key part
-                            byte[] chaChaKey = new byte[32];
-                            Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
-
-                            // Get nonce part
-                            byte[] chaChaNonce = new byte[12];
-                            Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
-
-                            // Create cipher
-                            m_ClientCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12)));
-                        }
-
-                        // Cleanup
-                        m_ClientSignedKeyExchanges.Remove(internalClientId);
+                        key = m_ClientSignedKeyExchanges[internalClientId].GetVerifiedSharedPart(clientPublicPart);
                     }
                     else
                     {
                         // Get key
-                        byte[] key = m_ClientKeyExchanges[internalClientId].GetSharedSecretRaw(clientPublicPart);
-
-                        // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
-                        using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
-                        {
-                            // Add raw key for external use
-                            ClientKeys.Add(internalClientId, key);
-
-                            // ChaCha wants 48 bytes
-                            byte[] chaChaData = pbdkf.GetBytes(48);
-
-                            // Get key part
-                            byte[] chaChaKey = new byte[32];
-                            Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
-
-                            // Get nonce part
-                            byte[] chaChaNonce = new byte[12];
-                            Buffer.BlockCopy(chaChaData, 32, chaChaNonce, 0, 12);
-
-                            // Create cipher
-                            m_ClientCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaNonce, BitConverter.ToUInt32(chaChaData, 32 + 12)));
-                        }
-
-                        //Cleanup
-                        m_ClientKeyExchanges.Remove(internalClientId);
+                        key = m_ClientKeyExchanges[internalClientId].GetSharedSecretRaw(clientPublicPart);
                     }
+
+                    // Do key stretching with PBKDF2-HMAC-SHA1 with Application.productName as salt
+                    using (Rfc2898DeriveBytes pbdkf = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(Application.productName), 10_000))
+                    {
+                        // Add raw key for external use
+                        ClientKeys.Add(internalClientId, key);
+
+                        // ChaCha wants 44 bytes per instance
+                        byte[] chaChaData = pbdkf.GetBytes(32 + (12 * 2));
+
+                        // Get key part
+                        byte[] chaChaKey = new byte[32];
+                        Buffer.BlockCopy(chaChaData, 0, chaChaKey, 0, 32);
+
+                        // Get nonce part
+                        byte[] chaChaSendNonce = new byte[12];
+                        Buffer.BlockCopy(chaChaData, 32 + 12, chaChaSendNonce, 0, 12);
+
+                        byte[] chaChaReceiveNonce = new byte[12];
+                        Buffer.BlockCopy(chaChaData, 32, chaChaReceiveNonce, 0, 12);
+
+                        // Create cipher
+                        m_ClientSendCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaSendNonce, 0));
+                        m_ClientReceiveCiphers.Add(internalClientId, new ChaCha20Cipher(chaChaKey, chaChaReceiveNonce, 0));
+                    }
+
+                    // Cleanup
+                    m_ClientSignedKeyExchanges.Remove(internalClientId);
 
                     /* Respond with ready response */
 
@@ -423,8 +398,56 @@ namespace MLAPI.Transport.ChaCha20
                 {
                     // Decrypt and pass message to the MLAPI
 
+                    // Get the least significant bits of the counter
+                    byte leastSignificantBitsCounter = internalPayload.Array[position++];
+
                     // Get the correct cipher
-                    ChaCha20Cipher cipher = m_IsServer ? m_ClientCiphers[internalClientId] : m_ServerCipher;
+                    ChaCha20Cipher cipher = m_IsServer ? m_ClientReceiveCiphers[internalClientId] : m_ServerReceiveCipher;
+
+                    // Get the correct counter
+                    uint counter = m_IsServer ? m_ClientReceiveCiphers[internalClientId].Counter : m_ServerReceiveCipher.Counter;
+
+                    if ((counter & 0xFF) != leastSignificantBitsCounter)
+                    {
+                        /* COUNTER PREDICTION */
+                        // The goal of this code is to predict the senders counter.
+                        // This must work.
+                        // The only thing sent is the 8 least significant bytes of the sender counter.
+                        // The rest has to be predicted.
+                        // - TwoTen
+
+                        if ((counter & 0xFF) > byte.MaxValue - 64 && leastSignificantBitsCounter < 64)
+                        {
+                            // The counter was on the upper half of the bits and the message we got was rolled over
+
+                            // Roll over the counter then set the 8 least significant bits to the senders
+                            counter = ((counter + ((uint)byte.MaxValue - ((byte) counter)) + 1) & 0xFFFFFF00) | leastSignificantBitsCounter;
+                        }
+                        else if ((counter & 0xFF) < 64 && leastSignificantBitsCounter > byte.MaxValue - 64)
+                        {
+                            // The counter was on the lower half of the bits and the message we got was in the past
+
+                            // Roll the counter back to make the least significant bits 0xFF.
+
+                            // TODO: Optimize with something closer to real bitmath
+                            // Eg. https://bisqwit.iki.fi/story/howto/bitmath/
+                            while ((counter & 0xFF) != byte.MaxValue)
+                            {
+                                counter--;
+                            }
+
+                            // Counter was rolled back to where the bits were on the upper half then set to the least significant bits of the sender
+                            counter = (counter & 0xFFFFFF00) | leastSignificantBitsCounter;
+                        }
+                        else
+                        {
+                            // We didn't detect a integer rollover from the 8 least significant bits. We simply set the last 8 to the senders 8 lsb
+                            counter = (counter & 0xFFFFFF00) | leastSignificantBitsCounter;
+                        }
+
+                        // Reset the cipher nonce and IV to the predicted value
+                        cipher.SetCounter(counter);
+                    }
 
                     // Decrypt bytes
                     cipher.ProcessBytes(internalPayload.Array, position, m_CryptoBuffer, 0, internalPayload.Count - position);
@@ -461,10 +484,16 @@ namespace MLAPI.Transport.ChaCha20
                         ClientKeys.Remove(internalClientId);
                     }
 
-                    if (m_ClientCiphers.ContainsKey(internalClientId))
+                    if (m_ClientSendCiphers.ContainsKey(internalClientId))
                     {
-                        m_ClientCiphers[internalClientId].Dispose();
-                        m_ClientCiphers.Remove(internalClientId);
+                        m_ClientSendCiphers[internalClientId].Dispose();
+                        m_ClientSendCiphers.Remove(internalClientId);
+                    }
+
+                    if (m_ClientReceiveCiphers.ContainsKey(internalClientId))
+                    {
+                        m_ClientReceiveCiphers[internalClientId].Dispose();
+                        m_ClientReceiveCiphers.Remove(internalClientId);
                     }
 
                     if (m_ClientStates.ContainsKey(internalClientId))
