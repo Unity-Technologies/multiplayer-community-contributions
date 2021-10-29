@@ -12,7 +12,7 @@ using UnityEngine.Assertions;
 
 namespace MLAPI.Transport.ChaCha20
 {
-    public class CryptographyTransportAdapter : NetworkTransport
+    public class CryptographyTransportAdpater : NetworkTransport
     {
         public override ulong ServerClientId => Transport.ServerClientId;
 
@@ -22,6 +22,8 @@ namespace MLAPI.Transport.ChaCha20
 
         [TextArea]
         public string ServerBase64PFX;
+
+        public Func<X509Certificate2, bool> ValidateCertificate;
 
         private X509Certificate2 m_ServerCertificate;
 
@@ -207,8 +209,22 @@ namespace MLAPI.Transport.ChaCha20
 
                         // Create cert
                         m_ServerCertificate = new X509Certificate2(cert);
+                        
+                        if (ValidateCertificate == null)
+                        {
+                            throw new Exception("ValidateCertificate handler not set");
+                        }
 
-                        // TODO: IMPORTANT!!! VERIFY CERTIFICATE!!!!!!!
+                        if (!ValidateCertificate(m_ServerCertificate))
+                        {
+                            // Failed validation. Disconnect and return
+                            Transport.DisconnectLocalClient();
+
+                            clientId = internalClientId;
+                            payload = new ArraySegment<byte>();
+                            receiveTime = internalReceiveTime;
+                            return NetworkEvent.Nothing;
+                        }
 
                         // Create key exchange
                         m_ServerSignedKeyExchange = new ECDiffieHellmanRSA(m_ServerCertificate);
