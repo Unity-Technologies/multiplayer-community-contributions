@@ -134,20 +134,16 @@ namespace Netcode.Transports.Facepunch
             }
         }
 
-        public override unsafe void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
-            var sendType = NetworkDeliveryToSendType(delivery);
+	        var sendType = NetworkDeliveryToSendType(delivery);
 
-            byte* buffer = stackalloc byte[data.Count];
-            fixed (byte* pointer = data.Array)
-                Buffer.MemoryCopy(pointer + data.Offset, buffer, data.Count, data.Count);
-
-            if (clientId == ServerClientId)
-                connectionManager.Connection.SendMessage((IntPtr)buffer, data.Count , sendType);
-            else if (connectedClients.TryGetValue(clientId, out Client user))
-                user.connection.SendMessage((IntPtr)buffer, data.Count, sendType);
-            else if (LogLevel <= LogLevel.Normal)
-                Debug.LogWarning($"[{nameof(FacepunchTransport)}] - Failed to send packet to remote client with ID {clientId}, client not connected.");
+	        if (clientId == ServerClientId)
+		        connectionManager.Connection.SendMessage(data.Array, data.Offset, data.Count, sendType);
+	        else if (connectedClients.TryGetValue(clientId, out Client user))
+		        user.connection.SendMessage(data.Array, data.Offset, data.Count, sendType);
+	        else if (LogLevel <= LogLevel.Normal)
+		        Debug.LogWarning($"[{nameof(FacepunchTransport)}] - Failed to send packet to remote client with ID {clientId}, client not connected.");
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
