@@ -211,7 +211,7 @@ namespace Netcode.Transports.Facepunch
         {
             byte[] payload = new byte[size];
             Marshal.Copy(data, payload, 0, size);
-            InvokeOnTransportEvent(NetworkEvent.Data, ServerClientId, new ArraySegment<byte>(payload, 0, size - 1), Time.realtimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Data, ServerClientId, new ArraySegment<byte>(payload, 0, size), Time.realtimeSinceStartup);
         }
 
         #endregion
