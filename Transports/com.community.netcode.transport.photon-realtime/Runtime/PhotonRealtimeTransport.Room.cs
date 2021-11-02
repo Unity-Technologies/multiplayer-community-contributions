@@ -37,13 +37,18 @@ namespace Netcode.Transports.PhotonRealtime
             // server/host gets any player's leave. 
             // all clients disconnect when the server/host leaves.
 
-            if (m_IsHostOrServer || otherPlayer.ActorNumber == m_originalRoomMasterClient)
+            if (m_IsHostOrServer)
             {
                 var senderId = GetMlapiClientId(otherPlayer.ActorNumber, false);
                 //Debug.Log("Host got OnPlayerLeftRoom() with senderId: "+senderId);
                 
                 NetworkEvent netEvent = NetworkEvent.Disconnect;
                 InvokeTransportEvent(netEvent, senderId);
+            }
+            else if (otherPlayer.ActorNumber == m_originalRoomMasterClient)
+            {
+                NetworkEvent netEvent = NetworkEvent.Disconnect;
+                InvokeTransportEvent(netEvent, GetMlapiClientId(m_originalRoomMasterClient, false));
             }
         }
 
