@@ -35,7 +35,7 @@ var LibraryWebSocket = {
 
     state.ws.onopen = function () {
       if (state.debug) {
-        console.log("[MLAPI.WebSocket] Connected.");
+        console.log("[Netcode.WebSocket] Connected.");
       }
 
       if (state.onOpen) {
@@ -45,7 +45,7 @@ var LibraryWebSocket = {
 
     state.ws.onmessage = function (ev) {
       if (state.debug) {
-        console.log("[MLAPI.WebSocket] Received message:", ev.data);
+        console.log("[Netcode.WebSocket] Received message:", ev.data);
       }
 
       if (!state.onMessage) {
@@ -68,7 +68,7 @@ var LibraryWebSocket = {
 
     state.ws.onerror = function (ev) {
       if (state.debug) {
-        console.log("[MLAPI.WebSocket] Error occured.");
+        console.log("[Netcode.WebSocket] Error occured.");
       }
 
       if (state.onError) {
@@ -87,7 +87,7 @@ var LibraryWebSocket = {
 
     state.ws.onclose = function (ev) {
       if (state.debug) {
-        console.log("[MLAPI.WebSocket] Closed.");
+        console.log("[Netcode.WebSocket] Closed.");
       }
 
       if (state.onClose) {
