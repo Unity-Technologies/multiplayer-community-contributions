@@ -38,10 +38,8 @@ namespace Netcode.Transports.PhotonRealtime
             // any client (except host/server) need to know about their own join event
             if (!m_IsHostOrServer)
             {
-                var senderId = GetMlapiClientId(m_Client.LocalPlayer.ActorNumber, false);
-
                 NetworkEvent netEvent = NetworkEvent.Connect;
-                InvokeTransportEvent(netEvent, senderId);
+                InvokeTransportEvent(netEvent, GetMlapiClientId(m_originalRoomMasterClient, false));
             }
         }
 
@@ -60,10 +58,8 @@ namespace Netcode.Transports.PhotonRealtime
             // any client (except host/server) need to know about their own leave event
             if (!this.m_IsHostOrServer)
             {
-                var senderId = GetMlapiClientId(m_Client.LocalPlayer.ActorNumber, false);
-
                 NetworkEvent netEvent = NetworkEvent.Connect;
-                InvokeTransportEvent(netEvent, senderId);
+                InvokeTransportEvent(netEvent, GetMlapiClientId(m_originalRoomMasterClient, false));
             }
         }
     }
