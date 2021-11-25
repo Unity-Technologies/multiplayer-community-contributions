@@ -10,7 +10,7 @@ The SteamNetworking Transport leverages Valve's SteamNetworking APIs enabling se
 1. Install [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) via the package manager by clicking the '+' (plus) button located in the upper left of the window and selecting `Add package from git URL...` when prompted provide the following URL:  
 `https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net`
 2. Install this package via the package manager by clicking the '+' (plus) button located in the upper left of the window and selecting `Add package from git URL...` when prompted provide the following URL:  
-`https://github.com/Unity-Technologies/mlapi-community-contributions.git?path=/Transports/com.mlapi.contrib.transport.steamnetworking`
+`https://github.com/Unity-Technologies/multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.steamnetworking`
 
 ## Usage
 This transport does require that you first initalize the Steam API before use. To do so you will need to either

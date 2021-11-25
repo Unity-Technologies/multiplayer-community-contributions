@@ -1,5 +1,5 @@
 {
-    "name": "SteamNetworking MLAPI Transport",
+    "name": "SteamNetworking Transport  for Netcode for GameObjects",
     "references": [
         "GUID:1491147abca9d7d4bb7105af628b223e",
         "GUID:68bd7fdb68ef2684e982e8a9825b18a5"
