@@ -1,0 +1,16 @@
+{
+    "name": "Photon Realtime Transport for Netcode for GameObjects",
+    "rootNamespace": "Netcode.Transports.PhotonRealtime",
+    "references": [
+        "Unity.Netcode.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,17 @@
+{
+    "name": "Netcode for GameObjects Community Extensions",
+    "rootNamespace": "Netcode.Extensions",
+    "references": [
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Adapter.UTP"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

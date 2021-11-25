@@ -1,0 +1,12 @@
+{
+  "name": "com.community.netcode.extensions",
+  "displayName": "Netcode for GameObjects Community Extensions Package",
+  "version": "1.0.0",
+  "unity": "2019.4",
+  "description": "The Netcode for GameObjects Community Extensions package is a package containing extensions to Netcode for GameObjects.",
+  "author": "",
+  "dependencies": {
+    "com.unity.netcode.gameobjects": "0.2.0-preview.1",
+    "com.unity.netcode.adapter.utp" : "0.1.0-preview.1"
+  }
+}
