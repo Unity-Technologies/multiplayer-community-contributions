@@ -1,9 +1,0 @@
-{
-  "name": "com.community.netcode.transport.steamp2p",
-  "displayName": "SteamP2P Transport for Netcode for GameObjects",
-  "version": "2.0.0",
-  "unity": "2019.4",
-  "description": "SteamP2P Transport for Netcode for GameObjects",
-  "author": "Petter Vernersson (transport adapter), Riley Labrecque (C# wrapper Steamworks.NET), Valve Corporation.",
-  "dependencies": {}
-}
