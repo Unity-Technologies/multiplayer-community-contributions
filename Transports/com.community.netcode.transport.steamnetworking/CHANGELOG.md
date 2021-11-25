@@ -8,13 +8,13 @@ v2.0.0 submitted by [Heathen Engineering](https://assetstore.unity.com/publisher
 
 The [Heathen Assets Discord](https://discord.gg/6X3xrRc) server can be used to ask any questions regarding Heathen's modifications or to see community support with Heathen related Steam integration and Steam networking questions
 
-## [2.0.0] - 2021-09-25
+## [2.0.0] - 2021-11-25
 ### Add
 - Added support for Steam Game Server Networking APIs
 
 ### Changed
 - Transport is now named SteamNetworkingTransport as it is no longer limited to peer to peer architectures
-- Namespace simplified to MLAPI.Transports
+- Namespace simplified to Netcode.Transports
 - Updated all API calls to test for platform, in the case of UNITY_SERVER being defined the transport will use the SteamGameServerNetworking APIs otherwise it will use the client equivelent SteamNetworking APIs
 
 ### Removed

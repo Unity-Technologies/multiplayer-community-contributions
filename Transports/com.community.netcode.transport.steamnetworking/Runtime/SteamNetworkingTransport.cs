@@ -3,18 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Steamworks;
-using MLAPI.Logging;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using MLAPI.Transports.Tasks;
+using Unity.Netcode;
 
 /*
  * Steamworks API Reference for ISteamNetworking: https://partner.steamgames.com/doc/api/ISteamNetworking
  * Steamworks.NET: https://steamworks.github.io/
  */
 
-namespace MLAPI.Transports
+namespace Netcode.Transports
 {
     public class SteamNetworkingTransport : NetworkTransport
     {
@@ -48,18 +47,11 @@ namespace MLAPI.Transports
             Disconnect = 1,
             Ping = 2,
             Pong = 3,
-            InternalChannelsCount = 4
+            InternalChannelsCount = 4,
+            NetcodeData = 5,
         }
 
         private int channelCounter = 0;
-        
-        // User channels was made private because the inspector would only allow to select channels which are already used by MLAPI.
-        private List<TransportChannel> userChannels = new List<TransportChannel>();
-        
-        
-        private Dictionary<int, EP2PSend> channelSendTypes = new Dictionary<int, EP2PSend>();
-        private readonly Dictionary<NetworkChannel, int> channelNameToId = new Dictionary<NetworkChannel, int>();
-        private readonly Dictionary<int, NetworkChannel> channelIdToName = new Dictionary<int, NetworkChannel>();
         private int currentPollChannel = 0;
 
         private class Ping
@@ -201,58 +193,38 @@ namespace MLAPI.Transports
             return 0ul;
         }
 
-        public override void Init()
+        public override void Initialize()
         {
             if (!IsSupported)
             {
                 if (NetworkManager.Singleton.LogLevel <= LogLevel.Error) 
-                    NetworkLog.LogErrorServer(nameof(SteamNetworkingTransport) + " - Init - Steamworks.NET SteamManager.Initialized not found, "+ nameof(SteamNetworkingTransport) + " can not run without it");
+                    NetworkLog.LogErrorServer(nameof(SteamNetworkingTransport) + " - Initialize - Steamworks.NET not ready, " + nameof(SteamNetworkingTransport) + " can not run without it");
                 return;
             }
 
-            channelIdToName.Clear();
-            channelNameToId.Clear();
-            channelSendTypes.Clear();
             channelCounter = 0;
             currentPollChannel = 0;
 
             // Add SteamP2PTransport internal channels
             for (int i = 0; i < (int)InternalChannelType.InternalChannelsCount; i++)
             {
-                int channelId = AddChannel(NetworkDelivery.Reliable);
-            }
-
-            // MLAPI Channels
-            for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
-            {
-                int channelId = AddChannel(MLAPI_CHANNELS[i].Delivery);
-                channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Channel);
-                channelNameToId.Add(MLAPI_CHANNELS[i].Channel, channelId);
-            }
-
-            // User Channels
-            for (int i = 0; i < userChannels.Count; i++)
-            {
-                int channelId = AddChannel(userChannels[i].Delivery);
-                channelIdToName.Add(channelId, userChannels[i].Channel);
-                channelNameToId.Add(userChannels[i].Channel, channelId);
+                int channelId = AddChannel(EP2PSend.k_EP2PSendReliableWithBuffering);
             }
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             //Connect fail disconnect
             if (connectionAttemptFailed)
             {
                 clientId = connectionAttemptFailedClientId;
-                channel = default;
                 payload = new ArraySegment<byte>();
                 connectionAttemptFailed = false;
                 receiveTime = Time.realtimeSinceStartup;
                 return NetworkEvent.Disconnect;
             }
 
-            while (currentPollChannel < channelSendTypes.Count)
+            while (currentPollChannel < channelCounter)
             {
 #if UNITY_SERVER
                 if (SteamGameServerNetworking.IsP2PPacketAvailable(out uint msgSize, currentPollChannel))
@@ -281,7 +253,6 @@ namespace MLAPI.Transports
 
                         if (currentPollChannel < (int)InternalChannelType.InternalChannelsCount)
                         {
-                            channel = default;
                             payload = new ArraySegment<byte>();
 
                             switch (currentPollChannel)
@@ -355,7 +326,6 @@ namespace MLAPI.Transports
                         else
                         {
                             payload = new ArraySegment<byte>(messageBuffer, 0, (int)msgSize);
-                            channel = channelIdToName[currentPollChannel];
                             receiveTime = Time.realtimeSinceStartup;
                             return NetworkEvent.Data;
                         }
@@ -372,30 +342,21 @@ namespace MLAPI.Transports
             }
             currentPollChannel = 0;
             payload = new ArraySegment<byte>();
-            channel = default;
             clientId = 0;
             receiveTime = Time.realtimeSinceStartup;
             return NetworkEvent.Nothing;
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
-            if (!channelNameToId.ContainsKey(channel))
-            {
-                if (NetworkManager.Singleton.LogLevel <= LogLevel.Error) 
-                    NetworkLog.LogErrorServer(nameof(SteamNetworkingTransport) + " - Can't Send to client, channel with channelName: " + channel + " is not present");
-                return;
-            }
-
-            int channelId = channelNameToId[channel];
-            EP2PSend sendType = channelSendTypes[channelId];
+            EP2PSend sendType = NetworkDeliveryToEP2PSend(delivery);
 
             if (clientId == ServerClientId)
             {
 #if UNITY_SERVER
-                SteamGameServerNetworking.SendP2PPacket(serverUser.SteamId, data.Array, (uint)data.Count, sendType, channelId);
+                SteamGameServerNetworking.SendP2PPacket(serverUser.SteamId, data.Array, (uint)data.Count, sendType, (int)InternalChannelType.NetcodeData);
 #else
-                SteamNetworking.SendP2PPacket(serverUser.SteamId, data.Array, (uint)data.Count, sendType, channelId);
+                SteamNetworking.SendP2PPacket(serverUser.SteamId, data.Array, (uint)data.Count, sendType, (int)InternalChannelType.NetcodeData);
 #endif
             }
             else
@@ -403,9 +364,9 @@ namespace MLAPI.Transports
                 if (connectedUsers.ContainsKey(clientId))
                 {
 #if UNITY_SERVER
-                    SteamGameServerNetworking.SendP2PPacket(connectedUsers[clientId].SteamId, data.Array, (uint)data.Count, sendType, channelId);
+                    SteamGameServerNetworking.SendP2PPacket(connectedUsers[clientId].SteamId, data.Array, (uint)data.Count, sendType, (int)InternalChannelType.NetcodeData);
 #else
-                    SteamNetworking.SendP2PPacket(connectedUsers[clientId].SteamId, data.Array, (uint)data.Count, sendType, channelId);
+                    SteamNetworking.SendP2PPacket(connectedUsers[clientId].SteamId, data.Array, (uint)data.Count, sendType, (int)InternalChannelType.NetcodeData);
 #endif
                 }
                 else
@@ -429,7 +390,6 @@ namespace MLAPI.Transports
             sendPings = false;
             isServer = false;
             connectionAttemptFailed = false;
-            channelSendTypes.Clear();
             channelCounter = 0;
             currentPollChannel = 0;
 
@@ -449,11 +409,9 @@ namespace MLAPI.Transports
             }
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
             serverUser = new User(new CSteamID(ConnectToSteamID));
-
-            SocketTask task = SocketTask.Working;
 
 #if UNITY_SERVER
             if (SteamGameServerNetworking.SendP2PPacket(serverUser.SteamId, new byte[] { 0 }, 1, EP2PSend.k_EP2PSendReliable, (int)InternalChannelType.Connect))
@@ -465,9 +423,6 @@ namespace MLAPI.Transports
                 _p2PSessionConnectFailCallback = Callback<P2PSessionConnectFail_t>.Create((sessionConnectFailInfo) =>
                 {
                     OnP2PSessionConnectFail(sessionConnectFailInfo);
-                    task.IsDone = true;
-                    task.Success = false;
-                    task.TransportCode = sessionConnectFailInfo.m_eP2PSessionError;
                 });
             }
             else
@@ -478,18 +433,15 @@ namespace MLAPI.Transports
                     m_steamIDRemote = serverUser.SteamId
                 };
 
-
-                task.IsDone = true;
-                task.Success = false;
-                task.TransportCode = sessionConnectFailInfo.m_eP2PSessionError;
-
                 OnP2PSessionConnectFail(sessionConnectFailInfo);
+
+                return false;
             }
 
-            return task.AsTasks();
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             isServer = true;
 
@@ -501,10 +453,16 @@ namespace MLAPI.Transports
             if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer) 
                 NetworkLog.LogInfoServer(nameof(SteamNetworkingTransport) + " - StartServer");
 
-            return SocketTask.Done.AsTasks();
+            return true;
         }
 
-        private int AddChannel(NetworkDelivery type)
+        private int AddChannel(EP2PSend send)
+        {
+            channelCounter++;
+            return channelCounter - 1;
+        }
+
+        private EP2PSend NetworkDeliveryToEP2PSend(NetworkDelivery type)
         {
             EP2PSend options = EP2PSend.k_EP2PSendReliableWithBuffering;
             switch (type)
@@ -528,9 +486,8 @@ namespace MLAPI.Transports
                     options = EP2PSend.k_EP2PSendReliableWithBuffering;
                     break;
             }
-            channelSendTypes.Add(channelCounter, options);
-            channelCounter++;
-            return channelCounter - 1;
+
+            return options;
         }
 
         private void CloseP2PSessions()

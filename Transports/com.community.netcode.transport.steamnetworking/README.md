@@ -1,4 +1,4 @@
-# SteamNetworking Transport for Unity MLAPI
+# SteamNetworking Transport for Unity NetCode for GameObjects
 The SteamNetworking Transport leverages Valve's SteamNetworking APIs enabling secure and efficent networking in both peer to peer and client server architectures. The Steam networking APIs address via CSteamID, not IP/Port. These APIs handle routing via Valve's backend services and do not require NAT punch or additional routing solutions.
 
 ## Dependencies
