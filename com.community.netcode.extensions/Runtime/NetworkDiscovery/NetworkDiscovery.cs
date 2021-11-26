@@ -241,13 +241,13 @@ public abstract class NetworkDiscovery<TBroadCast, TResponse> : MonoBehaviour
 
     private bool ReadAndCheckHeader(FastBufferReader reader, MessageType expectedType)
     {
-        reader.ReadValueSafe(out int receivedApplicationId);
+        reader.ReadValueSafe(out long receivedApplicationId);
         if (receivedApplicationId != m_UniqueApplicationId)
         {
             return false;
         }
 
-        reader.ReadValueSafe(out byte messageType);
+        reader.ReadByteSafe(out byte messageType);
         if (messageType != (byte) expectedType)
         {
             return false;
