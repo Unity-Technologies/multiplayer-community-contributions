@@ -26,7 +26,7 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 | **[Ruffles](/Transports/com.community.netcode.transport.ruffles)**| Desktop, Mobile | :heavy_check_mark: |  :heavy_check_mark: | :heavy_check_mark: |
 |**[Enet](/Transports/com.community.netcode.transport.enet)**| Desktop, Mobile\* | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | 
 |**[LiteNetLib](/Transports/com.community.netcode.transport.litenetlib)**| Desktop, Mobile | :heavy_check_mark: |  :heavy_check_mark: | :heavy_check_mark: | 
-|**[SteamP2P](/Transports/com.community.netcode.transport.steamp2p)**| Steam | :heavy_check_mark: |  :heavy_check_mark: | :heavy_check_mark: | 
+|**[SteamNetworking](/Transports/com.community.netcode.transport.steamnetworking)**| Steam | :heavy_check_mark: |  :heavy_check_mark: | :heavy_check_mark: | 
 |**[WebSocket](/Transports/com.community.netcode.transport.websocket)**| Desktop, Mobile, WebGL | :heavy_check_mark: |  :heavy_check_mark:||
 |**[Photon Realtime](/Transports/com.community.netcode.transport.photon-realtime)**| Desktop, Mobile, WebGL\** | :heavy_check_mark: |  :heavy_check_mark: | |  
 |**[Facepunch](/Transports/com.community.netcode.transport.facepunch)**| Steam | :heavy_check_mark: |  :heavy_check_mark: | :heavy_check_mark: | 
