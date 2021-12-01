@@ -233,21 +233,21 @@ public abstract class NetworkDiscovery<TBroadCast, TResponse> : MonoBehaviour
     private void WriteHeader(FastBufferWriter writer, MessageType messageType)
     {
         // Serialize unique application id to make sure packet received is from same application.
-        writer.WriteValue(m_UniqueApplicationId);
+        writer.WriteValueSafe(m_UniqueApplicationId);
 
         // Write a flag indicating whether this is a broadcast
-        writer.WriteByte((byte) messageType);
+        writer.WriteByteSafe((byte) messageType);
     }
 
     private bool ReadAndCheckHeader(FastBufferReader reader, MessageType expectedType)
     {
-        reader.ReadValue(out int receivedApplicationId);
+        reader.ReadValueSafe(out long receivedApplicationId);
         if (receivedApplicationId != m_UniqueApplicationId)
         {
             return false;
         }
 
-        reader.ReadValue(out byte messageType);
+        reader.ReadByteSafe(out byte messageType);
         if (messageType != (byte) expectedType)
         {
             return false;
