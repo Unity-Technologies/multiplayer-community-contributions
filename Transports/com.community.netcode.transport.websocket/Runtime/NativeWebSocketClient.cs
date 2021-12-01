@@ -32,7 +32,7 @@ namespace Netcode.Transports.WebSocket
         public NativeWebSocketClient(string url)
         {
             Connection = new WebSocketSharp.WebSocket(url);
-
+            if(url.StartsWith("wss")) Connection.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             Connection.OnOpen += OnOpen;
             Connection.OnMessage += OnMessage;
             Connection.OnError += OnError;
