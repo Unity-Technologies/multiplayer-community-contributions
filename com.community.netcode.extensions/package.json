@@ -6,7 +6,7 @@
   "description": "The Netcode for GameObjects Community Extensions package is a package containing extensions to Netcode for GameObjects.",
   "author": "",
   "dependencies": {
-    "com.unity.netcode.gameobjects": "0.2.0-preview.1",
-    "com.unity.netcode.adapter.utp" : "0.1.0-preview.1"
+    "com.unity.netcode.gameobjects": "1.0.0-pre.3",
+    "com.unity.netcode.adapter.utp" : "1.0.0-pre.3"
   }
 }
