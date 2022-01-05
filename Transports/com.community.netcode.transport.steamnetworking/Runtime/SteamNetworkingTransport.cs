@@ -379,8 +379,8 @@ namespace Netcode.Transports
 
         public override void Shutdown()
         {
-            if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer) 
-                NetworkLog.LogInfoServer(nameof(SteamNetworkingTransport) + " - Shutdown");
+            if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
+                Debug.Log(nameof(SteamNetworkingTransport) + " - Shutdown");
 
             if (_p2PSessionRequestCallback != null)
                 _p2PSessionRequestCallback.Dispose();
@@ -451,7 +451,7 @@ namespace Netcode.Transports
             OnConnected();
 
             if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer) 
-                NetworkLog.LogInfoServer(nameof(SteamNetworkingTransport) + " - StartServer");
+                Debug.Log(nameof(SteamNetworkingTransport) + " - StartServer");
 
             return true;
         }
@@ -510,8 +510,8 @@ namespace Netcode.Transports
             }
             connectedUsers.Clear();
             serverUser = null;
-            if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer) 
-                NetworkLog.LogInfoServer(nameof(SteamNetworkingTransport) + " - CloseP2PSessions - has Closed P2P Sessions With all Users");
+            if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
+                Debug.Log(nameof(SteamNetworkingTransport) + " - CloseP2PSessions - has Closed P2P Sessions With all Users");
         }
 
         private void OnP2PSessionRequest(P2PSessionRequest_t request)
