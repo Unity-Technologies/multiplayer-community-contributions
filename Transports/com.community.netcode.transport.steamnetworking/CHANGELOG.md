@@ -8,6 +8,11 @@ v2.0.0 submitted by [Heathen Engineering](https://assetstore.unity.com/publisher
 
 The [Heathen Assets Discord](https://discord.gg/6X3xrRc) server can be used to ask any questions regarding Heathen's modifications or to see community support with Heathen related Steam integration and Steam networking questions
 
+## [2.0.1] - 2021-01-06
+
+### Fixed
+- Fixed a bug in the internal channel implementation which did not allow Netcode for GameObject to send any data over the transport.
+
 ## [2.0.0] - 2021-11-25
 ### Add
 - Added support for Steam Game Server Networking APIs
