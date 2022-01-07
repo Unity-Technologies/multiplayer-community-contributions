@@ -1,7 +1,7 @@
 {
   "name": "com.community.netcode.transport.steamnetworking",
   "displayName": "SteamNetworking Transport for NetCode for Gameobjects",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "unity": "2020.3",
   "description": "SteamNetworking Transport for NetCode for GameObjects with support for both peer to peer and client server architectures. Derived from SteamAPI originally authored by Petter Vernersson",
   "author": {
