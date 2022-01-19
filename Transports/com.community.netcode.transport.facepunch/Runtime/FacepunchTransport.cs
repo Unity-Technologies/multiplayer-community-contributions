@@ -6,6 +6,7 @@ using Steamworks;
 using Steamworks.Data;
 using Unity.Netcode;
 using UnityEngine;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Netcode.Transports.Facepunch
 {
@@ -96,6 +97,10 @@ namespace Netcode.Transports.Facepunch
 
         public override unsafe ulong GetCurrentRtt(ulong clientId)
         {
+            if (connectedClients.TryGetValue(clientId, out Client user))
+            {
+                return (ulong)user.connection.QuickStatus().Ping;
+            }
             return 0;
         }
 
@@ -181,6 +186,8 @@ namespace Netcode.Transports.Facepunch
 
         #region ConnectionManager Implementation
 
+        private byte[] payloadCache = new byte[4096];
+
         void IConnectionManager.OnConnecting(ConnectionInfo info)
         {
             if (LogLevel <= LogLevel.Developer)
@@ -203,11 +210,17 @@ namespace Netcode.Transports.Facepunch
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}.");
         }
 
-        void IConnectionManager.OnMessage(IntPtr data, int size, long messageNum, long recvTime, int channel)
+        unsafe void IConnectionManager.OnMessage(IntPtr data, int size, long messageNum, long recvTime, int channel)
         {
-            byte[] payload = new byte[size];
-            Marshal.Copy(data, payload, 0, size);
-            InvokeOnTransportEvent(NetworkEvent.Data, ServerClientId, new ArraySegment<byte>(payload, 0, size), Time.realtimeSinceStartup);
+            if (payloadCache.Length < size) {
+                payloadCache = new byte[payloadCache.Length * 2];
+            }
+
+            fixed (byte* payload = payloadCache) {
+                UnsafeUtility.MemCpy(payload, (byte*)data, size);
+            }
+
+            InvokeOnTransportEvent(NetworkEvent.Data, ServerClientId, new ArraySegment<byte>(payloadCache, 0, size), Time.realtimeSinceStartup);
         }
 
         #endregion
@@ -251,11 +264,17 @@ namespace Netcode.Transports.Facepunch
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}");
         }
 
-        void ISocketManager.OnMessage(SocketConnection connection, NetIdentity identity, IntPtr data, int size, long messageNum, long recvTime, int channel)
+        unsafe void ISocketManager.OnMessage(SocketConnection connection, NetIdentity identity, IntPtr data, int size, long messageNum, long recvTime, int channel)
         {
-            byte[] payload = new byte[size];
-            Marshal.Copy(data, payload, 0, size);
-            InvokeOnTransportEvent(NetworkEvent.Data, connection.Id, new ArraySegment<byte>(payload, 0, size), Time.realtimeSinceStartup);
+            if (payloadCache.Length < size) {
+                payloadCache = new byte[payloadCache.Length * 2];
+            }
+
+            fixed (byte* payload = payloadCache) {
+                UnsafeUtility.MemCpy(payload, (byte*)data, size);
+            }
+
+            InvokeOnTransportEvent(NetworkEvent.Data, connection.Id, new ArraySegment<byte>(payloadCache, 0, size), Time.realtimeSinceStartup);
         }
 
         #endregion
