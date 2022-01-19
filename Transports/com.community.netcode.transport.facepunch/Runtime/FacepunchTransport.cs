@@ -188,6 +188,14 @@ namespace Netcode.Transports.Facepunch
 
         private byte[] payloadCache = new byte[4096];
 
+        private void EnsurePayloadCapacity(int size)
+        {
+            if (payloadCache.Length >= size)
+                return;
+
+            payloadCache = new byte[Math.Max(payloadCache.Length * 2, size)];
+        }
+
         void IConnectionManager.OnConnecting(ConnectionInfo info)
         {
             if (LogLevel <= LogLevel.Developer)
@@ -212,10 +220,7 @@ namespace Netcode.Transports.Facepunch
 
         unsafe void IConnectionManager.OnMessage(IntPtr data, int size, long messageNum, long recvTime, int channel)
         {
-            if (payloadCache.Length < size)
-            {
-                payloadCache = new byte[payloadCache.Length * 2];
-            }
+            EnsurePayloadCapacity(size);
 
             fixed (byte* payload = payloadCache)
             {
@@ -268,10 +273,7 @@ namespace Netcode.Transports.Facepunch
 
         unsafe void ISocketManager.OnMessage(SocketConnection connection, NetIdentity identity, IntPtr data, int size, long messageNum, long recvTime, int channel)
         {
-            if (payloadCache.Length < size)
-            {
-                payloadCache = new byte[payloadCache.Length * 2];
-            }
+            EnsurePayloadCapacity(size);
 
             fixed (byte* payload = payloadCache)
             {
