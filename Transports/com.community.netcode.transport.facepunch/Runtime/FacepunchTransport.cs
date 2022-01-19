@@ -212,11 +212,13 @@ namespace Netcode.Transports.Facepunch
 
         unsafe void IConnectionManager.OnMessage(IntPtr data, int size, long messageNum, long recvTime, int channel)
         {
-            if (payloadCache.Length < size) {
+            if (payloadCache.Length < size)
+            {
                 payloadCache = new byte[payloadCache.Length * 2];
             }
 
-            fixed (byte* payload = payloadCache) {
+            fixed (byte* payload = payloadCache)
+            {
                 UnsafeUtility.MemCpy(payload, (byte*)data, size);
             }
 
@@ -266,11 +268,13 @@ namespace Netcode.Transports.Facepunch
 
         unsafe void ISocketManager.OnMessage(SocketConnection connection, NetIdentity identity, IntPtr data, int size, long messageNum, long recvTime, int channel)
         {
-            if (payloadCache.Length < size) {
+            if (payloadCache.Length < size)
+            {
                 payloadCache = new byte[payloadCache.Length * 2];
             }
 
-            fixed (byte* payload = payloadCache) {
+            fixed (byte* payload = payloadCache)
+            {
                 UnsafeUtility.MemCpy(payload, (byte*)data, size);
             }
 
