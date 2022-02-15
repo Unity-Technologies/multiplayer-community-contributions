@@ -41,6 +41,7 @@ Check our [contribution guidelines](CONTRIBUTING.md) for information on how to c
 |**[NetworkObjectPool](/com.community.netcode.extensions/Runtime/NetworkObjectPool)**| :heavy_check_mark: | :heavy_check_mark: | |
 |**[NetworkManagerHud](/com.community.netcode.extensions/Runtime/NetworkManagerHud)**| :heavy_check_mark: | :heavy_check_mark: | |
 |**[NetworkDiscovery](/com.community.netcode.extensions/Runtime/NetworkDiscovery)**| :heavy_check_mark: | :heavy_check_mark: | |
+|**[NetworkDictionary](/com.community.netcode.extensions/Runtime/NetworkDictionary)**| :heavy_check_mark: || |
 
 
 ### Releases
