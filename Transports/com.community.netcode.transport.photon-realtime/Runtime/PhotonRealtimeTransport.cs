@@ -257,7 +257,7 @@ namespace Netcode.Transports.PhotonRealtime
         // -------------- Transport Handlers --------------------------------------------------------------------------
 
         ///<inheritdoc/>
-        public override void Initialize() { }
+        public override void Initialize(NetworkManager networkManager = null) { }
 
         ///<inheritdoc/>
         public override void Shutdown()
