@@ -6,6 +6,6 @@
   "description": "Facepunch Transport for Netcode for GameObjects",
   "author": "Nico Thomas (Transport Adapter), Floris van Onna (Transport Adapter), Garry Newman (Author of Facepunch.Steamworks)",
   "dependencies": {
-    "com.unity.netcode.gameobjects": "0.2.0-preview.1"
+    "com.unity.netcode.gameobjects": "1.0.0-pre.4"
   }
 }
