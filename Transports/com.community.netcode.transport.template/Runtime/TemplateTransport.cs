@@ -45,7 +45,7 @@ namespace Netcode.Transports.Template
             throw new NotImplementedException();
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
             throw new NotImplementedException();
         }

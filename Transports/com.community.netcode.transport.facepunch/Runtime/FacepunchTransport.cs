@@ -104,7 +104,7 @@ namespace Netcode.Transports.Facepunch
             return 0;
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
             connectedClients = new Dictionary<ulong, Client>();
         }

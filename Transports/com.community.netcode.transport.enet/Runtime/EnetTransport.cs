@@ -299,7 +299,7 @@ namespace Netcode.Transports.Enet
             Library.Deinitialize();
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
             Library.Initialize();
 
