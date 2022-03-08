@@ -42,7 +42,7 @@ namespace Netcode.Transports.WebSocket
             return 0;
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
 
         }

@@ -161,7 +161,7 @@ namespace Netcode.Transports.LiteNetLib
             m_HostType = HostType.None;
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
             m_MessageBuffer = new byte[MessageBufferSize];
 

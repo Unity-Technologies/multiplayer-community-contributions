@@ -194,7 +194,7 @@ namespace Netcode.Transports
             return 0ul;
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
             if (!IsSupported)
             {
