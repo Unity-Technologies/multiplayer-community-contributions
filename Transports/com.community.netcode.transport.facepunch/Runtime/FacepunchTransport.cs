@@ -97,10 +97,6 @@ namespace Netcode.Transports.Facepunch
 
         public override unsafe ulong GetCurrentRtt(ulong clientId)
         {
-            if (connectedClients.TryGetValue(clientId, out Client user))
-            {
-                return (ulong)user.connection.QuickStatus().Ping;
-            }
             return 0;
         }
 
