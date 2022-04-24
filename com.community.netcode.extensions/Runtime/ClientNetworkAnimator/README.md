@@ -1,6 +1,6 @@
 ## ClientNetworkAnimator
 
-ClientNetworkAnimator is a simple script modified from the official ``NetworkAnimator``. It gives the ability the clients can change their animation states and synchronize through the net automatically.
+ClientNetworkAnimator is a simple script modified from the official ``NetworkAnimator``. It gives the ability that the clients can change their animation states and synchronize through the net automatically.
 
 ## Notice
 
