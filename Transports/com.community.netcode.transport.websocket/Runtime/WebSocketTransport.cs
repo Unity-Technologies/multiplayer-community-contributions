@@ -1,6 +1,9 @@
 using System;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Unity.Netcode;
 using UnityEngine;
+using WebSocketSharp.Net;
 using WebSocketSharp.Server;
 
 namespace Netcode.Transports.WebSocket
@@ -15,6 +18,8 @@ namespace Netcode.Transports.WebSocket
         public string ConnectAddress = "127.0.0.1";
         public ushort Port = 7777;
         public bool SecureConnection = false;
+        public bool AllowForwardedRequest;
+        public string CertificateBase64String;
 
         public override ulong ServerClientId => 0;
 
@@ -122,9 +127,15 @@ namespace Netcode.Transports.WebSocket
             {
                 throw new InvalidOperationException("Socket already started");
             }
-
-            WebSocketServer = new WebSocketServer(Port);
+            
+            WebSocketServer = new WebSocketServer(Port, SecureConnection);
+            WebSocketServer.AllowForwardedRequest = AllowForwardedRequest;
             WebSocketServer.AddWebSocketService<WebSocketServerConnectionBehavior>("/netcode");
+            if (!string.IsNullOrEmpty(CertificateBase64String))
+            {
+                byte[] bytes = Convert.FromBase64String(CertificateBase64String);
+                WebSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(bytes);
+            }
             WebSocketServer.Start();
 
             IsStarted = true;
