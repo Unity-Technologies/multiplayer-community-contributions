@@ -1,9 +1,7 @@
 using System;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Unity.Netcode;
 using UnityEngine;
-using WebSocketSharp.Net;
 using WebSocketSharp.Server;
 
 namespace Netcode.Transports.WebSocket
@@ -133,7 +131,7 @@ namespace Netcode.Transports.WebSocket
             WebSocketServer.AddWebSocketService<WebSocketServerConnectionBehavior>("/netcode");
             if (!string.IsNullOrEmpty(CertificateBase64String))
             {
-                byte[] bytes = Convert.FromBase64String(CertificateBase64String);
+                var bytes = Convert.FromBase64String(CertificateBase64String);
                 WebSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(bytes);
             }
             WebSocketServer.Start();
