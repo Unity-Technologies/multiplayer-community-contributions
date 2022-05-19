@@ -12,7 +12,7 @@ Here are our guidlines for contributing:
 
 ## <a name="coc"></a> Code of Conduct
 
-Please help us keep Unity Multiplayer Networking open and inclusive. Read and follow our [Code of Conduct](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/main/CODE_OF_CONDUCT.md).
+Please help us keep Unity Multiplayer Networking open and inclusive. Read and follow our [Code of Conduct](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/develop/CODE_OF_CONDUCT.md).
 
 ## <a name="ways"></a> Ways to Contribute
 
