@@ -5,12 +5,72 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
+    public class FixedStringKeyedNetworkDictionary<TKey, TValue> : NetworkDictionary<TKey, TValue>
+        where TKey : unmanaged, INativeList<byte>, IUTF8Bytes, IEquatable<TKey>
+        where TValue : unmanaged
+    {
+        public FixedStringKeyedNetworkDictionary() { }
+
+        public FixedStringKeyedNetworkDictionary(NetworkVariableReadPermission readPerm, IDictionary<TKey, TValue> values) : base(readPerm, values) { }
+
+        public FixedStringKeyedNetworkDictionary(IDictionary<TKey, TValue> values) : base(values) { }
+
+        protected override void WriteKey(FastBufferWriter writer, TKey key) => writer.WriteValueSafe(key);
+
+        protected override void ReadKey(FastBufferReader reader, out TKey key) => reader.ReadValueSafe(out key);
+    }
+
+    public class EnumKeyedNetworkDictionary<TKey, TValue> : NetworkDictionary<TKey, TValue>
+        where TKey : unmanaged, Enum, IEquatable<TKey>
+        where TValue : unmanaged
+    {
+        public EnumKeyedNetworkDictionary() { }
+
+        public EnumKeyedNetworkDictionary(NetworkVariableReadPermission readPerm, IDictionary<TKey, TValue> values) : base(readPerm, values) { }
+
+        public EnumKeyedNetworkDictionary(IDictionary<TKey, TValue> values) : base(values) { }
+
+        protected override void WriteKey(FastBufferWriter writer, TKey key) => writer.WriteValueSafe(key);
+
+        protected override void ReadKey(FastBufferReader reader, out TKey key) => reader.ReadValueSafe(out key);
+    }
+
+    public class PrimitiveKeyedNetworkDictionary<TKey, TValue> : NetworkDictionary<TKey, TValue>
+        where TKey : unmanaged, IComparable, IConvertible, IComparable<TKey>, IEquatable<TKey>
+        where TValue : unmanaged
+    {
+        public PrimitiveKeyedNetworkDictionary() { }
+
+        public PrimitiveKeyedNetworkDictionary(NetworkVariableReadPermission readPerm, IDictionary<TKey, TValue> values) : base(readPerm, values) { }
+
+        public PrimitiveKeyedNetworkDictionary(IDictionary<TKey, TValue> values) : base(values) { }
+
+        protected override void WriteKey(FastBufferWriter writer, TKey key) => writer.WriteValueSafe(key);
+
+        protected override void ReadKey(FastBufferReader reader, out TKey key) => reader.ReadValueSafe(out key);
+    }
+
+    public class StructKeyedNetworkDictionary<TKey, TValue> : NetworkDictionary<TKey, TValue>
+        where TKey : unmanaged, INetworkSerializeByMemcpy, IEquatable<TKey>
+        where TValue : unmanaged
+    {
+        public StructKeyedNetworkDictionary() { }
+
+        public StructKeyedNetworkDictionary(NetworkVariableReadPermission readPerm, IDictionary<TKey, TValue> values) : base(readPerm, values) { }
+
+        public StructKeyedNetworkDictionary(IDictionary<TKey, TValue> values) : base(values) { }
+
+        protected override void WriteKey(FastBufferWriter writer, TKey key) => writer.WriteValueSafe(key);
+
+        protected override void ReadKey(FastBufferReader reader, out TKey key) => reader.ReadValueSafe(out key);
+    }
+
     /// <summary>
     /// Event based NetworkVariable container for syncing Dictionaries
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    public class NetworkDictionary<TKey, TValue> : NetworkVariableBase
+    public abstract class NetworkDictionary<TKey, TValue> : NetworkVariableSerialization<TValue>
         where TKey : unmanaged, IEquatable<TKey>
         where TValue : unmanaged
     {
@@ -31,14 +91,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Creates a NetworkDictionary with the default value and settings
         /// </summary>
-        public NetworkDictionary() { }
+        protected NetworkDictionary() { }
 
         /// <summary>
         /// Creates a NetworkDictionary with the default value and custom settings
         /// </summary>
         /// <param name="readPerm">The read permission to use for the NetworkDictionary</param>
         /// <param name="values">The initial value to use for the NetworkDictionary</param>
-        public NetworkDictionary(NetworkVariableReadPermission readPerm, IDictionary<TKey, TValue> values) : base(readPerm)
+        protected NetworkDictionary(NetworkVariableReadPermission readPerm, IDictionary<TKey, TValue> values) : base(readPerm)
         {
             foreach (var pair in values)
             {
@@ -50,7 +110,7 @@ namespace Unity.Netcode
         /// Creates a NetworkDictionary with a custom value and custom settings
         /// </summary>
         /// <param name="values">The initial value to use for the NetworkDictionary</param>
-        public NetworkDictionary(IDictionary<TKey, TValue> values)
+        protected NetworkDictionary(IDictionary<TKey, TValue> values)
         {
             foreach (var pair in values)
             {
@@ -90,19 +150,19 @@ namespace Unity.Netcode
                 {
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Key);
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            WriteKey(writer, m_DirtyEvents[i].Key);
+                            Write(writer, m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Key);
+                            WriteKey(writer, m_DirtyEvents[i].Key);
                         }
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Key);
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            WriteKey(writer, m_DirtyEvents[i].Key);
+                            Write(writer, m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Clear:
@@ -120,10 +180,14 @@ namespace Unity.Netcode
 
             foreach (var pair in m_Dictionary)
             {
-                writer.WriteValueSafe(pair.Key);
-                writer.WriteValueSafe(pair.Value);
+                WriteKey(writer, pair.Key);
+                Write(writer, pair.Value);
             }
         }
+
+        protected abstract void WriteKey(FastBufferWriter writer, TKey key);
+
+        protected abstract void ReadKey(FastBufferReader reader, out TKey key);
 
         /// <inheritdoc />
         public override void ReadField(FastBufferReader reader)
@@ -133,8 +197,8 @@ namespace Unity.Netcode
 
             for (int i = 0; i < count; i++)
             {
-                reader.ReadValueSafe(out TKey key);
-                reader.ReadValueSafe(out TValue value);
+                ReadKey(reader, out TKey key);
+                Read(reader, out TValue value);
                 m_Dictionary.Add(key, value);
             }
         }
@@ -152,8 +216,8 @@ namespace Unity.Netcode
                 {
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
                         {
-                            reader.ReadValueSafe(out TKey key);
-                            reader.ReadValueSafe(out TValue value);
+                            ReadKey(reader, out TKey key);
+                            Read(reader, out TValue value);
                             m_Dictionary.Add(key, value);
 
                             OnDictionaryChanged?.Invoke(new NetworkDictionaryEvent<TKey, TValue>
@@ -176,7 +240,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
                         {
-                            reader.ReadValueSafe(out TKey key);
+                            ReadKey(reader, out TKey key);
                             m_Dictionary.TryGetValue(key, out TValue value);
                             m_Dictionary.Remove(key);
 
@@ -200,8 +264,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
                         {
-                            reader.ReadValueSafe(out TKey key);
-                            reader.ReadValueSafe(out TValue value);
+                            ReadKey(reader, out TKey key);
+                            Read(reader, out TValue value);
 
                             m_Dictionary.TryGetValue(key, out TValue previousValue);
                             m_Dictionary[key] = value;
