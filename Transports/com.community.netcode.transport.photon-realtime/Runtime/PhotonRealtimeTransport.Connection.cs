@@ -43,7 +43,7 @@ namespace Netcode.Transports.PhotonRealtime
 
         public void OnDisconnected(DisconnectCause cause)
         {
-            InvokeTransportEvent(NetworkEvent.Disconnect);
+            InvokeTransportEvent(cause == DisconnectCause.DisconnectByClientLogic ? NetworkEvent.Nothing : NetworkEvent.Disconnect);
             this.DeInitialize();
         }
 
