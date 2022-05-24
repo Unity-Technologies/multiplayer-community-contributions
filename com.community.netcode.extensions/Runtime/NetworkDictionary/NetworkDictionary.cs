@@ -15,9 +15,13 @@ namespace Unity.Netcode
 
         public FixedStringKeyedNetworkDictionary(IDictionary<TKey, TValue> values) : base(values) { }
 
-        protected override void WriteKey(FastBufferWriter writer, TKey key) => writer.WriteValueSafe(key);
+        protected override void WriteKey(FastBufferWriter writer, TKey key) => writer.WriteValueSafe(new ForceNetworkSerializeByMemcpy<TKey>(key));
 
-        protected override void ReadKey(FastBufferReader reader, out TKey key) => reader.ReadValueSafe(out key);
+        protected override void ReadKey(FastBufferReader reader, out TKey key)
+        {
+            reader.ReadValueSafe(out ForceNetworkSerializeByMemcpy<TKey> serializedKey);
+            key = serializedKey.Value;
+        }
     }
 
     public class EnumKeyedNetworkDictionary<TKey, TValue> : NetworkDictionary<TKey, TValue>

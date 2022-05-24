@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -46,7 +47,7 @@ public class ExampleNetworkDiscovery : NetworkDiscovery<DiscoveryBroadcastData, 
         response = new DiscoveryResponseData()
         {
             ServerName = ServerName,
-            Port = (ushort) ((UnityTransport) m_NetworkManager.NetworkConfig.NetworkTransport).ConnectionData.Port,
+            Port = ((UnityTransport) m_NetworkManager.NetworkConfig.NetworkTransport).ConnectionData.Port,
         };
         return true;
     }
