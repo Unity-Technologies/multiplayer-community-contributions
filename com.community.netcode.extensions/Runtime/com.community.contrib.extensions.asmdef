@@ -5,11 +5,12 @@
         "Unity.Collections",
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Adapter.UTP",
-        "Unity.Networking.Transport"
+        "Unity.Networking.Transport",
+        "Unity.Netcode.Components"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
