@@ -14,27 +14,24 @@ namespace Netcode.Extensions
     /// </summary>
     public class NetworkObjectPool : NetworkBehaviour
     {
-
         private static NetworkObjectPool _instance;
 
-        public static NetworkObjectPool Singleton => _instance;
+        public static NetworkObjectPool Singleton=> _instance;
 
         [SerializeField]
-        private NetworkManager m_NetworkManager;
+        List<PoolConfigObject> PooledPrefabsList;
 
-        [SerializeField]
-        private List<PoolConfigObject> PooledPrefabsList;
+        HashSet<GameObject> prefabs = new HashSet<GameObject>();
 
-        private HashSet<GameObject> prefabs = new HashSet<GameObject>();
+        Dictionary<GameObject, Queue<NetworkObject>> pooledObjects = new Dictionary<GameObject, Queue<NetworkObject>>();
 
-        private Dictionary<GameObject, Queue<NetworkObject>> pooledObjects = new Dictionary<GameObject, Queue<NetworkObject>>();
+        private bool m_HasInitialized = false;
 
         public void Awake()
         {
             if (_instance != null && _instance != this)
             {
                 Destroy(this.gameObject);
-                return;
             }
             else
             {
@@ -44,7 +41,6 @@ namespace Netcode.Extensions
 
         public override void OnNetworkSpawn()
         {
-            m_NetworkManager = NetworkManager.Singleton;
             InitializePool();
         }
 
@@ -53,7 +49,7 @@ namespace Netcode.Extensions
             ClearPool();
         }
 
-        public override void OnDestroy()
+                public override void OnDestroy()
         {
             if (_instance == this)
             {
@@ -62,6 +58,7 @@ namespace Netcode.Extensions
             
             base.OnDestroy();
         }
+        
 
         public void OnValidate()
         {
@@ -113,15 +110,12 @@ namespace Netcode.Extensions
         }
 
         /// <summary>
-        /// Return an object to the pool (and reset them).
+        /// Return an object to the pool (reset objects before returning).
         /// </summary>
         public void ReturnNetworkObject(NetworkObject networkObject, GameObject prefab)
         {
             var go = networkObject.gameObject;
-
-            // In this simple example pool we just disable objects while they are in the pool. But we could call a function on the object here for more flexibility.
             go.SetActive(false);
-            go.transform.SetParent(transform);
             pooledObjects[prefab].Enqueue(networkObject);
         }
 
@@ -149,15 +143,14 @@ namespace Netcode.Extensions
 
             var prefabQueue = new Queue<NetworkObject>();
             pooledObjects[prefab] = prefabQueue;
-
             for (int i = 0; i < prewarmCount; i++)
             {
                 var go = CreateInstance(prefab);
                 ReturnNetworkObject(go.GetComponent<NetworkObject>(), prefab);
             }
 
-            // Register netcode Spawn handlers
-            m_NetworkManager.PrefabHandler.AddHandler(prefab, new DummyPrefabInstanceHandler(prefab, this));
+            // Register Netcode Spawn handlers
+            NetworkManager.Singleton.PrefabHandler.AddHandler(prefab, new PooledPrefabInstanceHandler(prefab, this));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -169,7 +162,7 @@ namespace Netcode.Extensions
         /// <summary>
         /// This matches the signature of <see cref="NetworkSpawnManager.SpawnHandlerDelegate"/>
         /// </summary>
-        /// <param name="prefabHash"></param>
+        /// <param name="prefab"></param>
         /// <param name="position"></param>
         /// <param name="rotation"></param>
         /// <returns></returns>
@@ -189,7 +182,6 @@ namespace Netcode.Extensions
 
             // Here we must reverse the logic in ReturnNetworkObject.
             var go = networkObject.gameObject;
-            go.transform.SetParent(null);
             go.SetActive(true);
 
             go.transform.position = position;
@@ -201,12 +193,27 @@ namespace Netcode.Extensions
         /// <summary>
         /// Registers all objects in <see cref="PooledPrefabsList"/> to the cache.
         /// </summary>
-        private void InitializePool()
+        public void InitializePool()
         {
+            if (m_HasInitialized) return;
             foreach (var configObject in PooledPrefabsList)
             {
                 RegisterPrefabInternal(configObject.Prefab, configObject.PrewarmCount);
             }
+            m_HasInitialized = true;
+        }
+
+        /// <summary>
+        /// Unregisters all objects in <see cref="PooledPrefabsList"/> from the cache.
+        /// </summary>
+        public void ClearPool()
+        {
+            foreach (var prefab in prefabs)
+            {
+                // Unregister Netcode Spawn handlers
+                NetworkManager.Singleton.PrefabHandler.RemoveHandler(prefab);
+            }
+            pooledObjects.Clear();
         }
     }
 
@@ -217,25 +224,28 @@ namespace Netcode.Extensions
         public int PrewarmCount;
     }
 
-    class DummyPrefabInstanceHandler : INetworkPrefabInstanceHandler
+    class PooledPrefabInstanceHandler : INetworkPrefabInstanceHandler
     {
         GameObject m_Prefab;
         NetworkObjectPool m_Pool;
 
-        public DummyPrefabInstanceHandler(GameObject prefab, NetworkObjectPool pool)
+        public PooledPrefabInstanceHandler(GameObject prefab, NetworkObjectPool pool)
         {
             m_Prefab = prefab;
             m_Pool = pool;
         }
 
-        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        NetworkObject INetworkPrefabInstanceHandler.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
-            return m_Pool.GetNetworkObject(m_Prefab, position, rotation);
+            var netObject = m_Pool.GetNetworkObject(m_Prefab, position, rotation);
+            return netObject;
         }
 
-        public void Destroy(NetworkObject networkObject)
+        void INetworkPrefabInstanceHandler.Destroy(NetworkObject networkObject)
         {
             m_Pool.ReturnNetworkObject(networkObject, m_Prefab);
         }
     }
+
+}
 }
