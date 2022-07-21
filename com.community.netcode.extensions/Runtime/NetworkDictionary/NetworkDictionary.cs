@@ -5,6 +5,11 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
+
+    // TODO: uncomment this when 'Write' and 'Read' in NetworkVariableSerialization (see https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/develop/com.unity.netcode.gameobjects/Runtime/NetworkVariable/NetworkVariableSerialization.cs).
+    // are no longer internal, so this class will actually work.
+
+    /*
     public class FixedStringKeyedNetworkDictionary<TKey, TValue> : NetworkDictionary<TKey, TValue>
         where TKey : unmanaged, INativeList<byte>, IUTF8Bytes, IEquatable<TKey>
         where TValue : unmanaged
@@ -470,4 +475,5 @@ namespace Unity.Netcode
         /// </summary>
         public TValue PreviousValue;
     }
+    */
 }
