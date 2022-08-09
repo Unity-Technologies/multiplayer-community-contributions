@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if NETWORK_DICTIONARY
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -544,3 +546,5 @@ namespace Unity.Netcode
         public TValue PreviousValue;
     }
 }
+
+#endif
