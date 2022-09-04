@@ -1,5 +1,5 @@
-# SteamNetworking Transport for Unity NetCode for GameObjects
-The SteamNetworking Transport leverages Valve's SteamNetworking APIs enabling secure and efficent networking in both peer to peer and client server architectures. The Steam networking APIs address via CSteamID, not IP/Port. These APIs handle routing via Valve's backend services and do not require NAT punch or additional routing solutions.
+# SteamNetworkingSockets Transport for Unity NetCode for GameObjects
+The SteamNetworkingSockets Transport leverages Valve's SteamNetworkingSockets APIs enabling secure and efficent networking in both peer to peer and client server architectures. The Steam networking sockets APIs address via CSteamID, not IP/Port. These APIs handle routing via Valve's backend services and do not require NAT punch or additional routing solutions.
 
 ## Dependencies
 **[Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET)** This transport relies on Steamworks.NET to communicate with the **[Steamworks API](https://partner.steamgames.com/doc/sdk)**. 
@@ -20,4 +20,4 @@ This transport does require that you first initalize the Steam API before use. T
 - Use the example SteamManager from [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) **NOTE This is not recomended as the SteamManager does not support Steam Game Server and is very limited in funcitonlity, it can however be a good learning tool for creating your own logic**
 
 
-Steam Networking uses the CSteamID as the network address to connect to. For P2P games this would require you to provide the Steam ID of the peer to connect to. For Client Server games this would require you to log your server onto Steam as a Steam Game Server, this act will issue your server a Steam ID which would be used as the address in this transport.
+Steam Networking Sockets uses the CSteamID as the network address to connect to. For P2P games this would require you to provide the Steam ID of the peer to connect to. For Client Server games this would require you to log your server onto Steam as a Steam Game Server, this act will issue your server a Steam ID which would be used as the address in this transport.

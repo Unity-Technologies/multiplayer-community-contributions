@@ -1,0 +1,11 @@
+{
+  "name": "com.community.netcode.transport.steamnetworkingsockets",
+  "displayName": "SteamNetworkingSockets Transport for NetCode for Gameobjects",
+  "version": "1.0.0",
+  "unity": "2020.3",
+  "description": "SteamNetworkingSockets Transport for NetCode for GameObjects with support for both peer to peer and client server architectures.",
+  "author": {
+    "name": "Heathen Group",
+    "url": "https://assetstore.unity.com/publishers/5836"
+  }
+}
