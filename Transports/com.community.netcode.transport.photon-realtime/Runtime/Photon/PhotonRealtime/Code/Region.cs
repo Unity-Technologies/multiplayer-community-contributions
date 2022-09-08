@@ -15,9 +15,12 @@
 
 namespace Photon.Realtime
 {
-#if SUPPORTED_UNITY || NETFX_CORE
+    using ExitGames.Client.Photon;
 
-#endif
+    #if SUPPORTED_UNITY || NETFX_CORE
+    using Hashtable = ExitGames.Client.Photon.Hashtable;
+    using SupportClass = ExitGames.Client.Photon.SupportClass;
+    #endif
 
 
     public class Region
@@ -29,6 +32,11 @@ namespace Photon.Realtime
 
         public string HostAndPort { get; protected internal set; }
 
+        /// <summary>Weighted ping time.</summary>
+        /// <remarks>
+        /// Regions gets pinged 5 times (RegionPinger.Attempts).
+        /// Out of those, the worst rtt is discarded and the best will be counted two times for a weighted average.
+        /// </remarks>
         public int Ping { get; set; }
 
         public bool WasPinged { get { return this.Ping != int.MaxValue; } }
