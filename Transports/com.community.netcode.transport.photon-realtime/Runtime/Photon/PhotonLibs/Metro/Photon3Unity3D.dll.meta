@@ -27,12 +27,6 @@ PluginImporter:
         SDK: AnySDK
         ScriptingBackend: DotNet
   - first:
-      Editor: Editor
-    second:
-      enabled: 0
-      settings:
-        DefaultValueInitialized: true
-  - first:
       Windows Store Apps: WindowsStoreApps
     second:
       enabled: 1
