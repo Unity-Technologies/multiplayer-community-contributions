@@ -106,7 +106,7 @@ namespace Photon.Realtime
                 // unity 5.3 changes the usecase for SetDirty(). but here we don't modify a scene object! so it's ok to use
                 EditorUtility.SetDirty(PhotonAppSettings.Instance);
 
-                Photon.Realtime.Editor.WizardWindow.Open();     // would be nice to jump directly to the registration
+                EditorApplication.delayCall += Photon.Realtime.Editor.WizardWindow.Open;     // would be nice to jump directly to the registration
             }
         }
 
