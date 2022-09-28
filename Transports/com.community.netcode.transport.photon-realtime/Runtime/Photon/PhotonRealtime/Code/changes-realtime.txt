@@ -3,6 +3,61 @@ Photon Realtime C# Client - Changelog
 Exit Games GmbH - www.photonengine.com - forum.photonengine.com
 
 
+Version 4.1.6.18 (08. September 2022)
+    Added: RegionHandler.Abort() as option to stop pinging any regions asap (disposing individual ping sockets). The onCompleteCallback (as set in PingMinimumOfRegions()) will not be called if aborted.
+
+Version 4.1.6.17 (02. August 2022)
+    Added: DisconnectCause.ApplicationQuit. Can be used when your app disconnects on application quit: lbc.Disconnect(DisconnectCause.ApplicationQuit).
+    Note: The ConnectionHandler will use this to differentiate a regular disconnect from one that is triggered by Unity / app-quit.
+
+Version 4.1.6.16 (22. June 2022)
+    Fixed: Formatting issue in debug logs for WebGL exports.
+    Changed: Best Region selection. A weighted ping value is used now. Out of the 5 attempts, the worst is discarded (usually the first) and the best is counted in twice (it is the fastest). In WebGL, HTTP is used to ping servers and when a request didn't finish, the next attempt will be delayed a bit.
+    Changed: HTTP Ping class for Best Region selection in WebGL changed from Unity's WWW class to UnityWebRequest.
+
+Version 4.1.6.15 (10. June 2022)
+    Changed: Sharding / Clustering support. Clients will no longer connect to a random cluster by default. To do so, make sure to add "/*" to the region code, if your game supports sharding / multiple clusters. This is only done in very high CCU cases.
+
+Version 4.1.6.14 (26. April 2022)
+    Added: Warning log if SocketWebTcp could not be found at runtime in Unity WebGL exports.
+
+Version 4.1.6.11 (22. November 2021)
+    Changed: For Unity, PhotonEditorUtils.IsPrefab to use the correct prefab stage utility for Unity 2021.2 and up.
+    Added: CustomAuthenticationType.Epic to authenticate via Epic Online Services (EOS).
+    Added: CustomAuthenticationType.FacebookGaming to authenticate via Facebook Gaming services.
+
+Version 4.1.6.8 (12. October 2021)
+    Changed: CustomTypesUnity. The default Quaternion is now Quaternion.identity (which is a legit Quaterion, as opposed to the previously used new Quaternion). Added const values for each type's byte-size.
+    Added: Checks to avoid creating a player for actorNumber 0.
+    Added: CheckIfOpCanBeSent to OpJoinOrCreateRoom and OpRejoinRoom. Avoids changing state and repeating operation.
+    Removed: Surplus checks if the LoadBalancingPeer is non-null. This is done in CheckIfOpCanBeSent(), too.
+
+Version 4.1.6.7 (27. September 2021)
+    Replaced: Pointer_stringify with UTF8ToString in WebSocket.jslib. It was removed from newer Emscripten versions and is no longer working when exporting from Unity 2021.2. betas. Replaced with UTF8ToString. Tested in 2018.4.x and a current beta.
+    Fixed: Usage of websocketType for console.
+
+Version 4.1.6.6 (17. September 2021)
+    Removed: Usage of class EncryptorNative. This needs to be replaced by EncryptorNativeSource where the Native Socket Plugin should be used.
+    Changed: The Native Socket Plugin can also be used for UDP on Xbox (not in Editor).
+    Removed: CheckConnectSetupXboxOne() as platform requirements were turned into recommendations.
+    Changed: For Xbox, order of checked assemblies when getting Type SocketNativeSource. It's more likely to be in Assembly-CSharp.
+
+Version 4.1.6.5 (24. August 2021)
+    Updated: The default name server host to "ns.photonengine.io". When using WSS on this, it expects TLS1.2 (Win 7 and old Unity versions may not support this).
+    Fixed: Internally used OpJoinRoom() will now send custom room properties (all RoomOptions set) to the Master Server, too. This allows the Master Server to immediately find the room, even if property filtering is used. This was affecting matchmaking with OpJoinOrCreateRoom.
+
+Version 4.1.6.4 (26. July 2021)
+    Internal: Added PhotonEditorTools.HasFusion value and added AppSettings.AppIdFusion as well as ClientAppType.Fusion.
+    Added: ConnectionHandler.DisconnectAfterKeepAlive to let the fallback thread call Disconnect after the KeepAliveInBackground time. Default: false.
+    Changed: ConnectionHandler timer implementation to use a Stopwatch, which is a little more clear about what happens. PUN does not expose this value, so you need to set it in code (change the default).
+    Added: Hashtable specific extension methods StripKeysWithNullValues and StripToStringKeys which allocates less.
+
+Version 4.1.6.3 (06. July 2021)
+    Added: Handling of ErrorCode Invalid Operation (-2) for Authenticate requests. This becomes a DisconnectCause = OperationNotAllowedInCurrentState.
+
+Version 4.1.6.2 (17. June 2021)
+    Changed: The enumeration CustomAuthenticationType was changed to fix naming inconsistencies. Use PlayStation4 and PlayStation5 respectively. Old variants are available as obsolete.
+
 Version 4.1.6.0 (19. May 2021)
     Changed: As tokenless auth is no longer allowed when using a Name Server, there is now an error log and authentication will not be done from the client. This is not happening in the normal workflow but a precaution to detect issues, should something unpredicted happen.
     Changed: SupportLogger formatting of the timestamp to include the minutes (if available). Hours will not be logged (so in the logs, there is a wrap around of log-timestamps after 60 min).
