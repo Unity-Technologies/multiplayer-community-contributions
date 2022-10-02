@@ -252,7 +252,7 @@ namespace Netcode.Transports
 
                                 connectedUsers.Remove(clientId);
 #if UNITY_SERVER
-                                    SteamGameServerNetworking.CloseP2PSessionWithUser(remoteId);
+                                SteamGameServerNetworking.CloseP2PSessionWithUser(remoteId);
 #else
                                 SteamNetworking.CloseP2PSessionWithUser(remoteId);
 #endif
@@ -264,7 +264,7 @@ namespace Netcode.Transports
                                 if (isServer)
                                 {
 #if UNITY_SERVER
-                                        SteamGameServerNetworking.SendP2PPacket(remoteId, new byte[] { 0 }, 1, EP2PSend.k_EP2PSendReliable, (int)InternalChannelType.Connect);
+                                    SteamGameServerNetworking.SendP2PPacket(remoteId, new byte[] { 0 }, 1, EP2PSend.k_EP2PSendReliable, (int)InternalChannelType.Connect);
 #else
                                     SteamNetworking.SendP2PPacket(remoteId, new byte[] { 0 }, 1, EP2PSend.k_EP2PSendReliable, (int)InternalChannelType.Connect);
 #endif
@@ -290,7 +290,7 @@ namespace Netcode.Transports
 
                                 pingPongMessageBuffer[0] = messageBuffer[0];
 #if UNITY_SERVER
-                                    SteamGameServerNetworking.SendP2PPacket(remoteId, pingPongMessageBuffer, msgSize, EP2PSend.k_EP2PSendUnreliableNoDelay, (int)InternalChannelType.Pong);
+                                SteamGameServerNetworking.SendP2PPacket(remoteId, pingPongMessageBuffer, msgSize, EP2PSend.k_EP2PSendUnreliableNoDelay, (int)InternalChannelType.Pong);
 #else
                                 SteamNetworking.SendP2PPacket(remoteId, pingPongMessageBuffer, msgSize, EP2PSend.k_EP2PSendUnreliableNoDelay, (int)InternalChannelType.Pong);
 #endif
@@ -302,7 +302,8 @@ namespace Netcode.Transports
                                 uint pingValue = sentPings[messageBuffer[0]].getPingTime();
                                 if (isServer)
                                 {
-                                    connectedUsers[remoteId.m_SteamID].Ping.SetPing(pingValue);
+                                    if (connectedUsers.ContainsKey(remoteId.m_SteamID))
+                                        connectedUsers[remoteId.m_SteamID].Ping.SetPing(pingValue);
                                 }
                                 else
                                 {
@@ -313,9 +314,18 @@ namespace Netcode.Transports
                                 break;
                             
                             case (byte)InternalChannelType.NetcodeData:
-                                payload = new ArraySegment<byte>(messageBuffer, 0, (int)msgSize);
-                                receiveTime = Time.realtimeSinceStartup;
-                                return NetworkEvent.Data;
+                                if (connectedUsers.ContainsKey(clientId))
+                                {
+                                    payload = new ArraySegment<byte>(messageBuffer, 0, (int)msgSize);
+                                    receiveTime = Time.realtimeSinceStartup;
+                                    return NetworkEvent.Data;
+                                }
+                                else
+                                {
+                                    if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
+                                        NetworkLog.LogInfoServer(nameof(SteamNetworkingTransport) + " - PollEvent - Recieved a message from an unknown user with clientId: " + clientId);
+                                }
+                                break;
                             default:
                                 throw new InvalidOperationException();
                         }
@@ -571,6 +581,39 @@ namespace Netcode.Transports
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(PingInterval));
+            }
+        }
+
+        private void OnDestroy()
+        {
+            try
+            {
+                if (connectedUsers != null && connectedUsers.Count > 0)
+                {
+                    foreach (User user in connectedUsers.Values)
+                    {
+#if UNITY_SERVER
+                        SteamGameServerNetworking.CloseP2PSessionWithUser(user.SteamId);
+#else
+                        SteamNetworking.CloseP2PSessionWithUser(user.SteamId);
+#endif
+                    }
+
+                    connectedUsers.Clear();
+                }
+
+                if (serverUser != null)
+                {
+#if UNITY_SERVER
+                    SteamGameServerNetworking.CloseP2PSessionWithUser(serverUser.SteamId);
+#else
+                    SteamNetworking.CloseP2PSessionWithUser(serverUser.SteamId);
+#endif
+                }
+            }
+            catch(Exception ex)
+            {
+                UnityEngine.Debug.LogError("Failed to properly close network sessions: " + ex.Message);
             }
         }
     }
