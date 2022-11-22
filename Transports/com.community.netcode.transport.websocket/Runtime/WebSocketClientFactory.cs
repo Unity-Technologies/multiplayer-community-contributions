@@ -68,7 +68,7 @@ namespace Netcode.Transports.WebSocket
         public static IWebSocketClient Create(string url)
         {
 #if (UNITY_WEBGL && !UNITY_EDITOR)
-            Client = new JSWebSocketClient()
+            Client = new JSWebSocketClient();
             _SetUrl(url);
             _SetOnOpen(OnOpenEvent);
             _SetOnMessage(OnMessageEvent);
