@@ -8,9 +8,9 @@ namespace Netcode.Transports.WebSocket
 {
     public class WebSocketTransport : NetworkTransport
     {
-        private static WebSocketServer WebSocketServer = null;
-        private static IWebSocketClient WebSocketClient = null;
-        private static bool IsStarted = false;
+        private WebSocketServer WebSocketServer = null;
+        private IWebSocketClient WebSocketClient = null;
+        private bool IsStarted = false;
 
         [Header("Transport")]
         public string ConnectAddress = "127.0.0.1";
