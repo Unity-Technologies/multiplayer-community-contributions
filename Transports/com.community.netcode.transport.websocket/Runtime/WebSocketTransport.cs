@@ -23,13 +23,11 @@ namespace Netcode.Transports.WebSocket
 
         public override void DisconnectLocalClient()
         {
-            IsStarted = false;
             WebSocketClient.Close();
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            IsStarted = false;
             WebSocketServerConnectionBehavior.DisconnectClient(clientId);
         }
 
@@ -95,6 +93,7 @@ namespace Netcode.Transports.WebSocket
 
         public override void Shutdown()
         {
+            IsStarted = false;
             if (WebSocketClient != null)
             {
                 WebSocketClient.Close();
