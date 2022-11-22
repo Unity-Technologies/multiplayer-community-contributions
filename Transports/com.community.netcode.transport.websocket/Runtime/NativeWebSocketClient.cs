@@ -63,6 +63,11 @@ namespace Netcode.Transports.WebSocket
 
         public void Close(CloseStatusCode code = CloseStatusCode.Normal, string reason = null)
         {
+            if (Connection == null)
+            {
+                return;
+            }
+
             if (ReadyState == WebSocketSharp.WebSocketState.Closing)
             {
                 throw new InvalidOperationException("Socket is already closing");

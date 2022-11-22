@@ -97,7 +97,6 @@ namespace Netcode.Transports.WebSocket
             if (WebSocketClient != null)
             {
                 WebSocketClient.Close();
-                WebSocketClient = null;
             }
             else if (WebSocketServer != null)
             {
