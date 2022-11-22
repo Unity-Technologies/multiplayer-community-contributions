@@ -93,7 +93,6 @@ namespace Netcode.Transports.WebSocket
 
         public override void Shutdown()
         {
-            IsStarted = false;
             if (WebSocketClient != null)
             {
                 WebSocketClient.Close();
@@ -102,6 +101,7 @@ namespace Netcode.Transports.WebSocket
             {
                 WebSocketServer.Stop();
             }
+            IsStarted = false;
         }
 
         public override bool StartClient()
