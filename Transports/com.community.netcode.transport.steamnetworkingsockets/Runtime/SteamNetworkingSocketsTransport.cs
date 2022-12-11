@@ -246,7 +246,7 @@ namespace Netcode.Transports
                         SteamNetworkingMessage_t data = Marshal.PtrToStructure<SteamNetworkingMessage_t>(ptrs[0]);
                         var buffer = new byte[data.m_cbSize];
                         Marshal.Copy(data.m_pData, buffer, 0, data.m_cbSize);
-                        payload = buffer;
+                        payload = new ArraySegment<byte>(buffer);
                         SteamNetworkingMessage_t.Release(ptrs[0]);
                         
                         receiveTime = Time.realtimeSinceStartup;
