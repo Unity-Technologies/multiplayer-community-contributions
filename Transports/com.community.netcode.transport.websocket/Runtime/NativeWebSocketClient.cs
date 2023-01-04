@@ -70,7 +70,7 @@ namespace Netcode.Transports.WebSocket
 
             if (ReadyState == WebSocketSharp.WebSocketState.Closed)
             {
-                throw new InvalidOperationException("Socket is already closed");
+                return;
             }
 
             try
