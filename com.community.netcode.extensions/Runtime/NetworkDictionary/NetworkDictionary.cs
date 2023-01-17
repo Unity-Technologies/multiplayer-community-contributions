@@ -474,7 +474,13 @@ namespace Unity.Netcode
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
             m_DirtyEvents.Add(dictionaryEvent);
+            MarkNetworkObjectDirty();
             OnDictionaryChanged?.Invoke(dictionaryEvent);
+        }
+
+        internal void MarkNetworkObjectDirty()
+        {
+            m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
         }
 
         public override void Dispose()

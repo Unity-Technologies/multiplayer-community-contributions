@@ -39,7 +39,7 @@ var LibraryWebSocket = {
       }
 
       if (state.onOpen) {
-        Runtime.dynCall('v', state.onOpen, []);
+        Module['dynCall_v'](state.onOpen);
       }
     };
 
@@ -59,7 +59,7 @@ var LibraryWebSocket = {
         HEAPU8.set(dataBuffer, buffer);
 
         try {
-          Runtime.dynCall('vii', state.onMessage, [buffer, dataBuffer.length]);
+          Module['dynCall_vii'](state.onMessage, buffer, dataBuffer.length);
         } finally {
           _free(buffer);
         }
@@ -78,7 +78,7 @@ var LibraryWebSocket = {
         stringToUTF8(msg, msgBuffer, msgBytes);
 
         try {
-          Runtime.dynCall('vi', state.onError, [msgBuffer]);
+          Module['dynCall_vi'](state.onError, msgBuffer)
         } finally {
           _free(msgBuffer);
         }
@@ -91,7 +91,7 @@ var LibraryWebSocket = {
       }
 
       if (state.onClose) {
-        Runtime.dynCall('vi', state.onClose, [ev.code]);
+        Module['dynCall_vi'](state.onClose, ev.code)
       }
     };
   },

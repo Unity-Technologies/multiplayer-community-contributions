@@ -75,7 +75,7 @@ namespace Netcode.Transports.Facepunch
 
         public override void DisconnectLocalClient()
         {
-            connectionManager.Connection.Close();
+            connectionManager?.Connection.Close();
 
             if (LogLevel <= LogLevel.Developer)
                 Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnecting local client.");

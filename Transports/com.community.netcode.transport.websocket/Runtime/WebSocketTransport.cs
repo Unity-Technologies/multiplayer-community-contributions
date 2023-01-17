@@ -8,12 +8,13 @@ namespace Netcode.Transports.WebSocket
 {
     public class WebSocketTransport : NetworkTransport
     {
-        private static WebSocketServer WebSocketServer = null;
-        private static IWebSocketClient WebSocketClient = null;
-        private static bool IsStarted = false;
+        private WebSocketServer WebSocketServer = null;
+        private IWebSocketClient WebSocketClient = null;
+        private bool IsStarted = false;
 
         [Header("Transport")]
         public string ConnectAddress = "127.0.0.1";
+        public string Path = "/netcode";
         public ushort Port = 7777;
         public bool SecureConnection = false;
         public bool AllowForwardedRequest;
@@ -101,6 +102,7 @@ namespace Netcode.Transports.WebSocket
             {
                 WebSocketServer.Stop();
             }
+            IsStarted = false;
         }
 
         public override bool StartClient()
@@ -111,7 +113,7 @@ namespace Netcode.Transports.WebSocket
             }
 
             var protocol = SecureConnection ? "wss" : "ws";
-            WebSocketClient = WebSocketClientFactory.Create($"{protocol}://{ConnectAddress}:{Port}/netcode");
+            WebSocketClient = WebSocketClientFactory.Create($"{protocol}://{ConnectAddress}:{Port}{Path}");
             WebSocketClient.Connect();
 
             IsStarted = true;
@@ -128,7 +130,7 @@ namespace Netcode.Transports.WebSocket
             
             WebSocketServer = new WebSocketServer(Port, SecureConnection);
             WebSocketServer.AllowForwardedRequest = AllowForwardedRequest;
-            WebSocketServer.AddWebSocketService<WebSocketServerConnectionBehavior>("/netcode");
+            WebSocketServer.AddWebSocketService<WebSocketServerConnectionBehavior>(Path);
             if (!string.IsNullOrEmpty(CertificateBase64String))
             {
                 var bytes = Convert.FromBase64String(CertificateBase64String);
