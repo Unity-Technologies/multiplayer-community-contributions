@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: Copyright 2023 Holo Interactive <dev@holoi.com>
+//
+// SPDX-FileContributor: Yuchen Zhang <yuchen@holoi.com>
+//
+// SPDX-License-Identifier: MIT
+
 using System.IO;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -18,7 +24,6 @@ namespace Netcode.Transports.MultipeerConnectivity.Editor
                 plist.ReadFromFile(plistPath);
                 PlistElementDict rootDict = plist.root;
 
-                // For MPC
                 rootDict.SetString("NSLocalNetworkUsageDescription", "For connecting to nearby devices");
                 PlistElementArray array = rootDict.CreateArray("NSBonjourServices");
                 array.AddString("_netcode-mpc._tcp");

@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) Holo Interactive
+Copyright (c) 2023 Holo Interactive
 
 Copyright (c) 2021 Unity Technologies
 
