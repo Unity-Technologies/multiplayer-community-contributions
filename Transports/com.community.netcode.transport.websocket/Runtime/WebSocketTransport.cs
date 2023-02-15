@@ -24,6 +24,7 @@ namespace Netcode.Transports.WebSocket
 
         public override void DisconnectLocalClient()
         {
+            if (WebSocketClient == null) return;
             WebSocketClient.Close();
         }
 
