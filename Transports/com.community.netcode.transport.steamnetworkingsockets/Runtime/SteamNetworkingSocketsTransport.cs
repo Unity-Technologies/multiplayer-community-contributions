@@ -60,14 +60,16 @@ namespace Netcode.Transports
         {
             if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer(nameof(SteamNetworkingSocketsTransport) + " - DisconnectLocalClient");
 
-            if (connectionMapping.ContainsKey(serverUser.id.m_SteamID))
-                connectionMapping.Remove(serverUser.id.m_SteamID);
+            if (serverUser != null) {
+                if (connectionMapping.ContainsKey(serverUser.id.m_SteamID))
+                    connectionMapping.Remove(serverUser.id.m_SteamID);
 #if UNITY_SERVER
-            SteamGameServerNetworkingSockets.CloseConnection(serverUser.connection, 0, "Disconnected", false);
+                SteamGameServerNetworkingSockets.CloseConnection(serverUser.connection, 0, "Disconnected", false);
 #else
-            SteamNetworkingSockets.CloseConnection(serverUser.connection, 0, "Disconnected", false);
+                SteamNetworkingSockets.CloseConnection(serverUser.connection, 0, "Disconnected", false);
 #endif
-            serverUser = null;
+                serverUser = null;
+            }
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
