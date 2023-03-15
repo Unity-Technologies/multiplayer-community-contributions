@@ -1,3 +1,9 @@
+# ⚠️Outdate Warning⚠️
+The offical ``NetworkAnimator`` now support ``Owner Authoritative Mode`` so you can use that instead this extension.
+Check out this [link](https://docs-multiplayer.unity3d.com/netcode/current/components/networkanimator#owner-authoritative-mode) to learn more.
+
+
+
 ## ClientNetworkAnimator
 
 ClientNetworkAnimator is a simple script modified from the official ``NetworkAnimator``. It gives the ability that the clients can change their animation states and synchronize through the net automatically.
