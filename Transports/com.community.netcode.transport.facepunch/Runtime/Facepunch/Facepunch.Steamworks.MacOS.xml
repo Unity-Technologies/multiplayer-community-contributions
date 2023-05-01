@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <doc>
     <assembly>
-        <name>Facepunch.Steamworks.Posix</name>
+        <name>Facepunch.Steamworks.MacOS</name>
     </assembly>
     <members>
         <member name="T:Steamworks.CallResult`1">
