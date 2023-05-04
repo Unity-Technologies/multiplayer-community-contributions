@@ -85,6 +85,8 @@ namespace Netcode.Transports.Facepunch
         {
             if (connectedClients.TryGetValue(clientId, out Client user))
             {
+                // Flush any pending messages before closing the connection
+                user.connection.Flush();
                 user.connection.Close();
                 connectedClients.Remove(clientId);
 
