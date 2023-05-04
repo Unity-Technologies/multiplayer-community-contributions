@@ -60,7 +60,8 @@ namespace Netcode.Transports
         {
             if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer) NetworkLog.LogInfoServer(nameof(SteamNetworkingSocketsTransport) + " - DisconnectLocalClient");
 
-            if (serverUser != null) {
+            if (serverUser != null)
+            {
                 if (connectionMapping.ContainsKey(serverUser.id.m_SteamID))
                     connectionMapping.Remove(serverUser.id.m_SteamID);
 #if UNITY_SERVER
@@ -68,8 +69,8 @@ namespace Netcode.Transports
 #else
                 SteamNetworkingSockets.CloseConnection(serverUser.connection, 0, "Disconnected", false);
 #endif
-                serverUser = null;
             }
+            serverUser = null;
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
@@ -184,7 +185,7 @@ namespace Netcode.Transports
                 else if (param.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
                 {
                     if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
-                        NetworkLog.LogInfoServer(nameof(SteamNetworkingSocketsTransport) + " - connection request to " + param.m_info.m_identityRemote.GetSteamID64() + " was accepted!");
+                        Debug.Log(nameof(SteamNetworkingSocketsTransport) + " - connection request to " + param.m_info.m_identityRemote.GetSteamID64() + " was accepted!");
 
                     clientId = param.m_info.m_identityRemote.GetSteamID64();
                     payload = new ArraySegment<byte>();
@@ -210,7 +211,7 @@ namespace Netcode.Transports
                 {
                     //The connection is no more
                     if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
-                        NetworkLog.LogInfoServer(nameof(SteamNetworkingSocketsTransport) + $" - connection closed for {param.m_info.m_identityRemote.GetSteamID64()} state responce: {param.m_info.m_eState}");
+                        Debug.Log(nameof(SteamNetworkingSocketsTransport) + $" - connection closed for {param.m_info.m_identityRemote.GetSteamID64()} state responce: {param.m_info.m_eState}");
 
                     clientId = param.m_info.m_identityRemote.GetSteamID64();
                     payload = new ArraySegment<byte>();
@@ -380,7 +381,11 @@ namespace Netcode.Transports
         public override bool StartClient()
         {
             if (c_onConnectionChange == null)
+#if UNITY_SERVER
+                c_onConnectionChange = Callback<SteamNetConnectionStatusChangedCallback_t>.CreateGameServer(OnConnectionStatusChanged);
+#else
                 c_onConnectionChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(OnConnectionStatusChanged);
+#endif
 
             serverUser = new SteamConnectionData(new CSteamID(ConnectToSteamID));
 
@@ -414,7 +419,11 @@ namespace Netcode.Transports
             isServer = true;
 
             if(c_onConnectionChange == null)
+#if UNITY_SERVER
+                c_onConnectionChange = Callback<SteamNetConnectionStatusChangedCallback_t>.CreateGameServer(OnConnectionStatusChanged);
+#else
                 c_onConnectionChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(OnConnectionStatusChanged);
+#endif
 
             if (options == null)
                 options = new SteamNetworkingConfigValue_t[0];
