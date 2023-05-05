@@ -247,8 +247,8 @@ namespace Netcode.Transports
                         clientId = connectionData.id.m_SteamID;
 
                         SteamNetworkingMessage_t data = Marshal.PtrToStructure<SteamNetworkingMessage_t>(ptrs[0]);
-                        var buffer = new byte[data.m_cbSize];
-                        Marshal.Copy(data.m_pData, buffer, 0, data.m_cbSize);
+                        var buffer = new byte[data.m_cbSize - 1];
+                        Marshal.Copy(data.m_pData, buffer, 0, data.m_cbSize - 1);
                         payload = new ArraySegment<byte>(buffer);
                         SteamNetworkingMessage_t.Release(ptrs[0]);
                         
