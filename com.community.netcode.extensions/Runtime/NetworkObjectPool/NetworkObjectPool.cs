@@ -246,6 +246,4 @@ namespace Netcode.Extensions
             m_Pool.ReturnNetworkObject(networkObject, m_Prefab);
         }
     }
-
-}
 }
