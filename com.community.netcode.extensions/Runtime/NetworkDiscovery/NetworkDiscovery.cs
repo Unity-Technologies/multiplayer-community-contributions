@@ -179,7 +179,7 @@ public abstract class NetworkDiscovery<TBroadCast, TResponse> : MonoBehaviour
         UdpReceiveResult udpReceiveResult = await m_Client.ReceiveAsync();
 
         var segment = new ArraySegment<byte>(udpReceiveResult.Buffer, 0, udpReceiveResult.Buffer.Length);
-        using var reader = new FastBufferReader(segment, Allocator.Temp);
+        using var reader = new FastBufferReader(segment, Allocator.Persistent);
 
         try
         {
@@ -202,7 +202,7 @@ public abstract class NetworkDiscovery<TBroadCast, TResponse> : MonoBehaviour
         UdpReceiveResult udpReceiveResult = await m_Client.ReceiveAsync();
 
         var segment = new ArraySegment<byte>(udpReceiveResult.Buffer, 0, udpReceiveResult.Buffer.Length);
-        using var reader = new FastBufferReader(segment, Allocator.Temp);
+        using var reader = new FastBufferReader(segment, Allocator.Persistent);
 
         try
         {
@@ -215,7 +215,7 @@ public abstract class NetworkDiscovery<TBroadCast, TResponse> : MonoBehaviour
 
             if (ProcessBroadcast(udpReceiveResult.RemoteEndPoint, receivedBroadcast, out TResponse response))
             {
-                using var writer = new FastBufferWriter(1024, Allocator.Temp, 1024 * 64);
+                using var writer = new FastBufferWriter(1024, Allocator.Persistent, 1024 * 64);
                 WriteHeader(writer, MessageType.Response);
 
                 writer.WriteNetworkSerializable(response);
