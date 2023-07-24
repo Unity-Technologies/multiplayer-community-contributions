@@ -480,7 +480,7 @@ namespace Unity.Netcode
 
         internal void MarkNetworkObjectDirty()
         {
-            m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
+            m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
         }
 
         public override void Dispose()
