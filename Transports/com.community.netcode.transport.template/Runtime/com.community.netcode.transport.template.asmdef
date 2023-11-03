@@ -2,7 +2,7 @@
     "name": "[name] Transport for Netcode for GameObjects",
     "rootNamespace": "Netcode.Transport.[name]",
     "references": [
-        "com.unity.netcode.runtime"
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
