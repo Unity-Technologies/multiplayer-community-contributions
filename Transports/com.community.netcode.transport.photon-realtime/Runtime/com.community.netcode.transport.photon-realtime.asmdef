@@ -2,7 +2,8 @@
     "name": "Photon Realtime Transport for Netcode for GameObjects",
     "rootNamespace": "Netcode.Transports.PhotonRealtime",
     "references": [
-        "Unity.Netcode.Runtime"
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
