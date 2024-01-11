@@ -261,12 +261,15 @@ namespace Netcode.Transports.Facepunch
 
         void ISocketManager.OnDisconnected(SocketConnection connection, ConnectionInfo info)
         {
-            connectedClients.Remove(connection.Id);
+            if (connectedClients.Remove(connection.Id))
+	    {
+	        InvokeOnTransportEvent(NetworkEvent.Disconnect, connection.Id, default, Time.realtimeSinceStartup);
 
-            InvokeOnTransportEvent(NetworkEvent.Disconnect, connection.Id, default, Time.realtimeSinceStartup);
-
-            if (LogLevel <= LogLevel.Developer)
-                Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}");
+	       if (LogLevel <= LogLevel.Developer)
+                    Debug.Log($"[{nameof(FacepunchTransport)}] - Disconnected Steam user {info.Identity.SteamId}");
+	    }
+     	    else if (LogLevel <= LogLevel.Normal)
+                Debug.LogWarning($"[{nameof(FacepunchTransport)}] - Failed to diconnect client with ID {connection.Id}, client not connected.");
         }
 
         unsafe void ISocketManager.OnMessage(SocketConnection connection, NetIdentity identity, IntPtr data, int size, long messageNum, long recvTime, int channel)
