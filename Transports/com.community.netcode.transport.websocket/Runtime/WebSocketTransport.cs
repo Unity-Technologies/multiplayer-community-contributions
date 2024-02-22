@@ -19,6 +19,7 @@ namespace Netcode.Transports.WebSocket
         public bool SecureConnection = false;
         public bool AllowForwardedRequest;
         public string CertificateBase64String;
+        public string CertificatePassword;
 
         public override ulong ServerClientId => 0;
 
@@ -135,7 +136,8 @@ namespace Netcode.Transports.WebSocket
             if (!string.IsNullOrEmpty(CertificateBase64String))
             {
                 var bytes = Convert.FromBase64String(CertificateBase64String);
-                WebSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(bytes);
+                if(string.IsNullOrEmpty(CertificatePassword)) WebSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(bytes);
+                else WebSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(bytes, CertificatePassword);
             }
             WebSocketServer.Start();
 
