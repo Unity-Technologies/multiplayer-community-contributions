@@ -1,4 +1,4 @@
-﻿#if NETWORK_DICTIONARY
+#if NETWORK_DICTIONARY
 
 using System;
 using System.Collections;
@@ -205,8 +205,10 @@ namespace Unity.Netcode
 
             for (int i = 0; i < count; i++)
             {
-                NetworkVariableSerialization<TKey>.Read(reader, out TKey key);
-                NetworkVariableSerialization<TValue>.Read(reader, out TValue value);
+                TKey key = new TKey();
+                TValue value = new TValue();
+                NetworkVariableSerialization<TKey>.Read(reader, ref key);
+                NetworkVariableSerialization<TValue>.Read(reader, ref value);
                 m_Keys.Add(key);
                 m_Values.Add(value);
             }
@@ -225,8 +227,10 @@ namespace Unity.Netcode
                 {
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
                         {
-                            NetworkVariableSerialization<TKey>.Read(reader, out TKey key);
-                            NetworkVariableSerialization<TValue>.Read(reader, out TValue value);
+                            TKey key = new TKey();
+                            TValue value = new TValue();
+                            NetworkVariableSerialization<TKey>.Read(reader, ref key);
+                            NetworkVariableSerialization<TValue>.Read(reader, ref value);
 
                             if (m_Keys.Contains(key))
                             {
@@ -256,7 +260,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
                         {
-                            NetworkVariableSerialization<TKey>.Read(reader, out TKey key);
+                            TKey key = new TKey();
+                            NetworkVariableSerialization<TKey>.Read(reader, ref key);
                             var index = m_Keys.IndexOf(key);
 
                             if (index == -1)
@@ -288,8 +293,10 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
                         {
-                            NetworkVariableSerialization<TKey>.Read(reader, out TKey key);
-                            NetworkVariableSerialization<TValue>.Read(reader, out TValue value);
+                            TKey key = new TKey();
+                            TValue value = new TValue();
+                            NetworkVariableSerialization<TKey>.Read(reader, ref key);
+                            NetworkVariableSerialization<TValue>.Read(reader, ref value);
                             var index = m_Keys.IndexOf(key);
 
                             if (index == -1)
