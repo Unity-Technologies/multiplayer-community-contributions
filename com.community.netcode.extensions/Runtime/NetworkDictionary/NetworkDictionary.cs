@@ -13,6 +13,13 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
+    
+    /*
+    Some KeyValuePairs (e.g., <int, bool>) cannot be serialized without this attribute.
+    Alternatively, this issue can be fixed by adding the [GenerateSerializationForType] attribute to the
+    class implementing these NetworkDictionaries.
+    */
+    [GenerateSerializationForGenericParameter(1)]
     public class NetworkDictionary<TKey, TValue> : NetworkVariableBase
         where TKey : unmanaged, IEquatable<TKey>
         where TValue : unmanaged
