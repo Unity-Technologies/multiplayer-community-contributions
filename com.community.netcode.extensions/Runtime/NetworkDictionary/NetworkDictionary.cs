@@ -171,7 +171,7 @@ namespace Unity.Netcode
             // upon initial spawn. However, it causes issues with in-scene placed objects
             // due to difference in spawn order. In order to address this, we pick the right
             // list based on the type of object.
-            bool isSceneObject = m_NetworkBehaviour.NetworkObject.IsSceneObject != false;
+            bool isSceneObject = GetBehaviour().NetworkObject.IsSceneObject != false;
 
             if (isSceneObject)
             {
@@ -205,8 +205,10 @@ namespace Unity.Netcode
 
             for (int i = 0; i < count; i++)
             {
-                NetworkVariableSerialization<TKey>.Read(reader, out TKey key);
-                NetworkVariableSerialization<TValue>.Read(reader, out TValue value);
+				var value = new TValue();
+				var key = new TKey();
+                NetworkVariableSerialization<TKey>.Read(reader, ref key);
+                NetworkVariableSerialization<TValue>.Read(reader, ref value);
                 m_Keys.Add(key);
                 m_Values.Add(value);
             }
@@ -225,8 +227,10 @@ namespace Unity.Netcode
                 {
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
                         {
-                            NetworkVariableSerialization<TKey>.Read(reader, out TKey key);
-                            NetworkVariableSerialization<TValue>.Read(reader, out TValue value);
+							var value = new TValue();
+							var key = new TKey();
+                            NetworkVariableSerialization<TKey>.Read(reader, ref key);
+                            NetworkVariableSerialization<TValue>.Read(reader, ref value);
 
                             if (m_Keys.Contains(key))
                             {
@@ -256,7 +260,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
                         {
-                            NetworkVariableSerialization<TKey>.Read(reader, out TKey key);
+							var key = new TKey();
+                            NetworkVariableSerialization<TKey>.Read(reader, ref key);
                             var index = m_Keys.IndexOf(key);
 
                             if (index == -1)
@@ -288,8 +293,10 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
                         {
-                            NetworkVariableSerialization<TKey>.Read(reader, out TKey key);
-                            NetworkVariableSerialization<TValue>.Read(reader, out TValue value);
+							var value = new TValue();
+							var key = new TKey();
+                            NetworkVariableSerialization<TKey>.Read(reader, ref key);
+                            NetworkVariableSerialization<TValue>.Read(reader, ref value);
                             var index = m_Keys.IndexOf(key);
 
                             if (index == -1)
@@ -429,10 +436,10 @@ namespace Unity.Netcode
         public int Count => m_Keys.Length;
 
         /// <inheritdoc />
-        public IEnumerable<TKey> Keys => m_Keys.ToArray();
+        public IEnumerable<TKey> Keys => m_Keys.ToArray(Allocator.Temp);
 
         /// <inheritdoc />
-        public IEnumerable<TValue> Values => m_Values.ToArray();
+        public IEnumerable<TValue> Values => m_Values.ToArray(Allocator.Temp);
 
         /// <inheritdoc />
         public TValue this[TKey key]
@@ -480,7 +487,7 @@ namespace Unity.Netcode
 
         internal void MarkNetworkObjectDirty()
         {
-            m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
+            MarkNetworkBehaviourDirty();
         }
 
         public override void Dispose()
