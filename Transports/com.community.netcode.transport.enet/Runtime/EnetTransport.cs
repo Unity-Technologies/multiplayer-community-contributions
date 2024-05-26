@@ -263,7 +263,10 @@ namespace Netcode.Transports.Enet
         {
             GetEnetConnectionDetails(serverPeerId, out uint peerId);
 
-            connectedEnetPeers[peerId].DisconnectNow(0);
+            if (connectedEnetPeers.ContainsKey(peerId))
+            {
+                connectedEnetPeers[peerId].DisconnectNow(0);
+            }
         }
 
         public override void DisconnectLocalClient()
@@ -282,7 +285,12 @@ namespace Netcode.Transports.Enet
         {
             GetEnetConnectionDetails(clientId, out uint peerId);
 
-            return connectedEnetPeers[peerId].RoundTripTime;
+            if (connectedEnetPeers.ContainsKey(peerId))
+            {
+                return connectedEnetPeers[peerId].RoundTripTime;
+            }
+
+            return 0;
         }
 
         public override void Shutdown()
