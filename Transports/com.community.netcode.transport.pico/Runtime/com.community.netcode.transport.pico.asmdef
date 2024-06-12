@@ -1,0 +1,17 @@
+{
+    "name": "Pico Transport for NGO",
+    "rootNamespace": "Netcode.Transport.Pico",
+    "references": [
+        "Unity.Netcode.Runtime",
+        "PICO.Platform"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
