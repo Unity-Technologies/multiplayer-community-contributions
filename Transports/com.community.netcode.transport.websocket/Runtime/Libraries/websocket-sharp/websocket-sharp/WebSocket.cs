@@ -3214,7 +3214,7 @@ namespace WebSocketSharp
     ///   A series of reconnecting has failed.
     ///   </para>
     /// </exception>
-    public void Connect ()
+    public bool Connect ()
     {
       if (!_client) {
         var msg = "This instance is not a client.";
@@ -3232,7 +3232,11 @@ namespace WebSocketSharp
       }
 
       if (connect ())
+      {
         open ();
+        return true;
+      }
+      return false;
     }
 
     /// <summary>
