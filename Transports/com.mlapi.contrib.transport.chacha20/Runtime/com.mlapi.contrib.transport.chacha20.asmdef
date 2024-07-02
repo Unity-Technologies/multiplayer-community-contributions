@@ -1,0 +1,16 @@
+{
+    "name": "ChaCha20 MLAPI Transport",
+    "rootNamespace": "MLAPI.Transport.ChaCha20",
+    "references": [
+        "Unity.Multiplayer.MLAPI.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
