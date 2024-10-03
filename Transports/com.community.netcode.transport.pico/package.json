@@ -1,0 +1,23 @@
+{
+  "name": "com.community.netcode.transport.pico",
+  "displayName": "Pico Transport for NGO",
+  "version": "0.0.1",
+  "unity": "2019.4",
+  "description": "Pico Transport for NGO",
+  "author": "chenyu",
+  "dependencies": {
+    "com.unity.netcode.gameobjects": "1.2.0"
+  },
+  "samples": [
+    {
+        "displayName": "Pico Golden Path",
+        "description": "Netcode rpc example using pico transport",
+        "path": "Samples~/Pico Golden Path"
+    },
+    {
+        "displayName": "Pico Multiplayer",
+        "description": "Netcode rpc example modified from Oculus SharedSpace",
+        "path": "Samples~/Pico Multiplayer"
+    }
+]
+}
