@@ -43,7 +43,14 @@ public class ExampleNetworkDiscoveryHud : MonoBehaviour
 
     void OnServerFound(IPEndPoint sender, DiscoveryResponseData response)
     {
-        discoveredServers[sender.Address] = response;
+        if (discoveredServers.ContainsKey(sender.Address))
+        {
+            discoveredServers[sender.Address] = response;
+        }
+        else
+        {
+            discoveredServers.Add(sender.Address, response);
+        }
     }
 
     void OnGUI()
