@@ -60,7 +60,7 @@ namespace Netcode.Transports.LiteNetLib
             SimulateMaxLatency = Math.Max(SimulateMinLatency, SimulateMaxLatency);
         }
 
-        void Update()
+        protected override void OnEarlyUpdate()
         {
             m_NetManager?.PollEvents();
         }

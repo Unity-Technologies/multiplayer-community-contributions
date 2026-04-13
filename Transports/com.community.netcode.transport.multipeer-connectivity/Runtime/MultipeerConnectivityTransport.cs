@@ -333,21 +333,19 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// </summary>
         public event Action<string> OnConnectingWithPeer;
 
-        private void Awake()
+        public override void Initialize(NetworkManager networkManager)
         {
             // Initialize the singleton instance
             if (s_instance != null && s_instance != this)
             {
                 Destroy(gameObject);
+                return;
             }
             else
             {
                 s_instance = this;
             }
-        }
 
-        public override void Initialize(NetworkManager networkManager)
-        {
             if (!IsRuntime)
             {
                 Debug.LogError($"[MPCTransport] MPCTransport cannot run in Unity Editor, it can only run on an iOS device. " +

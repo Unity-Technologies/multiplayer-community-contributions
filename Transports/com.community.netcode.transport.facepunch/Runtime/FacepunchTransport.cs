@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Steamworks;
@@ -17,6 +16,7 @@ namespace Netcode.Transports.Facepunch
         private ConnectionManager connectionManager;
         private SocketManager socketManager;
         private Dictionary<ulong, Client> connectedClients;
+        private bool m_SteamInitialized;
 
         [Space]
         [Tooltip("The Steam App ID of your game. Technically you're not allowed to use 480, but Valve doesn't do anything about it so it's fine for testing purposes.")]
@@ -38,38 +38,26 @@ namespace Netcode.Transports.Facepunch
             public SocketConnection connection;
         }
 
-        #region MonoBehaviour Messages
+        #region NetworkTransport Overrides
 
-        private void Awake()
-        {
-            try
-            {
-                SteamClient.Init(steamAppId, false);
-            }
-            catch (Exception e)
-            {
-                if (LogLevel <= LogLevel.Error)
-                    Debug.LogError($"[{nameof(FacepunchTransport)}] - Caught an exeption during initialization of Steam client: {e}");
-            }
-            finally
-            {
-                StartCoroutine(InitSteamworks());
-            }
-        }
-
-        private void Update()
+        protected override void OnEarlyUpdate()
         {
             SteamClient.RunCallbacks();
+
+            if (!m_SteamInitialized && SteamClient.IsValid)
+            {
+                m_SteamInitialized = true;
+                SteamNetworkingUtils.InitRelayNetworkAccess();
+
+                if (LogLevel <= LogLevel.Developer)
+                    Debug.Log($"[{nameof(FacepunchTransport)}] - Initialized access to Steam Relay Network.");
+
+                userSteamId = SteamClient.SteamId;
+
+                if (LogLevel <= LogLevel.Developer)
+                    Debug.Log($"[{nameof(FacepunchTransport)}] - Fetched user Steam ID.");
+            }
         }
-
-        private void OnDestroy()
-        {
-            SteamClient.Shutdown();
-        }
-
-        #endregion
-
-        #region NetworkTransport Overrides
 
         public override ulong ServerClientId => 0;
 
@@ -105,6 +93,16 @@ namespace Netcode.Transports.Facepunch
         public override void Initialize(NetworkManager networkManager = null)
         {
             connectedClients = new Dictionary<ulong, Client>();
+
+            try
+            {
+                SteamClient.Init(steamAppId, false);
+            }
+            catch (Exception e)
+            {
+                if (LogLevel <= LogLevel.Error)
+                    Debug.LogError($"[{nameof(FacepunchTransport)}] - Caught an exeption during initialization of Steam client: {e}");
+            }
         }
 
         private SendType NetworkDeliveryToSendType(NetworkDelivery delivery)
@@ -129,6 +127,7 @@ namespace Netcode.Transports.Facepunch
 
                 connectionManager?.Close();
                 socketManager?.Close();
+                SteamClient.Shutdown();
             }
             catch (Exception e)
             {
@@ -285,23 +284,6 @@ namespace Netcode.Transports.Facepunch
         }
 
         #endregion
-
-        #region Utility Methods
-
-        private IEnumerator InitSteamworks()
-        {
-            yield return new WaitUntil(() => SteamClient.IsValid);
-
-            SteamNetworkingUtils.InitRelayNetworkAccess();
-
-            if (LogLevel <= LogLevel.Developer)
-                Debug.Log($"[{nameof(FacepunchTransport)}] - Initialized access to Steam Relay Network.");
-
-            userSteamId = SteamClient.SteamId;
-
-            if (LogLevel <= LogLevel.Developer)
-                Debug.Log($"[{nameof(FacepunchTransport)}] - Fetched user Steam ID.");
-        }
 
         #endregion
     }

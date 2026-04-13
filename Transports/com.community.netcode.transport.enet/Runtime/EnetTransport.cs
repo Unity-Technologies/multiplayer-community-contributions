@@ -9,7 +9,6 @@ using EventType = ENet.EventType;
 
 namespace Netcode.Transports.Enet
 {
-    [DefaultExecutionOrder(1000)]
     public class EnetTransport : NetworkTransport
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -71,7 +70,7 @@ namespace Netcode.Transports.Enet
             connectedEnetPeers[peerId].Send(0, ref packet);
         }
 
-        public void Update()
+        protected override void OnPostLateUpdate()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_Flush.Begin();

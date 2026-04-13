@@ -11,7 +11,6 @@ using UnityEngine.Serialization;
 
 namespace Netcode.Transports.PhotonRealtime
 {
-    [DefaultExecutionOrder(-1000)]
     public partial class PhotonRealtimeTransport : NetworkTransport, IOnEventCallback
     {
         private static readonly ArraySegment<byte> s_EmptyArraySegment = new ArraySegment<byte>(Array.Empty<byte>());
@@ -93,12 +92,12 @@ namespace Netcode.Transports.PhotonRealtime
         ///<inheritdoc/>
         public override ulong ServerClientId => GetMlapiClientId(0, true);
 
-        // -------------- MonoBehaviour Handlers --------------------------------------------------------------------------
+        // -------------- NetworkTransport Handlers ----------------------------------------------------------------------
 
         /// <summary>
-        /// In Update before other scripts run we dispatch incoming commands.
+        /// Dispatch incoming Photon commands before processing received packets.
         /// </summary>
-        void Update()
+        protected override void OnEarlyUpdate()
         {
             if (m_Client != null)
             {
@@ -107,9 +106,9 @@ namespace Netcode.Transports.PhotonRealtime
         }
 
         /// <summary>
-        /// Send batched messages out in LateUpdate.
+        /// Send batched messages out after processing.
         /// </summary>
-        void LateUpdate()
+        protected override void OnPostLateUpdate()
         {
             if (m_Client != null)
             {
