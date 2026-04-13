@@ -333,7 +333,7 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// </summary>
         public event Action<string> OnConnectingWithPeer;
 
-        public override void Initialize(NetworkManager networkManager)
+        public override void Initialize(NetworkManager networkManager = null)
         {
             // Initialize the singleton instance
             if (s_instance != null && s_instance != this)
