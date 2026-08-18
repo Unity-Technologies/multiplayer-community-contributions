@@ -96,7 +96,8 @@ namespace Netcode.Transports.Facepunch
 
             try
             {
-                SteamClient.Init(steamAppId, false);
+				if (!SteamClient.IsValid)
+                	SteamClient.Init(steamAppId, false);
             }
             catch (Exception e)
             {
