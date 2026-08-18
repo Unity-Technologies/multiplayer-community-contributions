@@ -288,7 +288,7 @@ namespace Netcode.Transports.Facepunch
 
         #region Utility Methods
 
-		private IEnumerator InitSteamworks()
+		private System.Collections.IEnumerator InitSteamworks()
 		{
 		    yield return new WaitUntil(() => SteamClient.IsValid);
 		
