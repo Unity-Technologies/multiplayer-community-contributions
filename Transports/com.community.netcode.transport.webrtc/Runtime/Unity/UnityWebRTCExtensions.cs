@@ -2,36 +2,38 @@ using System;
 using System.Threading.Tasks;
 using Unity.WebRTC;
 using UnityEngine;
+using NativePeerConnection = Unity.WebRTC.RTCPeerConnection;
+using NativeSessionDescription = Unity.WebRTC.RTCSessionDescription;
 
 namespace Netcode.Transports.WebRTC
 {
     public static class UnityWebRTCExtensions
     {
-        public static Task<RTCSessionDescription> CreateOfferAsync(this RTCPeerConnection pc, MonoBehaviour runner)
+        public static Task<NativeSessionDescription> CreateOfferAsync(this NativePeerConnection pc, MonoBehaviour runner)
         {
             var op = pc.CreateOffer();
             return AwaitOp(op, runner).ContinueWith(t => op.Desc);
         }
 
-        public static Task<RTCSessionDescription> CreateAnswerAsync(this RTCPeerConnection pc, MonoBehaviour runner)
+        public static Task<NativeSessionDescription> CreateAnswerAsync(this NativePeerConnection pc, MonoBehaviour runner)
         {
             var op = pc.CreateAnswer();
             return AwaitOp(op, runner).ContinueWith(t => op.Desc);
         }
 
-        public static Task SetLocalDescriptionAsync(this RTCPeerConnection pc, ref RTCSessionDescription desc, MonoBehaviour runner)
+        public static Task SetLocalDescriptionAsync(this NativePeerConnection pc, ref NativeSessionDescription desc, MonoBehaviour runner)
         {
             var op = pc.SetLocalDescription(ref desc);
             return AwaitOp(op, runner);
         }
 
-        public static Task SetRemoteDescriptionAsync(this RTCPeerConnection pc, ref RTCSessionDescription desc, MonoBehaviour runner)
+        public static Task SetRemoteDescriptionAsync(this NativePeerConnection pc, ref NativeSessionDescription desc, MonoBehaviour runner)
         {
             var op = pc.SetRemoteDescription(ref desc);
             return AwaitOp(op, runner);
         }
 
-        public static Task<RTCStatsReport> GetStatsAsync(this RTCPeerConnection pc, MonoBehaviour runner)
+        public static Task<RTCStatsReport> GetStatsAsync(this NativePeerConnection pc, MonoBehaviour runner)
         {
             var op = pc.GetStats();
             return AwaitOp(op, runner).ContinueWith(t => op.Value);
