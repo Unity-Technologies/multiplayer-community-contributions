@@ -13,7 +13,7 @@ A working example project lives at [multiplayer-test](https://github.com/aziztit
 | C# | All | `WebRTCTransport`, platform-specific peer connections and signaling clients |
 | Native WebRTC | Editor, Desktop, Mobile | [Unity WebRTC](https://docs.unity3d.com/Packages/com.unity.webrtc@3.0/manual/index.html) |
 | WebGL | WebGL player | Packaged `.jslib` + `webrtc-web-client.jspre` (no custom WebGL template required) |
-| Signaling | All | Socket.IO, plus the sample Node.js server in `Signaling~` |
+| Signaling | All | Socket.IO. Sample server: [webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling) |
 
 ## Dependencies
 
@@ -47,17 +47,25 @@ After installing, set Network Transport to None on your `NetworkManager`, then c
 
 ## Signaling server
 
-WebRTC needs a signaling server to exchange offers, answers, and ICE candidates. A sample Socket.IO server is included in `Signaling~` (Unity ignores folders that end with `~`, so it will not import into your project).
+WebRTC needs a signaling server to exchange offers, answers, and ICE candidates.
 
+You can use the following sample signaling server:
+[https://github.com/aziztitu/webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling)
+
+OR use a server that implements the following signaling events:
+`host-room`, `room-created`, `host-room-failed`, `join-room`, `room-not-found`, `new-client`, `offer`, `answer`, `candidate`, `client-disconnected`, `host-disconnected`.
+
+
+### Using the sample signaling server
 ```bash
-cd Signaling~
+git clone https://github.com/aziztitu/webrtc-ngo-signaling.git
+cd webrtc-ngo-signaling
 npm install
+cp .env.example .env
 npm run serve
 ```
 
-The server listens on `http://localhost:4000` by default. Copy `.env.example` to `.env` to set `PORT` and an optional `AUTH_TOKEN`. If you set a token, put the same value on `WebRTCTransport.Signaling Server Auth Token`.
-
-Signaling events: `host-room`, `room-created`, `host-room-failed`, `join-room`, `room-not-found`, `new-client`, `offer`, `answer`, `candidate`, `client-disconnected`, `host-disconnected`.
+The sample listens on `http://localhost:4000`. Copy `.env.example` to `.env` to set `PORT` and an optional `AUTH_TOKEN`. If you set a token, put the same value on `WebRTCTransport.Signaling Server Auth Token`.
 
 ## Usage
 
