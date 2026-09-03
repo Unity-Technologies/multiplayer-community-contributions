@@ -4,8 +4,6 @@ A cross-platform [Netcode for GameObjects](https://docs-multiplayer.unity3d.com/
 
 Tested on Windows, Mobile, and WebGL with Netcode for GameObjects 2.4.2.
 
-A working example project lives at [multiplayer-test](https://github.com/aziztitu/multiplayer-test).
-
 ## Architecture
 
 | Layer | Platform | Components |
