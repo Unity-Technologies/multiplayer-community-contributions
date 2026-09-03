@@ -49,23 +49,10 @@ After installing, set Network Transport to None on your `NetworkManager`, then c
 
 WebRTC needs a signaling server to exchange offers, answers, and ICE candidates.
 
-You can use the following sample signaling server:
-[https://github.com/aziztitu/webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling)
-
-OR use a server that implements the following signaling events:
+You can use the sample [webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling) server, or any server that implements these events:
 `host-room`, `room-created`, `host-room-failed`, `join-room`, `room-not-found`, `new-client`, `offer`, `answer`, `candidate`, `client-disconnected`, `host-disconnected`.
 
-
-### Using the sample signaling server
-```bash
-git clone https://github.com/aziztitu/webrtc-ngo-signaling.git
-cd webrtc-ngo-signaling
-npm install
-cp .env.example .env
-npm run serve
-```
-
-The sample listens on `http://localhost:4000`. Copy `.env.example` to `.env` to set `PORT` and an optional `AUTH_TOKEN`. If you set a token, put the same value on `WebRTCTransport.Signaling Server Auth Token`.
+The sample server listens on `http://localhost:4000` by default. If you set an `AUTH_TOKEN` on the server, use the same value on `WebRTCTransport.Signaling Server Auth Token`.
 
 ## Usage
 
