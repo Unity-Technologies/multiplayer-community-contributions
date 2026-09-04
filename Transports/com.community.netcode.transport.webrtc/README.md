@@ -30,7 +30,7 @@ In Unity Package Manager, add a package from Git URL:
 https://github.com/Unity-Technologies/multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.webrtc
 ```
 
-NOTE: Until this contribution is merged, you can use this fork URL:
+**NOTE:** Until this contribution is merged, you can use this fork URL instead:
 
 ```
 https://github.com/aziztitu/unity-multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.webrtc#transport/webrtc
