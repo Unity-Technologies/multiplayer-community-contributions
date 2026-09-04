@@ -20,7 +20,6 @@ Install these in your Unity project before using the transport:
 1. **Netcode for GameObjects** 2.0.0 or newer
 2. **Unity WebRTC** (`com.unity.webrtc` 3.0.0-pre.8 or compatible) - pulled in by this package
 3. **Socket.IO Unity** (required for Editor / Desktop / Mobile signaling). Add it from a Git URL: `https://github.com/itisnajim/SocketIOUnity.git`
-    - Socket.IO Unity is not needed at runtime on WebGL (browser `socket.io-client` is bundled in the WebGL plugin).
 
 ## Install this transport
 
