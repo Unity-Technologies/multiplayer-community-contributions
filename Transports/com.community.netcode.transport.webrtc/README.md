@@ -11,7 +11,7 @@ Tested on Windows, Mobile, and WebGL with Netcode for GameObjects 2.4.2.
 | C# | All | `WebRTCTransport`, platform-specific peer connections and signaling clients |
 | Native WebRTC | Editor, Desktop, Mobile | [Unity WebRTC](https://docs.unity3d.com/Packages/com.unity.webrtc@3.0/manual/index.html) |
 | WebGL | WebGL player | Packaged `.jslib` + `webrtc-web-client.jspre` (no custom WebGL template required) |
-| Signaling | All | Socket.IO. Sample server: [webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling) |
+| Signaling | All | **Socket.IO** <br/> Public test server: [signal.multiplayer.azeesoft.com](https://signal.multiplayer.azeesoft.com/) <br/> Self-host for production: [webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling) |
 
 ## Dependencies
 
@@ -42,29 +42,46 @@ To use the WebRTC Transport, assign it as the current `Network Transport` on the
 
 ## Signaling server setup
 
-WebRTC needs a signaling server to exchange offers, answers, and ICE candidates.
+WebRTC needs a signaling server to exchange offers, answers, and ICE candidates. Gameplay traffic does not go through that server.
 
-You can use the sample [webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling) server, or implement the same events on your own server.
+### Development and testing
 
-The sample server listens on `http://localhost:4000` by default. If you set an `AUTH_TOKEN` on the server, use the same value on `WebRTCTransport.Signaling Server Auth Token`.
+You can use the public signaling server available at [https://signal.multiplayer.azeesoft.com/](https://signal.multiplayer.azeesoft.com/) for development and testing.
+
+- Open that link, and generate a token.
+
+- Back in Unity, select the NetworkManager game object in the scene.
+
+- Open the WebRTCTransport component in Inspector, and set these values:
+   - **Signaling URL:** `wss://signal.multiplayer.azeesoft.com`
+   - **Signaling Server Auth Token:** The generated token from the web page
+
+### Production
+
+For production, I recommend that you run your own signaling server. The open-source sample is [webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling) (clone, configure, and deploy it, or implement the same Socket.IO events on your own server).
 
 ## Usage
 
 1. Add `WebRTCTransport` to the same GameObject as your `NetworkManager`.
 2. Set **Signaling Server URL**:
-   - Local: `http://localhost:4000`
-   - Production: `wss://your-domain.com`
-3. Optionally set **Signaling Server Auth Token** to match the server.
+   - Public test server: `wss://signal.multiplayer.azeesoft.com`
+   - Local sample: `http://localhost:4000`
+   - Your production server: `https://your-domain.com` (or `wss://your-domain.com`)
+3. Set **Signaling Server Auth Token**:
+   - Public test server: generate a token at [signal.multiplayer.azeesoft.com](https://signal.multiplayer.azeesoft.com/)
+   - Your own server: match the token the server expects
 4. Optionally add **Custom ICE Servers** (TURN).
+   - Recommended for production
 5. Host: leave `roomId` empty. The server creates a room code and writes it back to `roomId`.
 6. Client: set `roomId` to the host's code before calling `StartClient` / `NetworkManager.StartClient()`.
 
-> Tip: During local testing, you can pre-fill the `roomId` to a custom value in the inspector, and all local instances will host/join the same room automatically.
+> Tip: During local testing, you can pre-fill the `roomId` to a custom value in the inspector, and all local instances will host/join the same room automatically. This will help with iterating quickly.
 
 ### STUN / TURN
 
-Built-in STUN servers:
+**Built-in STUN servers**
 
+The package automatically includes these STUN servers, which should be good for development and testing:
 - `stun:stun.l.google.com:19302`
 - `stun:stun1.l.google.com:19302`
 - `stun:stun2.l.google.com:19302`
@@ -72,7 +89,7 @@ Built-in STUN servers:
 - `stun:stun.ekiga.net:3478`
 - `stun:stun.iptel.org:3478`
 
-**NOTE:** STUN-only connections can fail with symmetric NATs. Add at least one TURN server in **Custom ICE Servers** before going to production.
+> STUN-only connections can fail with symmetric NATs (Mobile Networks). So, before going to production, it is recommended that you add at least one TURN server in **Custom ICE Servers** in the Inspector.
 
 ## WebGL
 
