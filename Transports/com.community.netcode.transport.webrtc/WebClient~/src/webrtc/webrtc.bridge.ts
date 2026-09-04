@@ -4,7 +4,6 @@ import {
   UnityRTCIceConnectionState,
   WebRTCBridgeTypeConversions,
   type UnityIceServer,
-  type UnityRTCSdpType,
   type UnityRTCSessionDescription,
 } from './webrtc.bridge.types';
 
