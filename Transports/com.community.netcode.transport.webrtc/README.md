@@ -18,14 +18,9 @@ Tested on Windows, Mobile, and WebGL with Netcode for GameObjects 2.4.2.
 Install these in your Unity project before using the transport:
 
 1. **Netcode for GameObjects** 2.0.0 or newer
-2. **Unity WebRTC** (`com.unity.webrtc` 3.0.0-pre.8 or compatible) — pulled in by this package
-3. **Socket.IO Unity** (required for Editor / Desktop / Mobile signaling). Add it from a Git URL:
-
-```
-https://github.com/itisnajim/SocketIOUnity.git
-```
-
-This package cannot declare that Git dependency itself. Socket.IO Unity is not needed at runtime on WebGL (browser `socket.io-client` is bundled in the WebGL plugin).
+2. **Unity WebRTC** (`com.unity.webrtc` 3.0.0-pre.8 or compatible) - pulled in by this package
+3. **Socket.IO Unity** (required for Editor / Desktop / Mobile signaling). Add it from a Git URL: `https://github.com/itisnajim/SocketIOUnity.git`
+    - Socket.IO Unity is not needed at runtime on WebGL (browser `socket.io-client` is bundled in the WebGL plugin).
 
 ## Install this transport
 
@@ -35,20 +30,21 @@ In Unity Package Manager, add a package from Git URL:
 https://github.com/Unity-Technologies/multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.webrtc
 ```
 
-Until this contribution is merged, use the fork URL:
+NOTE: Until this contribution is merged, you can use this fork URL:
 
 ```
-https://github.com/aziztitu/unity-multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.webrtc
+https://github.com/aziztitu/unity-multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.webrtc#transport/webrtc
 ```
 
-After installing, set Network Transport to None on your `NetworkManager`, then choose **WebRTC Transport** from the Select Transport dropdown. You can also add `WebRTCTransport` on the same GameObject as `NetworkManager` and assign it manually.
+After installing, add `WebRTCTransport` component on the same GameObject as `NetworkManager`.
 
-## Signaling server
+To use the WebRTC Transport, assign it as the current `Network Transport` on the `NetworkManager` - either in the inspector, or in runtime before hosting/joining a session.
+
+## Signaling server setup
 
 WebRTC needs a signaling server to exchange offers, answers, and ICE candidates.
 
-You can use the sample [webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling) server, or any server that implements these events:
-`host-room`, `room-created`, `host-room-failed`, `join-room`, `room-not-found`, `new-client`, `offer`, `answer`, `candidate`, `client-disconnected`, `host-disconnected`.
+You can use the sample [webrtc-ngo-signaling](https://github.com/aziztitu/webrtc-ngo-signaling) server, or implement the same events on your own server.
 
 The sample server listens on `http://localhost:4000` by default. If you set an `AUTH_TOKEN` on the server, use the same value on `WebRTCTransport.Signaling Server Auth Token`.
 
@@ -63,6 +59,8 @@ The sample server listens on `http://localhost:4000` by default. If you set an `
 5. Host: leave `roomId` empty. The server creates a room code and writes it back to `roomId`.
 6. Client: set `roomId` to the host's code before calling `StartClient` / `NetworkManager.StartClient()`.
 
+> Tip: During local testing, you can pre-fill the `roomId` to a custom value in the inspector, and all local instances will host/join the same room automatically.
+
 ### STUN / TURN
 
 Built-in STUN servers:
@@ -74,18 +72,8 @@ Built-in STUN servers:
 - `stun:stun.ekiga.net:3478`
 - `stun:stun.iptel.org:3478`
 
-STUN-only connections can fail with symmetric NATs. Add at least one TURN server in **Custom ICE Servers** before going to production.
+**NOTE:** STUN-only connections can fail with symmetric NATs. Add at least one TURN server in **Custom ICE Servers** before going to production.
 
 ## WebGL
 
-The WebGL JavaScript client is shipped as `Runtime/Plugins/WebGL/webrtc-web-client.jspre`, so you do **not** need a custom WebGL template.
-
-To rebuild the browser bundle from TypeScript:
-
-```bash
-cd WebClient~
-npm install
-npm run build
-```
-
-`WebClient~/vite.config.js` writes the IIFE bundle to `Runtime/Plugins/WebGL/webrtc-web-client.jspre`.
+The WebGL JavaScript client is shipped as `Runtime/Plugins/WebGL/webrtc-web-client.jspre`, so you do **not** need to do anything extra.
