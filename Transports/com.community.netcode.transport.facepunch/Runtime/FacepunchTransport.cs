@@ -284,7 +284,5 @@ namespace Netcode.Transports.Facepunch
         }
 
         #endregion
-
-        #endregion
     }
 }
