@@ -1,0 +1,26 @@
+{
+    "name": "Netcode.Transports.WebRTC.Unity",
+    "rootNamespace": "Netcode.Transports.WebRTC",
+    "references": [
+        "Netcode.Transports.WebRTC",
+        "Unity.Netcode.Runtime",
+        "Unity.WebRTC",
+        "SocketIOUnityAssembly"
+    ],
+    "includePlatforms": [
+        "Android",
+        "Editor",
+        "iOS",
+        "LinuxStandalone64",
+        "macOSStandalone",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
