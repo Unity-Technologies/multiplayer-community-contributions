@@ -2,6 +2,7 @@
     "name": "Netcode.Transports.WebRTC",
     "rootNamespace": "Netcode.Transports.WebRTC",
     "references": [
+        "Unity.Networking.Transport.NetcodeInterop",
         "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],

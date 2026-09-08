@@ -1,7 +1,9 @@
 {
     "name": "Netcode.Transports.MultipeerConnectivity.Editor",
     "rootNamespace": "Netcode.Transports.MultipeerConnectivity.Editor",
-    "references": [],
+    "references": [
+        "Unity.Networking.Transport.NetcodeInterop"
+    ],
     "includePlatforms": [
         "Editor"
     ],

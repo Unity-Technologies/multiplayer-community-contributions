@@ -1,4 +1,4 @@
-﻿#if !DISABLESTEAMWORKS && STEAMWORKSNET && NETCODEGAMEOBJECTS
+﻿#if !DISABLESTEAMWORKS && STEAMWORKSNET
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

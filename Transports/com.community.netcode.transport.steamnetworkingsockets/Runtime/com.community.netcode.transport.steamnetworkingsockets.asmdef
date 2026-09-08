@@ -2,6 +2,7 @@
     "name": "SteamNetworkingSockets Transport for Netcode for GameObjects",
     "rootNamespace": "",
     "references": [
+        "Unity.Networking.Transport.NetcodeInterop",
         "GUID:1491147abca9d7d4bb7105af628b223e",
         "GUID:68bd7fdb68ef2684e982e8a9825b18a5"
     ],
@@ -23,11 +24,6 @@
             "name": "com.rlabrecque.steamworks.net",
             "expression": "",
             "define": "STEAMWORKSNET"
-        },
-        {
-            "name": "com.unity.netcode.gameobjects",
-            "expression": "",
-            "define": "NETCODEGAMEOBJECTS"
         }
     ],
     "noEngineReferences": false

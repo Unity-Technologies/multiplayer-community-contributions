@@ -2,6 +2,7 @@
     "name": "Facepunch Transport for Netcode for GameObjects",
     "rootNamespace": "Netcode.Transports.Facepunch",
     "references": [
+        "Unity.Networking.Transport.NetcodeInterop",
         "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [
