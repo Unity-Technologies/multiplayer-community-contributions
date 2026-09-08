@@ -6,7 +6,6 @@
   "description": "WebRTC Transport for Netcode for GameObjects with Desktop, Mobile, and WebGL support.",
   "author": "Aziztitu Murugan",
   "dependencies": {
-    "com.unity.netcode.gameobjects": "2.0.0",
     "com.unity.webrtc": "3.0.0-pre.8"
   }
 }

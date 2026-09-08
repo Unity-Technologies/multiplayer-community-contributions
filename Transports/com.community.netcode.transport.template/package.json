@@ -6,6 +6,5 @@
   "description": "[name] Transport for Netcode for GameObjects",
   "author": "[add authors]",
   "dependencies": {
-    "com.unity.netcode.gameobjects": "0.2.1-preview.1"
   }
 }
