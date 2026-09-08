@@ -96,7 +96,8 @@ namespace Netcode.Transports.Facepunch
 
             try
             {
-                SteamClient.Init(steamAppId, false);
+				if (!SteamClient.IsValid)
+                	SteamClient.Init(steamAppId, false);
             }
             catch (Exception e)
             {
@@ -281,6 +282,25 @@ namespace Netcode.Transports.Facepunch
             }
 
             InvokeOnTransportEvent(NetworkEvent.Data, connection.Id, new ArraySegment<byte>(payloadCache, 0, size), Time.realtimeSinceStartup);
+        }
+
+        #endregion
+
+        #region Utility Methods
+
+        private System.Collections.IEnumerator InitSteamworks()
+        {
+            yield return new WaitUntil(() => SteamClient.IsValid);
+
+            SteamNetworkingUtils.InitRelayNetworkAccess();
+
+            if (LogLevel <= LogLevel.Developer)
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Initialized access to Steam Relay Network.");
+
+            userSteamId = SteamClient.SteamId;
+
+            if (LogLevel <= LogLevel.Developer)
+                Debug.Log($"[{nameof(FacepunchTransport)}] - Fetched user Steam ID.");
         }
 
         #endregion
