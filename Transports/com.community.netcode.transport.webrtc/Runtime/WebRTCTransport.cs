@@ -55,7 +55,7 @@ namespace Netcode.Transports.WebRTC
 #else
             if (NativeBackendFactory == null)
             {
-                Debug.LogError("[WebRTCTransport] Native WebRTC backend is not available. Install com.unity.webrtc and Socket.IO Unity.");
+                Debug.LogError("[WebRTCTransport] Native WebRTC backend is not available. Install com.unity.webrtc and Socket.IO Unity. On IL2CPP player builds, this can also mean the native backend assembly was stripped.");
                 return;
             }
 

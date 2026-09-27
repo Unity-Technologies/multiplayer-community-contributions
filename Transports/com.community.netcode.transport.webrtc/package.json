@@ -1,7 +1,7 @@
 {
   "name": "com.community.netcode.transport.webrtc",
   "displayName": "WebRTC Transport for Netcode for GameObjects",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "unity": "2022.3",
   "description": "WebRTC Transport for Netcode for GameObjects with Desktop, Mobile, and WebGL support.",
   "author": "Aziztitu Murugan",

@@ -1,10 +1,13 @@
 using System;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace Netcode.Transports.WebRTC
 {
+    [Preserve]
     public class UnityWebRTC : ICustomWebRTC
     {
+        [Preserve]
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void RegisterBackend()
         {

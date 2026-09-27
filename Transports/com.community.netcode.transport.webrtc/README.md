@@ -29,12 +29,6 @@ In Unity Package Manager, add a package from Git URL:
 https://github.com/Unity-Technologies/multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.webrtc
 ```
 
-**NOTE:** Until this contribution is merged, you can use this fork URL instead:
-
-```
-https://github.com/aziztitu/unity-multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.webrtc#transport/webrtc
-```
-
 After installing, add `WebRTCTransport` component on the same GameObject as `NetworkManager`.
 
 To use the WebRTC Transport, assign it as the current `Network Transport` on the `NetworkManager` - either in the inspector, or in runtime before hosting/joining a session.

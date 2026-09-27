@@ -1,0 +1,3 @@
+<linker>
+  <assembly fullname="Netcode.Transports.WebRTC.Unity" preserve="all" />
+</linker>
